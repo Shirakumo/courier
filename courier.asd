@@ -10,7 +10,7 @@
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
   :version "1.2.0"
-  :license "Artistic"
+  :license "zlib"
   :description "An email marketing service for Radiance"
   :homepage "https://shirakumo.github.io/courier/"
   :bug-tracker "https://github.com/shirakumo/courier/issues"
