@@ -103,4 +103,6 @@
                (subscriber (:id subscriber))
                (time (:integer 5)))))
 
-(define-trigger startup-done ())
+(define-trigger startup-done ()
+  (defaulted-config "Courier" :title)
+  (defaulted-config "Shirakumo" :copyright))
