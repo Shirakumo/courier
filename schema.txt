@@ -1,0 +1,17 @@
+host: author title address host port username password encryption
+campaign: _host author title description time reply-to
+subscriber: _campaign address signup-time confirmed
+attribute: _campaign title
+attribute-value: _attribute _subscriber value
+mail: _campaign title subject body
+mail-receipt: _mail _subscriber time
+mail-log: _mail _subscriber time
+mail-queue: _host _subscriber _mail time
+mail-trigger: _mail _receipt-to-mail? _receipt-to-link? time-offset
+mail-trigger-tags: _mail-trigger _tag inverted
+tag: _campaign title description auto-rule
+tag-table: _tag _subscriber
+tag-trigger: _tag _receipt-to-mail? _receipt-to-link? time-offset
+tag-trigger-tags: _tag-trigger _tag inverted
+link: _campaign _mail title url
+link-receipt: _link _subscriber time
