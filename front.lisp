@@ -7,20 +7,31 @@
 (in-package #:courier)
 
 (defun render-page (page content &rest args)
-  (apply #'r-clip:process (@template "front.ctml")
-         :title (config :title)
-         :page page
-         :content (plump:parse content)
-         :copyright (config :copyright)
-         args))
+  (r-clip:with-clip-processing ("template.ctml")
+    (apply #'r-clip:process T
+           :title (config :title)
+           :page page
+           :content (plump:parse content)
+           :copyright (config :copyright)
+           :version (asdf:component-version (asdf:find-system :courier))
+           :logged-in (user:check (auth:current "anonymous") (perm courier))
+           :registration-open (config :registration-open)
+           args)))
 
 (define-page frontpage "courier/^$" ()
   (if (user:check (auth:current "anonymous") (perm courier))
       (render-page "Dashboard" (@template "dashboard.ctml"))
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
-(define-page campaigns "courier/^campaign/$" (:auth (perm courier))
+(define-page edit-host "courier/host/(.+)" (:uri-groups (host) :access (perm courier))
+  (if (string= host "new")
+      (render-page "New Host" (@template "host.ctml") (dm:hull 'host))
+      (render-page host (@template "host.ctml")
+                   (or (dm:get-one 'host (db:query (:= 'title host)))
+                       (error 'request-not-found :messag "No such host.")))))
+
+(define-page campaigns "courier/^campaign/$" (:access (perm courier))
   (render-page "Campaigns" (@template "campaigns.ctml")))
 
-(define-page mail-log "courier/^log$" (:auth (perm courier))
+(define-page mail-log "courier/^log$" (:access (perm courier))
   (render-page "Mail Log" (@template "mail-log.ctml")))

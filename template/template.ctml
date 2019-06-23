@@ -13,7 +13,7 @@
     <header>
       <h1><a href="#" @href="courier/" lquery="(text title)">Courier Mailing</a></h1>
       <h2 lquery="(text page)">Page</h2>
-      <c:if test="(...)">
+      <c:if test="logged-in">
         <c:then>
           <div class="profile menu">
             <a href="#" @href="courier/" class="label">
@@ -32,7 +32,7 @@
             </nav>
           </div>
         </c:then>
-        <c:else style="display: none">
+        <c:elseif test="registration-open" style="display: none">
           <div class="login menu">
             <a href="#" @href="<auth page login #>" class="label">
               Log In
@@ -45,6 +45,9 @@
               </a>
             </nav>
           </div>
+        </c:elseif>
+        <c:else>
+          <div></div>
         </c:else>
       </c:if>
     </header>
@@ -53,7 +56,7 @@
     </main>
     <footer>
       &copy; <time lquery="(time T)">2019</time> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>
-      Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text (asdf:system-version :courier))">0.0.0</c:splice></a>
+      Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text version)">0.0.0</c:splice></a>
     </footer>
   </body>
 </html>

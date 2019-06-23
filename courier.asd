@@ -9,7 +9,7 @@
   :class "radiance:virtual-module"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
-  :version "1.2.0"
+  :version "0.0.0"
   :license "zlib"
   :description "An email marketing service for Radiance"
   :homepage "https://shirakumo.github.io/courier/"
@@ -17,7 +17,8 @@
   :source-control (:git "https://github.com/shirakumo/courier.git")
   :serial T
   :components ((:file "module")
-               (:file "db"))
+               (:file "db")
+               (:file "front"))
   :depends-on ((:interface :database)
                (:interface :auth)
                :r-data-model
