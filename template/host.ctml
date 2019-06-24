@@ -1,3 +1,69 @@
-<article class="page host">
-  
-</article>
+<c:using value="host">
+  <article class="page host">
+    <form method="post">
+      <div class="row">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row">
+        <label for="address">Email Address:</label>
+        <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" required autocomplete="email"
+               id="address" name="address" lquery="(val address)" />
+      </div>
+      <div class="row">
+        <label for="address">Hostname:</label>
+        <input type="text" minlength="3" maxlength="64" placeholder="mail.example.com" required
+               id="hostname" name="hostname" lquery="(val hostname)" />
+      </div>
+      <div class="row">
+        <label for="port">Port:</label>
+        <input type="number" min="1" max="65535" placeholder="25" required
+               id="port" name="port" lquery="(val port)" />
+      </div>
+      <div class="row">
+        <label for="username">Username:</label>
+        <input type="username" maxlength="32" autocomplete="username"
+               id="username" name="username" lquery="(val username)" />
+      </div>
+      <div class="row">
+        <label for="password">Password:</label>
+        <input type="password" maxlength="32" autocomplete="current-password"
+               id="password" name="password" lquery="(val password)" />
+      </div>
+      <div class="row">
+        <label for="encryption">Encryption:</label>
+        <select id="encryption" name="encryption">
+          <option value="0" lquery="(attr :selected (= encryption 0))">None</option>
+          <option value="1" lquery="(attr :selected (= encryption 1))">StartTLS</option>
+          <option value="2" lquery="(attr :selected (= encryption 2))">SSL</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="batch-size">Batch Size:</label>
+        <input type="number" min="0" max="1000" required
+               id="batch-size" name="batch-size" lquery="(val batch-size)" />
+      </div>
+      <div class="row">
+        <label for="batch-cooldown">Batch Cooldown:</label>
+        <input type="number" min="1" max="86400" required
+               id="batch-cooldown" name="batch-cooldown" lquery="(val batch-cooldown)" />
+      </div>
+      <div class="row">
+        <label for="reply-to">Reply To Address:</label>
+        <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" autocomplete="email"
+               id="reply-to" name="reply-to" lquery="(val reply-to)" />
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <c:if test="_id">
+        <c:then>
+          <input type="hidden" name="id" lquery="(val _id)" />
+          <input type="submit" value="Save Changes" @formaction="courier/api/courier/host/edit" />
+        </c:then>
+        <c:else>
+          <input type="submit" value="Create Host" @formaction="courier/api/courier/host/new" />
+        </c:else>
+      </c:if>
+    </form>
+  </article>
+</c:using>

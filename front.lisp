@@ -23,12 +23,18 @@
       (render-page "Dashboard" (@template "dashboard.ctml"))
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
-(define-page edit-host "courier/host/(.+)" (:uri-groups (host) :access (perm courier))
+(define-page list-host "courier/^host/$" (:access (perm courier))
+  (render-page "Configured Hosts" (@template "hosts.ctml")
+               :hosts (dm:get 'host (db:query (:= 'author (user:id (auth:current)))) :sort '((title :asc)))))
+
+(define-page edit-host "courier/^host/(.+)$" (:uri-groups (host) :access (perm courier))
   (if (string= host "new")
-      (render-page "New Host" (@template "host.ctml") (dm:hull 'host))
+      (render-page "New Host" (@template "host.ctml")
+                   :host (make-host))
       (render-page host (@template "host.ctml")
-                   (or (dm:get-one 'host (db:query (:= 'title host)))
-                       (error 'request-not-found :messag "No such host.")))))
+                   :host (or (dm:get-one 'host (db:query (:and (:= 'author (user:id (auth:current)))
+                                                               (:= 'title host))))
+                             (error 'request-not-found :messag "No such host.")))))
 
 (define-page campaigns "courier/^campaign/$" (:access (perm courier))
   (render-page "Campaigns" (@template "campaigns.ctml")))

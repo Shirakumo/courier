@@ -23,5 +23,6 @@
                (:interface :auth)
                :r-data-model
                :r-clip
+               :ratify
                :cl-markless-plump
                :cl-smtp))
