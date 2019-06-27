@@ -1,0 +1,73 @@
+<div class="box info" lquery='(text (post/get "message"))'></div>
+<div class="box error" lquery='(text (post/get "error"))'></div>
+<c:using value="campaign">
+  <article class="page campaign">
+    <form method="post">
+      <div class="row">
+        <label for="host">Host:</label>
+        <select id="host" name="host" required iterate="(** :hosts)">
+          <option lquery="(val id) (text title)"></option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row">
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" lquery="(text description)" />
+      </div>
+      <div class="row">
+        <label for="address">Reply To Address:</label>
+        <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" autocomplete="email"
+               id="reply-to" name="reply-to" lquery="(val reply-to)" />
+      </div>
+      <div class="row">
+        <label for="attributes">Attributes:</label>
+        <ul class="attributes">
+          <c:splice iterate="(courier::list-attributes *)">
+            <li>
+              <input type="text" placeholder="Label"
+                     id="attributes" name="attribute[]" lquery="(val name)" />
+              <select name="attribute-type[]">
+                <option value="name">name</option>
+                <option value="text">text</option>
+                <option value="integer">integer</option>
+                <option value="url">URL</option>
+              </select>
+            </li>
+          </c:splice>
+          <li>
+            <input type="text" placeholder="Label"
+                   id="attributes" name="attribute[]"/>
+            <select name="attribute-type[]">
+              <option value="name">name</option>
+              <option value="text">text</option>
+              <option value="integer">integer</option>
+              <option value="url">URL</option>
+            </select>
+            <a id="new-attribute"><i class="fas fa-fw fa-plus-circle"></i></a>
+          </li>
+        </ul>
+      </div>
+      <div class="row">
+        <label for="template">Email Template:</label>
+        <textarea id="template" name="template" lquery="(text template)" />
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="campaign" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/campaign/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/campaign/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Host" @formaction="courier/api/courier/campaign/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+  </article>
+</c:using>

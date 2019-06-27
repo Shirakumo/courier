@@ -14,11 +14,10 @@
                (hostname (:varchar 64))
                (port :integer)
                (username (:varchar 32))
-               (password (:varchar 32))
+               (password (:varchar 128))
                (encryption (:integer 1))
                (batch-size :integer)
                (batch-cooldown :integer)
-               (reply-to (:varchar 64))
                (confirmed :boolean))
              :indices '(author title))
 
@@ -28,7 +27,8 @@
                (title (:varchar 32))
                (description :text)
                (time (:integer 5))
-               (reply-to (:varchar 64)))
+               (reply-to (:varchar 64))
+               (template :text))
              :indices '(author title))
 
   (db:create 'subscriber
@@ -40,7 +40,8 @@
 
   (db:create 'attribute
              '((campaign (:id campaign))
-               (name (:varchar 32)))
+               (name (:varchar 32))
+               (type (:varchar 16)))
              :indices '(campaign))
 
   (db:create 'attribute-value
@@ -131,23 +132,79 @@
   (defaulted-config NIL :registration-open)
   (defaulted-config (make-random-string 32) :private-key))
 
-(defun make-host (&key author title address hostname port username password encryption batch-size batch-cooldown reply-to save)
+(defmacro setf-dm-fields (model &rest vars)
+  (let ((modelg (gensym "MODEL")))
+    `(let ((,modelg ,model))
+       ,@(loop for var in vars
+               collect (destructuring-bind (var field) (radiance::enlist var (string-downcase var))
+                         `(when ,var (setf (dm:field ,modelg ,field) ,var))))
+       ,modelg)))
+
+(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) confirmed (save T))
   (dm:with-model host ('host NIL)
-    (when (and title (< 0 (db:count 'host (db:query (:and (:= 'author (user:id (auth:current)))
+    (when (and title (< 0 (db:count 'host (db:query (:and (:= 'author author)
                                                           (:= 'title title))))))
       (error 'api-argument-invalid
              :argument 'title
              :message "A host with that title already exists."))
-    (setf (dm:field host "author") author)
-    (setf (dm:field host "title") title)
-    (setf (dm:field host "address") address)
-    (setf (dm:field host "hostname") hostname)
-    (setf (dm:field host "port") (or port 25))
-    (setf (dm:field host "username") username)
-    (setf (dm:field host "password") password)
-    (setf (dm:field host "encryption") (or encryption 1))
-    (setf (dm:field host "batch-size") (or batch-size 100))
-    (setf (dm:field host "batch-cooldown") (or batch-cooldown 60))
-    (setf (dm:field host "reply-to") reply-to)
+    (setf-dm-fields host author title address hostname port username encryption batch-size batch-cooldown)
+    (when password (setf (dm:field host "password") (encrypt password)))
+    (setf (dm:field host "confirmed") NIL)
     (when save (dm:insert host))
     host))
+
+(defun ensure-host (host-ish &optional (user (auth:current)))
+  (or
+   (etypecase host-ish
+     (dm:data-model host-ish)
+     (string (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
+                                               (:= 'title host-ish)))))
+     (integer (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
+                                                (:= '_id host-ish))))))
+   (error "No such host.")))
+
+(defun delete-host (host-ish &optional (user (auth:current)))
+  (db:with-transaction ()
+    (let ((host (ensure-host host-ish user)))
+      ;; FIXME: cascade
+      (dm:delete host)
+      host)))
+
+(defun list-hosts (&optional (user (auth:current)))
+  (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc))))
+
+(defun make-campaign (&key host author title description reply-to template (save T))
+  (dm:with-model campaign ('campaign NIL)
+    (when (and title (< 0 (db:count 'campaign (db:query (:and (:= 'author author)
+                                                              (:= 'title title))))))
+      (error 'api-argument-invalid
+             :argument 'title
+             :message "A campaign with that title already exists."))
+    (setf-dm-fields campaign author title description reply-to template)
+    (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
+    (when save (dm:insert campaign))
+    campaign))
+
+(defun ensure-campaign (campaign-ish &optional (user (auth:current)))
+  (or
+   (etypecase campaign-ish
+     (dm:data-model campaign-ish)
+     (string (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
+                                                   (:= 'title campaign-ish)))))
+     (integer (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
+                                                    (:= '_id campaign-ish))))))
+   (error "No such campaign.")))
+
+(defun delete-campaign (campaign-ish &optional (user (auth:current)))
+  (db:with-transaction ()
+    (let ((campaign (ensure-campaign campaign-ish user)))
+      ;; FIXME: cascade
+      (dm:delete campaign)
+      campaign)))
+
+(defun list-campaigns (&optional (user (auth:current)))
+  (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
+
+(defun list-attributes (campaign-ish &optional (user (auth:current)))
+  (let ((campaign (ensure-campaign campaign-ish user)))
+    (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))

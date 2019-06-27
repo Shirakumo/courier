@@ -1,0 +1,28 @@
+<div class="box info" lquery='(text (post/get "message"))'></div>
+<div class="box error" lquery='(text (post/get "error"))'></div>
+<article class="page campaigns">
+  <ul class="campaigns" iterate="campaigns">
+    <li class="campaign">
+      <a class="title" @href="courier/campaign/{0} title" lquery="(text title)">Campaign</a>
+      <span class="description" lquery="(text description)">Description</span>
+      <nav class="actions">
+        <a class="button" href="#" @href="courier/campaign/{0}/tag title">
+          <i class="fas fa-tag"></i>
+          Tags
+        </a>
+        <a class="button" href="#" @href="courier/campaign/{0}/mail title">
+          <i class="fas fa-envelope"></i>
+          Mails
+        </a>
+        <a class="button" href="#" @href="courier/campaign/{0}/edit title">
+          <i class="fas fa-edit"></i>
+          Edit
+        </a>
+      </nav>
+    </li>
+  </ul>
+  <a class="button" href="#" @href="courier/campaign/new">
+    <i class="fas fa-plus-circle"></i>
+    New Campaign
+  </a>
+</article>

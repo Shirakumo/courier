@@ -1,3 +1,5 @@
+<div class="box info" lquery='(text (post/get "message"))'></div>
+<div class="box error" lquery='(text (post/get "error"))'></div>
 <c:using value="host">
   <article class="page host">
     <form method="post">
@@ -29,7 +31,7 @@
       <div class="row">
         <label for="password">Password:</label>
         <input type="password" maxlength="32" autocomplete="current-password"
-               id="password" name="password" lquery="(val password)" />
+               id="password" name="password" lquery="" />
       </div>
       <div class="row">
         <label for="encryption">Encryption:</label>
@@ -49,21 +51,19 @@
         <input type="number" min="1" max="86400" required
                id="batch-cooldown" name="batch-cooldown" lquery="(val batch-cooldown)" />
       </div>
-      <div class="row">
-        <label for="reply-to">Reply To Address:</label>
-        <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" autocomplete="email"
-               id="reply-to" name="reply-to" lquery="(val reply-to)" />
-      </div>
       <input type="hidden" name="browser" value="true" />
-      <c:if test="_id">
-        <c:then>
-          <input type="hidden" name="id" lquery="(val _id)" />
-          <input type="submit" value="Save Changes" @formaction="courier/api/courier/host/edit" />
-        </c:then>
-        <c:else>
-          <input type="submit" value="Create Host" @formaction="courier/api/courier/host/new" />
-        </c:else>
-      </c:if>
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="host" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/host/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/host/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Host" @formaction="courier/api/courier/host/new" />
+          </c:else>
+        </c:if>
+      </div>
     </form>
   </article>
 </c:using>

@@ -18,7 +18,8 @@
 
 (defun extract-plaintext (html)
   ;; KLUDGE: This is real dumb.
-  (lquery:$ html "body" (text)))
+  (with-output-to-string (out)
+    (lquery:$ html "body" (text) (each (lambda (text) (write-line text out))))))
 
 (defun extract-subject (html)
   (lquery:$1 html "head title" (text)))
@@ -32,7 +33,8 @@
              (plump:serialize text NIL)))))
 
 (defun send (host to subject message)
-  (multiple-value-bind (plaintext html) message
+  (multiple-value-bind (plaintext html) (format-email message)
+    ;; FIXME: better timeouts on unreachable host
     (cl-smtp:send-email
      (dm:field host "hostname")
      (dm:field host "address")
@@ -42,18 +44,12 @@
             (0 NIL) (1 :starttls) (2 :tls))
      :port (dm:field host "port")
      :reply-to (dm:field host "reply-to")
-     :authentication (list :plain
-                           (dm:field host "username")
-                           (dm:field host "password"))
+     :authentication (when (dm:field host "username")
+                       (list :plain
+                             (dm:field host "username")
+                             (decrypt (dm:field host "password"))))
      :display-name (dm:field host "title"))))
 
 (defun send-templated (host to template &rest args)
   (let ((html (apply #'compile-email host template args)))
     (send host to (extract-subject html) html)))
-
-(defun hash (thing)
-  (cryptos:pbkdf2-hash thing (config :private-key)))
-
-(defun check-hash (hash thing &optional (argument 'token))
-  (unless (equal hash (hash thing))
-    (error 'api-argument-invalid :argument argument)))
