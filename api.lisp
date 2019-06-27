@@ -8,11 +8,6 @@
 
 (define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown reply-to) (:access (perm courier))
   (db:with-transaction ()
-    (when (< 0 (db:count 'host (db:query (:and (:= 'author (user:id (auth:current)))
-                                               (:= 'title title)))))
-      (error 'api-argument-invalid
-             :argument 'title
-             :message "A host with that title already exists."))
     (ratify:with-parsed-forms ((:email address reply-to)
                                (:host hostname)
                                (:port port)
@@ -29,19 +24,13 @@
                              :batch-cooldown batch-cooldown
                              :reply-to reply-to
                              :save T)))
-        (send-host host (user:field "email" (auth:current))
-                   (format NIL "Confirm the Courier host settings")
-                   (format NIL "Hello ~a,
-
-Please visit the following URL to confirm that your email host settings are correct:
-
-  ~a
-
-Thank you."
-                           (user:field "displayname" (auth:current))
-                           (uri-to-url "courier/api/courier/host/confirm"
-                                       :representation :external
-                                       :query `(("id" . ,(dm:id host))))))
+        (send-templated host (user:field "email" (auth:current))
+                        (@template "email/confirm-host.ctml")
+                        :recipient (user:field "displayname" (auth:current))
+                        :link (uri-to-url "courier/api/courier/host/confirm"
+                                          :representation :external
+                                          :query `(("id" . ,(dm:id host))
+                                                   ("token" . ,(hash (dm:id host))))))
         (if (string= "true" (post/get "browser"))
             (redirect "courier/host/")
             (api-output host))))))
@@ -49,5 +38,5 @@ Thank you."
 (define-api courier/host/edit (id &optional title address hostname port username password encryption batch-size batch-cooldown) :access (perm courier)
   )
 
-(define-api courier/host/confirm (id) (:access (perm courier))
+(define-api courier/host/confirm (id token) (:access (perm courier))
   )

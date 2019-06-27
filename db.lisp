@@ -128,10 +128,16 @@
 (define-trigger startup-done ()
   (defaulted-config "Courier Mailing" :title)
   (defaulted-config "Shirakumo" :copyright)
-  (defaulted-config NIL :registration-open))
+  (defaulted-config NIL :registration-open)
+  (defaulted-config (make-random-string 32) :private-key))
 
 (defun make-host (&key author title address hostname port username password encryption batch-size batch-cooldown reply-to save)
   (dm:with-model host ('host NIL)
+    (when (and title (< 0 (db:count 'host (db:query (:and (:= 'author (user:id (auth:current)))
+                                                          (:= 'title title))))))
+      (error 'api-argument-invalid
+             :argument 'title
+             :message "A host with that title already exists."))
     (setf (dm:field host "author") author)
     (setf (dm:field host "title") title)
     (setf (dm:field host "address") address)
@@ -145,17 +151,3 @@
     (setf (dm:field host "reply-to") reply-to)
     (when save (dm:insert host))
     host))
-
-(defun send-host (host to subject message)
-  (cl-smtp:send-email
-   (dm:field host "hostname")
-   (dm:field host "address")
-   to subject message
-   :ssl (ecase (dm:field host "encryption")
-          (0 NIL) (1 :starttls) (2 :tls))
-   :port (dm:field host "port")
-   :reply-to (dm:field host "reply-to")
-   :authentication (list :plain
-                         (dm:field host "username")
-                         (dm:field host "password"))
-   :display-name (dm:field host "title")))

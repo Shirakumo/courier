@@ -17,6 +17,7 @@
   :source-control (:git "https://github.com/shirakumo/courier.git")
   :serial T
   :components ((:file "module")
+               (:file "email")
                (:file "db")
                (:file "front"))
   :depends-on ((:interface :database)
@@ -24,5 +25,6 @@
                :r-data-model
                :r-clip
                :ratify
+               :softdrink
                :cl-markless-plump
                :cl-smtp))

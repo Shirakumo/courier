@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Confirm the <c:splice lquery="(text title)"/> settings for <c:splice lquery="(text host)"/></title>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Confirm the <c:splice lquery="(text title)"/> settings for <c:splice lquery="(text host)"/></h1>
+    </div>
+    <div class="main">
+      <p>
+        Hello, <c:splice lquery="(text recipient)"/>. You have recently added a new email host. Please click the below link to confirm that it is working.
+      </p>
+      <a class="block" lquery="(attr :href link) (text link)">URL</a>
+    </div>
+    <div class="footer">
+        &copy; <div lquery="(time T)">2019</div> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>
+        Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text version)">0.0.0</c:splice></a>
+    </div>
+  </body>
+</html>
