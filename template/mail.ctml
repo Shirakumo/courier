@@ -1,0 +1,43 @@
+<div class="box info" lquery='(text (post/get "message"))'></div>
+<div class="box error" lquery='(text (post/get "error"))'></div>
+<c:using value="mail">
+  <article class="page mail">
+    <form method="post">
+      <div class="row">
+        <label for="host">Campaign:</label>
+        <input type="text" readonly
+               id="campaign" name="campaign" lquery="(val campaign)" />
+      </div>
+      <div class="row">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row">
+        <label for="subject">Subject:</label>
+        <input type="text" minlength="3" maxlength="128" autocomplete="none"
+               id="subject" name="subject" lquery="(val subject)" />
+      </div>
+      <div class="row">
+        <label for="body">Body:</label>
+        <textarea id="body" name="body" lquery="(text body)" />
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="mail" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/mail/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/mail/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Mail" @formaction="courier/api/courier/mail/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+    <section class="tiggers">
+      
+    </section>
+  </article>
+</c:using>
