@@ -115,7 +115,6 @@
 
   (db:create 'link
              '((campaign (:id campaign))
-               (mail (:id mail))
                (title (:varchar 32))
                (url (:varchar 256)))
              :indices '(campaign mail))
@@ -159,9 +158,8 @@
      (dm:data-model host-ish)
      (string (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
                                                (:= 'title host-ish)))))
-     (integer (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
-                                                (:= '_id host-ish))))))
-   (error "No such host.")))
+     (db:id (dm:get-one 'host (db:query (:= '_id host-ish)))))
+   (error 'request-not-found :message "No such host.")))
 
 (defun delete-host (host-ish &optional (user (auth:current)))
   (db:with-transaction ()
@@ -191,9 +189,8 @@
      (dm:data-model campaign-ish)
      (string (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
                                                    (:= 'title campaign-ish)))))
-     (integer (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
-                                                    (:= '_id campaign-ish))))))
-   (error "No such campaign.")))
+     (db:id (dm:get-one 'campaign (db:query (:= '_id campaign-ish)))))
+   (error 'request-not-found :message "No such campaign.")))
 
 (defun delete-campaign (campaign-ish &optional (user (auth:current)))
   (db:with-transaction ()
@@ -208,3 +205,100 @@
 (defun list-attributes (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))
+
+(defun make-mail (campaign &key title subject body (save T))
+  (dm:with-model mail ('mail NIL)
+    (let ((campaign (ensure-campaign campaign)))
+      (when (and title (< 0 (db:count 'mail (db:query (:and (:= 'campaign (dm:id campaign))
+                                                            (:= 'title title))))))
+        (error 'api-argument-invalid
+               :argument 'title
+               :message "A mail with that title already exists."))
+      (setf-dm-fields mail title subject body)
+      (setf (dm:field mail "campaign") (dm:id campaign))
+      (when save (dm:insert mail))
+      mail)))
+
+(defun ensure-mail (campaign mail-ish &optional (user (auth:current)))
+  (or
+   (etypecase mail-ish
+     (dm:data-model mail-ish)
+     (string (dm:get-one 'mail (db:query (:and (:= 'campaign (dm:id (ensure-campaign campaign user)))
+                                               (:= 'title mail-ish)))))
+     (db:id (dm:get-one 'mail (db:query (:= '_id mail-ish)))))
+   (error 'request-not-found :message "No such mail.")))
+
+(defun delete-mail (mail)
+  (db:with-transaction ()
+    ;; FIXME: cascade
+    (dm:delete mail)
+    mail))
+
+(defun list-mails (campaign-ish &optional (user (auth:current)))
+  (let ((campaign (ensure-campaign campaign-ish user)))
+    (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+
+(defun list-mail-triggers (mail)
+  (let ((id (etypecase mail
+              (dm:data-model (dm:id mail))
+              (db:id mail))))
+    (dm:get 'mail-trigger (db:query (:= 'mail id)) :sort '((time-offset :asc)))))
+
+(defun list-mail-trigger-tags (trigger)
+  (let ((id (etypecase trigger
+              (dm:data-model (dm:id trigger))
+              (db:id trigger))))
+    (dm:get 'mail-trigger-tags (db:query (:= 'mail-trigger id)))))
+
+(defun make-tag (campaign &key title description (save T))
+  (dm:with-model tag ('tag NIL)
+    (let ((campaign (ensure-campaign campaign)))
+      (when (and title (< 0 (db:count 'tag (db:query (:and (:= 'campaign (dm:id campaign))
+                                                           (:= 'title title))))))
+        (error 'api-argument-invalid
+               :argument 'title
+               :message "A tag with that title already exists."))
+      (setf-dm-fields tag title description)
+      (setf (dm:field tag "campaign") (dm:id campaign))
+      (when save (dm:insert tag))
+      tag)))
+
+(defun ensure-tag (campaign tag-ish &optional (user (auth:current)))
+  (or
+   (etypecase tag-ish
+     (dm:data-model tag-ish)
+     (string (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:id (ensure-campaign campaign user)))
+                                              (:= 'title tag-ish)))))
+     (db:id (dm:get-one 'tag (db:query (:= '_id tag-ish)))))
+   (error 'request-not-found :message "No such tag.")))
+
+(defun delete-tag (tag)
+  (db:with-transaction ()
+    ;; FIXME: cascade
+    (dm:delete tag)
+    tag))
+
+(defun list-tags (campaign-ish &optional (user (auth:current)))
+  (let ((campaign (ensure-campaign campaign-ish user)))
+    (dm:get 'tag (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+
+(defun make-link (campaign &key title url (save T))
+  (dm:with-model link ('link NIL)
+    (setf-dm-fields link title url)
+    (setf (dm:field link "campaign") (dm:id campaign))
+    (when save (dm:insert link))
+    link))
+
+(defun ensure-link (link-ish)
+  (or
+   (etypecase link-ish
+     (dm:data-model link-ish)
+     (db:id (dm:get-one 'link (db:query (:= '_id link-ish)))))
+   (error 'request-not-found :message "No such link.")))
+
+(defun delete-link (link-ish)
+  (db:with-transaction ()
+    (let ((link (ensure-link link-ish)))
+      ;; FIXME: cascade
+      (dm:delete link)
+      link)))

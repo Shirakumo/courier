@@ -24,20 +24,22 @@
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
 (define-page list-host "courier/^host/?$" (:access (perm courier))
-  (render-page "Configured Hosts" (@template "hosts.ctml")
+  (render-page "Configured Hosts"
+               (@template "hosts.ctml")
                :hosts (list-hosts)))
 
 (define-page edit-host "courier/^host/(.+)/edit$" (:uri-groups (host) :access (perm courier))
   (if (string= host "new")
-      (render-page "New Host" (@template "host.ctml")
+      (render-page "New Host"
+                   (@template "host.ctml")
                    :host (make-host :save NIL))
-      (render-page host (@template "host.ctml")
-                   :host (or (dm:get-one 'host (db:query (:and (:= 'author (user:id (auth:current)))
-                                                               (:= 'title host))))
-                             (error 'request-not-found :messag "No such host.")))))
+      (render-page (format NIL "Edit ~a" host)
+                   (@template "host.ctml")
+                   :host (ensure-host host))))
 
 (define-page list-campaigns "courier/^campaign/?$" (:access (perm courier))
-  (render-page "Campaigns" (@template "campaigns.ctml")
+  (render-page "Campaigns"
+               (@template "campaigns.ctml")
                :campaigns (list-campaigns)))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier))
@@ -45,34 +47,61 @@
 
 (define-page edit-campaign "courier/^campaign/([^/]+)/edit$" (:uri-groups (campaign) :access (perm courier))
   (if (string= campaign "new")
-      (render-page "New Campaign" (@template "campaign.ctml")
+      (render-page "New Campaign"
+                   (@template "campaign.ctml")
                    :hosts (list-hosts)
                    :campaign (make-campaign :save NIL))
-      (render-page campaign (@template "campaign.ctml")
+      (render-page (format NIL "Edit ~a" campaign)
+                   (@template "campaign.ctml")
                    :hosts (list-hosts)
-                   :campaign (or (dm:get-one 'campaign (db:query (:and (:= 'author (user:id (auth:current)))
-                                                                       (:= 'title campaign))))
-                                 (error 'request-not-found :messag "No such campaign.")))))
-
-(define-page list-tags "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
-  )
-
-(define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
-  )
-
-(define-page edit-tag "courier/^campaign/([^/]+)/tag/([^/]+)/edit$" (:uri-groups (campaign tag) :access (perm courier))
-  )
-
-(define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members$" (:uri-groups (campaign tag) :access (perm courier))
-  )
+                   :campaign (ensure-campaign campaign))))
 
 (define-page list-mails "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))
-  )
+  (render-page "Mails"
+               (@template "mails.ctml")
+               :mails (list-mails campaign)))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier))
   )
 
 (define-page edit-mail "courier/^campaign/([^/]+)/mail/([^/]+)/edit$" (:uri-groups (campaign mail) :access (perm courier))
+  (if (string= mail "new")
+      (render-page "New Mail"
+                   (@template "mail.ctml")
+                   :mail (make-mail campaign :save NIL))
+      (let ((mail (ensure-mail campaign mail)))
+        (render-page (format NIL "Edit ~a" mail)
+                     (@template "mail.ctml")
+                     :mail mail))))
+
+(define-page send-mail "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier))
+  (let ((mail (ensure-mail campaign mail)))
+    (render-page (format NIL "Send ~a" (dm:field mail "title"))
+                 (@template "mail-send.ctml")
+                 :mail mail)))
+
+(define-page list-tags "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
+  (render-page "Tags"
+               (@template "tags.ctml")
+               :mails (list-tags campaign)))
+
+(define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
+  )
+
+(define-page edit-tag "courier/^campaign/([^/]+)/tag/([^/]+)/edit$" (:uri-groups (campaign tag) :access (perm courier))
+  (if (string= tag "new")
+      (render-page "New Tag"
+                   (@template "tag.ctml")
+                   :tag (make-tag :save NIL))
+      (let ((tag (ensure-tag campaign tag)))
+        (render-page (format NIL "Edit ~a" tag)
+                     (@template "tag.ctml")
+                     :tag tag))))
+
+(define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members$" (:uri-groups (campaign tag) :access (perm courier))
+  )
+
+(define-page subscriber-overview "courier/^subscriber/(.+)" (:uri-groups (subscriber) :access (perm courier))
   )
 
 (define-page mail-log "courier/^log$" (:access (perm courier))
