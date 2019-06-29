@@ -17,9 +17,11 @@
   :source-control (:git "https://github.com/shirakumo/courier.git")
   :serial T
   :components ((:file "module")
+               (:file "toolkit")
                (:file "email")
                (:file "db")
-               (:file "front"))
+               (:file "front")
+               (:file "api"))
   :depends-on ((:interface :database)
                (:interface :auth)
                :r-data-model

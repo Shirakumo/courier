@@ -101,6 +101,8 @@
    :color #(c+2))
 
   (.button
+   :user-select none
+   :cursor pointer
    :display inline-block
    :border 1px solid (hex E0E0E0)
    :background (hex F0F0F0)
@@ -124,6 +126,10 @@
    ((:and (:or input select textarea) :focus)
     :outline none
     :border-bottom 1px solid #(c=0))
+   ((:and (:or input select textarea) [readonly])
+    :background (hex D0D0D0)
+    :border-color (hex C0C0C0)
+    :color (hex 505050))
    (.row
     :margin 0.1em 0
     :display flex
@@ -147,15 +153,13 @@
     :padding-left 1em
     :padding-right 1em))
 
-  ((:or .page.host .page.campaign)
+  ((:or .page.edit)
    :max-width 800px
    :margin 0 auto)
-  (.page.campaign
-   ("#template" :min-height 10em))
-  ((:or .page.hosts .page.campaigns)
+  (.page.list
    :max-width 1024px
    :margin 0 auto
-   ((:or ul.hosts ul.campaigns)
+   (>ul
     :border-left 2px solid (hex AAAAAA)
     :list-style none
     :margin 0 0 1em 0
@@ -164,12 +168,12 @@
      :display flex
      :align-items center
      (.title :min-width 10em)
-     (.address :flex-grow 1)
-     (.description :flex-grow 1)
+     ((:or .address .description .subject) :flex-grow 1)
      (.confirmed :padding 0 1em)
      (.fa-check-circle :color (hex 00AA00))
      (.fa-question-circle :color (hex AAAAAA)))))
-  (.page.campaign
+  (.page.campaign.edit
+   (textarea[name=template] :min-height 10em)
    (.attributes
     :width 100%
     :list-style none
@@ -179,4 +183,6 @@
      :align-items center
      (input :flex-grow 1)
      (select :flex-grow 0
-             :margin 0 0.1em)))))
+             :margin 0 0.1em))))
+  (.page.mail.edit
+   (textarea[name=body] :min-height 20em)))

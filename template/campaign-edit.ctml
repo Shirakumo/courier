@@ -1,7 +1,7 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
 <c:using value="campaign">
-  <article class="page campaign">
+  <article class="page campaign edit">
     <form method="post">
       <div class="row">
         <label for="host">Host:</label>
@@ -25,31 +25,18 @@
       </div>
       <div class="row">
         <label for="attributes">Attributes:</label>
-        <ul class="attributes">
-          <c:splice iterate="(courier::list-attributes *)">
+        <div>
+          <ul class="attributes" iterate="(courier::list-attributes *)">
             <li>
-              <input type="text" placeholder="Label"
-                     id="attributes" name="attribute[]" lquery="(val name)" />
-              <select name="attribute-type[]">
-                <option value="name">name</option>
-                <option value="text">text</option>
-                <option value="integer">integer</option>
-                <option value="url">URL</option>
+              <input type="text" placeholder="Label" minlength="1" maxlength="32"
+                     id="attributes" name="attribute[]" lquery="(val title)" />
+              <select name="attribute-type[]" iterate="(** :attribute-types)">
+                <option lquery="(val (car *)) (text (cdr *)) (attr :selected (when (string= (car *) (** :type))))">Name</option>
               </select>
             </li>
-          </c:splice>
-          <li>
-            <input type="text" placeholder="Label"
-                   id="attributes" name="attribute[]"/>
-            <select name="attribute-type[]">
-              <option value="name">name</option>
-              <option value="text">text</option>
-              <option value="integer">integer</option>
-              <option value="url">URL</option>
-            </select>
-            <a id="new-attribute"><i class="fas fa-fw fa-plus-circle"></i></a>
-          </li>
-        </ul>
+          </ul>
+          <a class="button new-attribute"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
+        </div>
       </div>
       <div class="row">
         <label for="template">Email Template:</label>

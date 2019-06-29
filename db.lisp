@@ -6,6 +6,16 @@
 
 (in-package #:courier)
 
+(defparameter *attribute-types*
+  '(("name" . "Name")
+    ("text" . "Free-Form Text")
+    ("number" . "Number")
+    ("url" . "URL")
+    ("date" . "Date")
+    ("color" . "Color")
+    ("password" . "Password")
+    ("tel" . "Telephone Number")))
+
 (define-trigger db:connected ()
   (db:create 'host
              '((author :id)
@@ -40,7 +50,7 @@
 
   (db:create 'attribute
              '((campaign (:id campaign))
-               (name (:varchar 32))
+               (title (:varchar 32))
                (type (:varchar 16)))
              :indices '(campaign))
 
@@ -131,6 +141,13 @@
   (defaulted-config NIL :registration-open)
   (defaulted-config (make-random-string 32) :private-key))
 
+(defun check-title-exists (collection title query)
+  (when (and title (< 0 (db:count collection query)))
+    (error 'api-argument-invalid
+           :argument 'title
+           :message (format NIL "A ~(~a~) titled ~s already exists."
+                            collection title))))
+
 (defmacro setf-dm-fields (model &rest vars)
   (let ((modelg (gensym "MODEL")))
     `(let ((,modelg ,model))
@@ -140,12 +157,9 @@
        ,modelg)))
 
 (defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) confirmed (save T))
+  (check-title-exists 'host title (db:query (:and (:= 'author author)
+                                                  (:= 'title title))))
   (dm:with-model host ('host NIL)
-    (when (and title (< 0 (db:count 'host (db:query (:and (:= 'author author)
-                                                          (:= 'title title))))))
-      (error 'api-argument-invalid
-             :argument 'title
-             :message "A host with that title already exists."))
     (setf-dm-fields host author title address hostname port username encryption batch-size batch-cooldown)
     (when password (setf (dm:field host "password") (encrypt password)))
     (setf (dm:field host "confirmed") NIL)
@@ -172,12 +186,9 @@
   (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
 (defun make-campaign (&key host author title description reply-to template (save T))
+  (check-title-exists 'campaign title (db:query (:and (:= 'author author)
+                                                      (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
-    (when (and title (< 0 (db:count 'campaign (db:query (:and (:= 'author author)
-                                                              (:= 'title title))))))
-      (error 'api-argument-invalid
-             :argument 'title
-             :message "A campaign with that title already exists."))
     (setf-dm-fields campaign author title description reply-to template)
     (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
     (when save (dm:insert campaign))
@@ -196,24 +207,38 @@
   (db:with-transaction ()
     (let ((campaign (ensure-campaign campaign-ish user)))
       ;; FIXME: cascade
-      (dm:delete campaign)
-      campaign)))
+      (dm:delete campaign))))
 
 (defun list-campaigns (&optional (user (auth:current)))
   (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
+
+(defun make-attribute (campaign name &key (type :text) (save T))
+  (let ((campaign (ensure-campaign campaign))
+        (type (string-downcase type)))
+    (unless (find type *attribute-types* :key #'car :test #'string=)
+      (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
+    (check-title-exists 'attribute title (db:query (:and (:= 'campaign (dm:id campaign))
+                                                         (:= 'title title))))
+    (dm:with-model attribute ('attribute NIL)
+      (setf-dm-fields attribute name type)
+      (setf (dm:field attribute "campaign") (dm:id campaign))
+      (when save (dm:insert attribute))
+      attribute)))
+
+(defun delete-attribute (attribute)
+  (db:with-transaction ()
+    (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
+    (dm:delete attribute)))
 
 (defun list-attributes (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))
 
 (defun make-mail (campaign &key title subject body (save T))
-  (dm:with-model mail ('mail NIL)
-    (let ((campaign (ensure-campaign campaign)))
-      (when (and title (< 0 (db:count 'mail (db:query (:and (:= 'campaign (dm:id campaign))
-                                                            (:= 'title title))))))
-        (error 'api-argument-invalid
-               :argument 'title
-               :message "A mail with that title already exists."))
+  (let ((campaign (ensure-campaign campaign)))
+    (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
+                                                    (:= 'title title))))
+    (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body)
       (setf (dm:field mail "campaign") (dm:id campaign))
       (when save (dm:insert mail))
@@ -231,8 +256,7 @@
 (defun delete-mail (mail)
   (db:with-transaction ()
     ;; FIXME: cascade
-    (dm:delete mail)
-    mail))
+    (dm:delete mail)))
 
 (defun list-mails (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
@@ -251,13 +275,10 @@
     (dm:get 'mail-trigger-tags (db:query (:= 'mail-trigger id)))))
 
 (defun make-tag (campaign &key title description (save T))
-  (dm:with-model tag ('tag NIL)
-    (let ((campaign (ensure-campaign campaign)))
-      (when (and title (< 0 (db:count 'tag (db:query (:and (:= 'campaign (dm:id campaign))
-                                                           (:= 'title title))))))
-        (error 'api-argument-invalid
-               :argument 'title
-               :message "A tag with that title already exists."))
+  (let ((campaign (ensure-campaign campaign)))
+    (check-title-exists 'tag title (db:query (:and (:= 'campaign (dm:id campaign))
+                                                   (:= 'title title))))
+    (dm:with-model tag ('tag NIL)
       (setf-dm-fields tag title description)
       (setf (dm:field tag "campaign") (dm:id campaign))
       (when save (dm:insert tag))
@@ -275,8 +296,7 @@
 (defun delete-tag (tag)
   (db:with-transaction ()
     ;; FIXME: cascade
-    (dm:delete tag)
-    tag))
+    (dm:delete tag)))
 
 (defun list-tags (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
@@ -300,5 +320,4 @@
   (db:with-transaction ()
     (let ((link (ensure-link link-ish)))
       ;; FIXME: cascade
-      (dm:delete link)
-      link)))
+      (dm:delete link))))

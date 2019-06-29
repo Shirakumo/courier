@@ -1,16 +1,20 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
-<article class="page mails">
-  <ul class="mails" iterate="mails">
+<article class="page mail list">
+  <ul class="mail" iterate="mails">
     <li class="mail">
       <a class="title" @href="courier/campaign/{0}/mail/{1} campaign title" lquery="(text title)">Mail</a>
       <span class="subject" lquery="(text subject)">Subject</span>
       <nav class="actions">
-        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/send campaign title">
+        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/send (** :campaign) title">
           <i class="fas fa-paper-plane"></i>
           Send
         </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/edit campaign title">
+        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/triggers (** :campaign) title">
+          <i class="fas fa-bolt"></i>
+          Triggers
+        </a>
+        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/edit (** :campaign) title">
           <i class="fas fa-edit"></i>
           Edit
         </a>

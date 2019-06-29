@@ -1,7 +1,7 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
-<article class="page campaigns">
-  <ul class="campaigns" iterate="campaigns">
+<article class="page campaign list">
+  <ul class="campaign" iterate="campaigns">
     <li class="campaign">
       <a class="title" @href="courier/campaign/{0} title" lquery="(text title)">Campaign</a>
       <span class="description" lquery="(text description)">Description</span>

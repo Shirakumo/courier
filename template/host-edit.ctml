@@ -1,7 +1,7 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
 <c:using value="host">
-  <article class="page host">
+  <article class="page host edit">
     <form method="post">
       <div class="row">
         <label for="title">Title:</label>

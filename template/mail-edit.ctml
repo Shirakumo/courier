@@ -1,12 +1,13 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
-<article class="page mail">
+<article class="page mail edit">
   <c:using value="mail">
     <form method="post">
       <div class="row">
         <label for="host">Campaign:</label>
+        <input type="hidden" name="campaign" lquery="(val campaign)" />
         <input type="text" readonly
-               id="campaign" name="campaign" lquery="(val campaign)" />
+               id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
       </div>
       <div class="row">
         <label for="title">Title:</label>
@@ -36,38 +37,5 @@
         </c:if>
       </div>
     </form>
-    <section class="triggers">
-      <ul iterate="(courier::list-mail-triggers *)">
-        <li class="trigger" lquery="(data _id)">
-          <span class="title" lquery="(text title)">Trigger</span>
-          <c:when test="to-mail">
-            <c:using value="(ensure-mail to-mail)">
-              <a class="mail" lquery="(text title)"
-                 @href="courier/campaign/{0}/mail/{1} campaign title">Mail</a>
-            </c:using>
-          </c:when>
-          <c:when test="to-link">
-            <c:using value="(ensure-link to-link)">
-              <a class="link" lquery="(text title)"
-                 @href="courier/campaign/{0}/link/{1} campaign title">Link</a>
-            </c:using>
-          </c:when>
-          <span class="time-offset" lquery="(text time-offset)">0</span>
-          <ul class="constraints" iterate="(courier::list-mail-trigger-tags *)">
-            <li class="constraint">
-              <i class="fas fa-fw" lquery="(add-class (if inverted :fa-minus-square :fa-plus-square))"></i>
-              <c:using value="(ensure-tag tag)">
-                <a class="title" lquery="(text title)"
-                   @href="courier/campaign/{0}/tag/{1} campaign title">Tag</a>
-              </c:using>
-            </li>
-          </ul>
-        </li>
-      </ul>
-      <a class="button">
-        <i class="fas fa-plus-circle"></i>
-        New Trigger
-      </a>
-    </section>
   </c:using>
 </article>

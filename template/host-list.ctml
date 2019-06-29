@@ -1,7 +1,7 @@
 <div class="box info" lquery='(text (post/get "message"))'></div>
 <div class="box error" lquery='(text (post/get "error"))'></div>
-<article class="page hosts">
-  <ul class="hosts" iterate="hosts">
+<article class="page host list">
+  <ul class="host" iterate="hosts">
     <li class="host">
       <span class="title" lquery="(text title)">Host</span>
       <span class="address" lquery="(text address)">Address</span>

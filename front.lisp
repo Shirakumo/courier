@@ -23,80 +23,88 @@
       (render-page "Dashboard" (@template "dashboard.ctml"))
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
-(define-page list-host "courier/^host/?$" (:access (perm courier))
+(define-page host-list "courier/^host/?$" (:access (perm courier))
   (render-page "Configured Hosts"
-               (@template "hosts.ctml")
+               (@template "host-list.ctml")
                :hosts (list-hosts)))
 
-(define-page edit-host "courier/^host/(.+)/edit$" (:uri-groups (host) :access (perm courier))
-  (if (string= host "new")
-      (render-page "New Host"
-                   (@template "host.ctml")
-                   :host (make-host :save NIL))
-      (render-page (format NIL "Edit ~a" host)
-                   (@template "host.ctml")
-                   :host (ensure-host host))))
+(define-page host-new ("courier/^host/new$" 1) (:uri-groups () :access (perm courier))
+  (render-page "New Host"
+               (@template "host-edit.ctml")
+               :host (make-host :save NIL)))
 
-(define-page list-campaigns "courier/^campaign/?$" (:access (perm courier))
+(define-page host-edit "courier/^host/(.+)/edit$" (:uri-groups (host) :access (perm courier))
+  (render-page (format NIL "Edit ~a" host)
+               (@template "host-edit.ctml")
+               :host (ensure-host host)))
+
+(define-page campaign-list "courier/^campaign/?$" (:access (perm courier))
   (render-page "Campaigns"
-               (@template "campaigns.ctml")
+               (@template "campaign-list.ctml")
                :campaigns (list-campaigns)))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier))
   )
 
-(define-page edit-campaign "courier/^campaign/([^/]+)/edit$" (:uri-groups (campaign) :access (perm courier))
-  (if (string= campaign "new")
-      (render-page "New Campaign"
-                   (@template "campaign.ctml")
-                   :hosts (list-hosts)
-                   :campaign (make-campaign :save NIL))
-      (render-page (format NIL "Edit ~a" campaign)
-                   (@template "campaign.ctml")
-                   :hosts (list-hosts)
-                   :campaign (ensure-campaign campaign))))
+(define-page campaign-new ("courier/^campaign/new$" 1) (:uri-groups () :access (perm courier))
+  (render-page "New Campaign"
+               (@template "campaign-edit.ctml")
+               :hosts (list-hosts)
+               :campaign (make-campaign :save NIL)))
 
-(define-page list-mails "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))
+(define-page campaign-edit "courier/^campaign/([^/]+)/edit$" (:uri-groups (campaign) :access (perm courier))
+  (render-page (format NIL "Edit ~a" campaign)
+               (@template "campaign-edit.ctml")
+               :hosts (list-hosts)
+               :campaign (ensure-campaign campaign)))
+
+(define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))
   (render-page "Mails"
-               (@template "mails.ctml")
-               :mails (list-mails campaign)))
+               (@template "mail-list.ctml")
+               :mails (list-mails campaign)
+               :campaign campaign))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier))
   )
 
-(define-page edit-mail "courier/^campaign/([^/]+)/mail/([^/]+)/edit$" (:uri-groups (campaign mail) :access (perm courier))
-  (if (string= mail "new")
-      (render-page "New Mail"
-                   (@template "mail.ctml")
-                   :mail (make-mail campaign :save NIL))
-      (let ((mail (ensure-mail campaign mail)))
-        (render-page (format NIL "Edit ~a" mail)
-                     (@template "mail.ctml")
-                     :mail mail))))
+(define-page mail-new ("courier/^campaign/([^/]+)/mail/new$" 1) (:uri-groups (campaign) :access (perm courier))
+  (render-page "New Mail"
+               (@template "mail-edit.ctml")
+               :mail (make-mail campaign :save NIL)))
 
-(define-page send-mail "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier))
-  (let ((mail (ensure-mail campaign mail)))
-    (render-page (format NIL "Send ~a" (dm:field mail "title"))
-                 (@template "mail-send.ctml")
-                 :mail mail)))
+(define-page mail-edit "courier/^campaign/([^/]+)/mail/([^/]+)/edit$" (:uri-groups (campaign mail) :access (perm courier))
+  (render-page (format NIL "Edit ~a" mail)
+               (@template "mail-edit.ctml")
+               :mail (ensure-mail campaign mail)))
 
-(define-page list-tags "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
+(define-page mail-triggers "courier/^campaign/([^/]+)/mail/([^/]+)/triggers$" (:uri-groups (campaign mail) :access (perm courier))
+  (render-page (format NIL "~a Triggers" mail)
+               (@template "mail-triggers.ctml")
+               :triggers (list-mail-triggers (ensure-mail campaign mail))))
+
+(define-page mail-send "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier))
+  (render-page (format NIL "Send ~a" (dm:field mail "title"))
+               (@template "mail-send.ctml")
+               :mail (ensure-mail campaign mail)))
+
+(define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
   (render-page "Tags"
-               (@template "tags.ctml")
-               :mails (list-tags campaign)))
+               (@template "tag-list.ctml")
+               :tags (list-tags campaign)
+               :campaign campaign))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
   )
 
-(define-page edit-tag "courier/^campaign/([^/]+)/tag/([^/]+)/edit$" (:uri-groups (campaign tag) :access (perm courier))
-  (if (string= tag "new")
-      (render-page "New Tag"
-                   (@template "tag.ctml")
-                   :tag (make-tag :save NIL))
-      (let ((tag (ensure-tag campaign tag)))
-        (render-page (format NIL "Edit ~a" tag)
-                     (@template "tag.ctml")
-                     :tag tag))))
+(define-page tag-new ("courier/^campaign/([^/]+)/tag/new" 1) (:uri-groups (campaign) :access (perm courier))
+  (render-page "New Tag"
+               (@template "tag-edit.ctml")
+               :tag (make-tag campaign :save NIL)))
+
+(define-page tag-edit "courier/^campaign/([^/]+)/tag/([^/]+)/edit$" (:uri-groups (campaign tag) :access (perm courier))
+  (render-page (format NIL "Edit ~a" tag)
+               (@template "tag-edit.ctml")
+               :tag (ensure-tag campaign tag)))
 
 (define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members$" (:uri-groups (campaign tag) :access (perm courier))
   )
