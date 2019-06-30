@@ -26,3 +26,27 @@
   (uri-to-url uri :representation :external
                   :query query
                   :fragment fragment))
+
+(defmacro setf-dm-fields (model &rest vars)
+  (let ((modelg (gensym "MODEL")))
+    `(let ((,modelg ,model))
+       ,@(loop for var in vars
+               collect (destructuring-bind (var field) (radiance::enlist var (string-downcase var))
+                         `(when ,var (setf (dm:field ,modelg ,field) ,var))))
+       ,modelg)))
+
+(defun check-title (title)
+  (when (string= title "")
+    (error 'api-argument-invalid :argument 'title :message "The title cannot be empty."))
+  (when (string-equal title "new")
+    (error 'api-argument-invalid :argument 'title :message "The title cannot be \"new\"."))
+  (when (find #\/ title)
+    (error 'api-argument-invalid :argument 'title :message "The title cannot contain a slash.")))
+
+(defun check-title-exists (collection title query)
+  (check-title title)
+  (when (and title (< 0 (db:count collection query)))
+    (error 'api-argument-invalid
+           :argument 'title
+           :message (format NIL "A ~(~a~) titled ~s already exists."
+                            collection title))))

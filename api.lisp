@@ -9,14 +9,6 @@
 ;; FIXME: check access more thoroughly for objects that can't be checked against author immediately:
 ;;        mail, tag, triggers, subscribers
 
-(defun check-title (title)
-  (when (string= title "")
-    (error 'api-argument-invalid :argument 'title :message "The title cannot be empty."))
-  (when (string-equal title "new")
-    (error 'api-argument-invalid :argument 'title :message "The title cannot be \"new\"."))
-  (when (find #\/ title)
-    (error 'api-argument-invalid :argument 'title :message "The title cannot contain a slash.")))
-
 (defun send-confirm-host (host &optional (user (auth:current)))
   (send-templated host (user:field "email" user)
                   (@template "email/confirm-host.ctml")

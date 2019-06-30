@@ -52,6 +52,8 @@
       </c:if>
     </header>
     <main>
+      <div class="box info" lquery='(text (post/get "message"))'></div>
+      <div class="box error" lquery='(text (post/get "error"))'></div>
       <c:splice lquery="(html content)"/>
     </main>
     <footer>

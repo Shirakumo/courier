@@ -77,15 +77,31 @@
                (@template "mail-edit.ctml")
                :mail (ensure-mail campaign mail)))
 
-(define-page mail-triggers "courier/^campaign/([^/]+)/mail/([^/]+)/triggers$" (:uri-groups (campaign mail) :access (perm courier))
-  (render-page (format NIL "~a Triggers" mail)
-               (@template "mail-triggers.ctml")
-               :triggers (list-mail-triggers (ensure-mail campaign mail))))
-
 (define-page mail-send "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier))
   (render-page (format NIL "Send ~a" (dm:field mail "title"))
                (@template "mail-send.ctml")
                :mail (ensure-mail campaign mail)))
+
+(define-page mail-trigger-list "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/?$" (:uri-groups (campaign mail) :access (perm courier))
+  (render-page (format NIL "~a Triggers" mail)
+               (@template "mail-trigger-list.ctml")
+               :triggers (list-mail-triggers (ensure-mail campaign mail))
+               :campaign campaign
+               :mail mail))
+
+(define-page mail-trigger-new "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/new$" (:uri-groups (campaign mail) :access (perm courier))
+  (render-page (format NIL "New Trigger for ~a" mail)
+               (@template "mail-trigger-edit.ctml")
+               :trigger (make-mail-trigger (ensure-mail campaign mail) :save NIL)
+               :campaign campaign
+               :mail mail))
+
+(define-page mail-trigger-edit "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/(\\d+)/edit$" (:uri-groups (campaign mail trigger) :access (perm courier))
+  (render-page (format NIL "Edit Trigger #~a for ~a" trigger mail)
+               (@template "mail-trigger-edit.ctml")
+               :trigger (ensure-mail-trigger trigger)
+               :campaign campaign
+               :mail mail))
 
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
   (render-page "Tags"

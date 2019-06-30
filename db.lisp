@@ -141,20 +141,7 @@
   (defaulted-config NIL :registration-open)
   (defaulted-config (make-random-string 32) :private-key))
 
-(defun check-title-exists (collection title query)
-  (when (and title (< 0 (db:count collection query)))
-    (error 'api-argument-invalid
-           :argument 'title
-           :message (format NIL "A ~(~a~) titled ~s already exists."
-                            collection title))))
-
-(defmacro setf-dm-fields (model &rest vars)
-  (let ((modelg (gensym "MODEL")))
-    `(let ((,modelg ,model))
-       ,@(loop for var in vars
-               collect (destructuring-bind (var field) (radiance::enlist var (string-downcase var))
-                         `(when ,var (setf (dm:field ,modelg ,field) ,var))))
-       ,modelg)))
+;; FIXME: check values
 
 (defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) confirmed (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
@@ -165,6 +152,10 @@
     (setf (dm:field host "confirmed") NIL)
     (when save (dm:insert host))
     host))
+
+(defun edit-host (host)
+  ;; TODO: this
+  )
 
 (defun ensure-host (host-ish &optional (user (auth:current)))
   (or
@@ -185,14 +176,27 @@
 (defun list-hosts (&optional (user (auth:current)))
   (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
-(defun make-campaign (&key host author title description reply-to template (save T))
+(defun make-campaign (&key host author title description reply-to template attributes (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
                                                       (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
     (setf-dm-fields campaign author title description reply-to template)
     (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
-    (when save (dm:insert campaign))
+    (when save
+      (dm:insert campaign)
+      (loop for (attribute . type) in attributes
+            do (unless (find type *attribute-types* :key #'car :test #'string=)
+                 (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
+               (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
+                                       ("name" . ,attribute)
+                                       ("type" . ,type)))))
     campaign))
+
+(defun edit-campaign (campaign)
+  ;; TODO: this
+  (db:with-transaction ()
+    (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
+    (dm:delete attribute)))
 
 (defun ensure-campaign (campaign-ish &optional (user (auth:current)))
   (or
@@ -212,24 +216,6 @@
 (defun list-campaigns (&optional (user (auth:current)))
   (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
-(defun make-attribute (campaign name &key (type :text) (save T))
-  (let ((campaign (ensure-campaign campaign))
-        (type (string-downcase type)))
-    (unless (find type *attribute-types* :key #'car :test #'string=)
-      (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
-    (check-title-exists 'attribute title (db:query (:and (:= 'campaign (dm:id campaign))
-                                                         (:= 'title title))))
-    (dm:with-model attribute ('attribute NIL)
-      (setf-dm-fields attribute name type)
-      (setf (dm:field attribute "campaign") (dm:id campaign))
-      (when save (dm:insert attribute))
-      attribute)))
-
-(defun delete-attribute (attribute)
-  (db:with-transaction ()
-    (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
-    (dm:delete attribute)))
-
 (defun list-attributes (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))
@@ -243,6 +229,10 @@
       (setf (dm:field mail "campaign") (dm:id campaign))
       (when save (dm:insert mail))
       mail)))
+
+(defun edit-mail (mail)
+  ;; TODO: this
+  )
 
 (defun ensure-mail (campaign mail-ish &optional (user (auth:current)))
   (or
@@ -261,6 +251,30 @@
 (defun list-mails (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+
+(defun make-mail-trigger (mail &key to-mail to-link (time-offset 0) constraints (save T))
+  (dm:with-model trigger ('mail-trigger NIL)
+    (setf-dm-fields trigger time-offset)
+    (setf (dm:field trigger "mail") (dm:id mail))
+    (when to-mail (setf (dm:field trigger "to-mail") (dm:id to-mail)))
+    (when to-link (setf (dm:field trigger "to-link") (dm:id to-link)))
+    (setf (dm:field trigger "time-offset") time-offset)
+    (when save
+      (dm:insert trigger)
+      (loop for (tag . inverted) in constraints
+            do (db:insert 'mail-trigger-tags `(("mail-trigger" . ,(dm:id trigger))
+                                               ("tag" . ,(dm:id tag))
+                                               ("inverted" . ,inverted)))))
+    trigger))
+
+(defun edit-mail-trigger (mail-trigger)
+  ;; TODO: this
+  )
+
+(defun delete-mail-trigger (mail-trigger)
+  (db:with-transaction ()
+    (db:remove 'mail-trigger-tags (db:query (:= 'mail-trigger (dm:id mail-trigger))))
+    (dm:delete mail-trigger)))
 
 (defun list-mail-triggers (mail)
   (let ((id (etypecase mail
@@ -321,3 +335,7 @@
     (let ((link (ensure-link link-ish)))
       ;; FIXME: cascade
       (dm:delete link))))
+
+(defun list-links (campaign-ish &optional (user (auth:current)))
+  (let ((campaign (ensure-campaign campaign-ish user)))
+    (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))

@@ -1,0 +1,69 @@
+<article class="page trigger edit">
+  <c:using value="trigger">
+    <form method="post">
+      <div class="row">
+        <label for="host">Mail:</label>
+        <input type="hidden" name="mail" lquery="(val mail)" />
+        <input type="text" readonly
+               id="campaign" lquery="(val (** :mail))" />
+      </div>
+      <div class="row">
+        <label for="on-mail">Trigger on Mail:</label>
+        <select id="on-mail" name="on-mail">
+          <option value=""></option>
+          <c:splice iterate="(courier::list-mails (** :campaign))">
+            <c:unless test="(eql _id (** :mail))">
+              <option lquery='(val _id) (text (format NIL "~a #~a" title _id))' />
+            </c:unless>
+          </c:splice>
+        </select>
+      </div>
+      <div class="row">
+        <label for="on-link">Trigger on Link:</label>
+        <select id="on-link" name="on-link">
+          <option value=""></option>
+          <c:splice iterate="(courier::list-links (** :campaign))">
+            <option lquery='(val _id) (text (format NIL "~a #~a" title _id))' />
+          </c:splice>
+        </select>
+      </div>
+      <div class="row">
+        <label for="time-offset">Time Offset [m]:</label>
+        <input type="number" min="0"
+               id="time-offset" name="time-offset" lquery="(val time-offset)" />
+      </div>
+      <div class="row">
+        <label for="constraints">Tag Constraints:</label>
+        <div>
+          <ul class="constraints" iterate="(courier::list-mail-trigger-tags *)">
+            <li>
+              <select name="constraint-tag[]">
+                <c:splice iterate="(courier::list-tags (*** :campaign))">
+                  <option lquery='(val _id) (text (format NIL "~a #~a" title _id))
+                                  (attr :selected (eql _id (** :tag)))' />
+                </c:splice>
+              </select>
+              <input type="checkbox"
+                     name="constraint-inverted[]" lquery="(attr :checked inverted)" />
+              <a class="remove"><i class="fas fa-fw fa-minus-circle"></i></a>
+            </li>
+          </ul>
+          <a class="button new-constraint"><i class="fas fa-fw fa-plus-circle"></i> New Constraint</a>
+        </div>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="trigger" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/mail-trigger/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/mail-trigger/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Trigger" @formaction="courier/api/courier/mail-trigger/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+  </c:using>
+</article>
