@@ -28,6 +28,7 @@
                (encryption (:integer 1))
                (batch-size :integer)
                (batch-cooldown :integer)
+               (last-send-time :integer)
                (confirmed :boolean))
              :indices '(author title))
 
@@ -125,9 +126,9 @@
 
   (db:create 'link
              '((campaign (:id campaign))
-               (title (:varchar 32))
+               (hash (:varchar 44))
                (url (:varchar 256)))
-             :indices '(campaign mail))
+             :indices '(campaign hash))
 
   (db:create 'link-receipt
              '((link (:id link))
@@ -135,27 +136,24 @@
                (time (:integer 5)))
              :indices '(link subscriber)))
 
-(define-trigger startup-done ()
-  (defaulted-config "Courier Mailing" :title)
-  (defaulted-config "Shirakumo" :copyright)
-  (defaulted-config NIL :registration-open)
-  (defaulted-config (make-random-string 32) :private-key))
-
 ;; FIXME: check values
 
-(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) confirmed (save T))
+(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
                                                   (:= 'title title))))
   (dm:with-model host ('host NIL)
     (setf-dm-fields host author title address hostname port username encryption batch-size batch-cooldown)
     (when password (setf (dm:field host "password") (encrypt password)))
     (setf (dm:field host "confirmed") NIL)
+    (setf (dm:field host "last-send-time") NIL)
     (when save (dm:insert host))
     host))
 
-(defun edit-host (host)
-  ;; TODO: this
-  )
+(defun edit-host (host &key author title address hostname port username password encryption batch-size batch-cooldown confirmed save)
+  (let ((host (ensure-host host)))
+    (setf-dm-fields host author title address hostname port username password encryption batch-size batch-cooldown confirmed)
+    (when save (dm:save host))
+    host))
 
 (defun ensure-host (host-ish &optional (user (auth:current)))
   (or
@@ -192,11 +190,29 @@
                                        ("type" . ,type)))))
     campaign))
 
-(defun edit-campaign (campaign)
-  ;; TODO: this
-  (db:with-transaction ()
-    (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
-    (dm:delete attribute)))
+(defun edit-campaign (campaign &key host author title description reply-to template attributes (save T))
+  (let ((campaign (ensure-campaign campaign)))
+    (setf-dm-fields campaign host author title description reply-to template)
+    (db:with-transaction ()
+      (let ((existing (list-attributes campaign)))
+        (loop for (attribute . type) in attributes
+              for previous = (find attribute existing :key (lambda (dm) (dm:field dm "name")))
+              do (unless (find type *attribute-types* :key #'car :test #'string=)
+                   (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
+                 (cond (previous
+                        (setf existing (delete previous existing))
+                        (setf (dm:field previous "name") attribute)
+                        (setf (dm:field previous "type") type)
+                        (dm:save previous))
+                       (T
+                        (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
+                                                ("name" . ,attribute)
+                                                ("type" . ,type))))))
+        (dolist (attribute existing)
+          (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
+          (dm:delete attribute))))
+    (when save (dm:save campaign))
+    campaign))
 
 (defun ensure-campaign (campaign-ish &optional (user (auth:current)))
   (or
@@ -220,19 +236,21 @@
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))
 
-(defun make-mail (campaign &key title subject body (save T))
+(defun make-mail (campaign &key title subject body (save T) (create-links T))
   (let ((campaign (ensure-campaign campaign)))
     (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
                                                     (:= 'title title))))
+    ;; FIXME: links
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body)
       (setf (dm:field mail "campaign") (dm:id campaign))
       (when save (dm:insert mail))
       mail)))
 
-(defun edit-mail (mail)
-  ;; TODO: this
-  )
+(defun edit-mail (mail &key title subject body (save T))
+  (setf-dm-fields mail title subject body)
+  (when save (dm:save mail))
+  mail)
 
 (defun ensure-mail (campaign mail-ish &optional (user (auth:current)))
   (or
@@ -267,9 +285,12 @@
                                                ("inverted" . ,inverted)))))
     trigger))
 
-(defun edit-mail-trigger (mail-trigger)
-  ;; TODO: this
-  )
+(defun edit-mail-trigger (mail-trigger &key (to-mail NIL to-mail-p) (to-link NIL to-link-p) time-offset constraints (save T))
+  (setf-dm-fields mail-trigger time-offset constraints)
+  (when to-mail-p (setf (dm:field mail-trigger "to-mail") (dm:id to-mail)))
+  (when to-link-p (setf (dm:field mail-trigger "to-link") (dm:id to-link)))
+  (when save (dm:save mail-trigger))
+  mail-trigger)
 
 (defun delete-mail-trigger (mail-trigger)
   (db:with-transaction ()
@@ -316,12 +337,16 @@
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'tag (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
 
-(defun make-link (campaign &key title url (save T))
-  (dm:with-model link ('link NIL)
-    (setf-dm-fields link title url)
-    (setf (dm:field link "campaign") (dm:id campaign))
-    (when save (dm:insert link))
-    link))
+(defun make-link (campaign &key url (save T))
+  (let ((hash (cryptos:sha256 url :to :base64)))
+    (or (dm:get-one 'link (db:query (:and (:= 'campaign (dm:id campaign))
+                                          (:= 'hash hash))))
+        (dm:with-model link ('link NIL)
+          (setf (dm:field link "url") url)
+          (setf (dm:field link "hash") hash)
+          (setf (dm:field link "campaign") (dm:id campaign))
+          (when save (dm:insert link))
+          link))))
 
 (defun ensure-link (link-ish)
   (or
@@ -339,3 +364,33 @@
 (defun list-links (campaign-ish &optional (user (auth:current)))
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+
+(defun link-received-p (link subscriber)
+  (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (dm:id link))
+                                               (:= 'subscriber (dm:id subscriber)))))))
+
+(defun link-coverage (link)
+  (/ (db:count 'link-receipt (db:query (:= 'link (dm:id link))))
+     (db:count 'subscriber (db:query (:= 'campaign (dm:field link "campaign"))))))
+
+(defun mark-link-received (link subscriber)
+  (db:with-transaction ()
+    (unless (link-received-p link subscriber)
+      (db:insert 'link-receipt `(("link" . ,(dm:id link))
+                                 ("subscriber" . ,(dm:id subscriber))
+                                 ("time" . ,(get-universal-time)))))))
+
+(defun mail-received-p (mail subscriber)
+  (< 0 (db:count 'mail-receipt (db:query (:and (:= 'mail (dm:id mail))
+                                               (:= 'subscriber (dm:id subscriber)))))))
+
+(defun mail-coverage (mail)
+  (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
+     (db:count 'subscriber (db:query (:= 'campaign (dm:field mail "campaign"))))))
+
+(defun mark-mail-received (mail subscriber)
+  (db:with-transaction ()
+    (unless (mail-received-p mail subscriber)
+      (db:insert 'mail-receipt `(("mail" . ,(dm:id mail))
+                                 ("subscriber" . ,(dm:id subscriber))
+                                 ("time" . ,(get-universal-time)))))))

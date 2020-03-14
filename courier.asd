@@ -20,6 +20,7 @@
                (:file "toolkit")
                (:file "email")
                (:file "db")
+               (:file "send-queue")
                (:file "front")
                (:file "api"))
   :depends-on ((:interface :database)
@@ -27,6 +28,8 @@
                :r-data-model
                :r-clip
                :ratify
+               :crypto-shortcuts
+               :bordeaux-threads
                :softdrink
                :cl-markless-plump
                :cl-smtp))

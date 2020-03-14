@@ -154,3 +154,11 @@
           (redirect (url> (format NIL "courier/campaign/~a/mail/" (dm:field campaign "title"))
                           :query `(("message" . "Mail deleted."))))
           (api-output NIL)))))
+
+(define-api courier/mail/receipt (id) ()
+  ;; FIXME
+  )
+
+(define-api courier/link/resolve (id) ()
+  ;; FIXME
+  )

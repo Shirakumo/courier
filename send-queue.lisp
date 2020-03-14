@@ -1,0 +1,64 @@
+#|
+ This file is a part of Courier
+ (c) 2019 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
+ Author: Nicolas Hafner <shinmera@tymoon.eu>
+|#
+
+(in-package #:courier)
+
+(defvar *mail-queue-thread* NIL)
+
+(defun send-queue (queue)
+  (send-mail (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))
+             (dm:get-one 'subscriber (db:query (:= '_id (dm:field queue "subscriber")))))
+  (dm:delete queue))
+
+(defun process-send-queue-for-host (host)
+  (l:trace :courier.send-queue "Processing ~a" host)
+  (let* ((host (ensure-host host))
+         (timeout (- (+ (dm:field host "last-send-time")
+                        (dm:field host "batch-cooldown"))
+                     (get-universal-time))))
+    (when (< timeout 0)
+      (let ((queued (dm:get 'mail-queue (db:query (:= 'host (dm:id host)))
+                            :amount (dm:field host "batch-size") :sort '((time :asc)))))
+        (dolist (queue queued)
+          (send-queue queue))
+        (when queued
+          (setf (dm:field host "last-send-time") (get-universal-time))
+          (dm:save host))))
+    (+ (dm:field host "last-send-time")
+       (dm:field host "batch-cooldown"))))
+
+(defun process-send-queue ()
+  ;; Return next time we can send stuff again.
+  (loop for host in (dm:get 'host (db:query :all))
+        maximize (process-send-queue-for-host host)))
+
+(defun send-queue-loop ()
+  (loop for next = (process-send-queue)
+        for now = (get-universal-time)
+        for interval = (config :send-queue-poll-interval)
+        do (cond ((< next now)
+                  (sleep interval))
+                 ((< (- next now) interval)
+                  (sleep interval))
+                 (T ;; We have work to do soon. Do it early.
+                  (sleep (- next now))))
+        while (started-p)))
+
+(defun start-send-queue ()
+  (when (and *mail-queue-thread*
+             (bt:thread-alive-p *mail-queue-thread*))
+    (error "The send queue is already running.")) 
+  (flet ((send-queue-thunk ()
+           (l:info :courier.send-queue "Starting send queue.")
+           (unwind-protect (send-queue-loop)
+             (l:info :courier.send-queue "Stopping send queue.")
+             (setf *mail-queue-thread* NIL))))
+    (setf *mail-queue-thread* (bt:make-thread #'send-queue-thunk :name "courier send queue"))))
+
+(define-trigger server-start ()
+  (unless (and *mail-queue-thread*
+               (bt:thread-alive-p *mail-queue-thread*))
+    (start-send-queue)))

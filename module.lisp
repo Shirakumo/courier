@@ -9,3 +9,10 @@
   (:use #:cl #:radiance)
   (:export))
 (in-package #:courier)
+
+(define-trigger startup ()
+  (defaulted-config "Courier Mailing" :title)
+  (defaulted-config "Shirakumo" :copyright)
+  (defaulted-config NIL :registration-open)
+  (defaulted-config (make-random-string 32) :private-key)
+  (defaulted-config 60 :send-queue-poll-interval))
