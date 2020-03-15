@@ -49,10 +49,12 @@
                :campaign (ensure-campaign campaign)))
 
 (define-page campaign-new ("courier/^campaign/new$" 1) (:uri-groups () :access (perm courier))
-  (render-page "New Campaign"
-               (@template "campaign-edit.ctml")
-               :hosts (list-hosts)
-               :campaign (make-campaign :save NIL)))
+  (let ((campaign (make-campaign :save NIL)))
+    (setf (dm:field campaign "template") (alexandria:read-file-into-string (@template "email/default-template.ctml")))
+    (render-page "New Campaign"
+                 (@template "campaign-edit.ctml")
+                 :hosts (list-hosts)
+                 :campaign campaign)))
 
 (define-page campaign-edit "courier/^campaign/([^/]+)/edit$" (:uri-groups (campaign) :access (perm courier))
   (render-page (format NIL "Edit ~a" campaign)
@@ -138,6 +140,19 @@
 
 (define-page mail-log "courier/^log$" (:access (perm courier))
   (render-page "Mail Log" (@template "mail-log.ctml")))
+
+;; User sections
+(define-page campaign-subscribe "courier/^subscribe$" ()
+  (render-page (@template "campaign-subscribe.ctml")
+               :campaign (ensure-campaign (db:ensure-id (post/get "campaign")))
+               :action (post/get "action")))
+
+(define-page campaign-unsubscribe "courier/^unsubscribe$" ()
+  (let ((subscriber (ensure-subscriber (decode-id (post/get "id")))))
+    (render-page (@template "campaign-unsubscribe.ctml")
+                 :campaign (ensure-campaign (dm:field subscriber "campaign"))
+                 :subscriber subscriber
+                 :action (post/get "action"))))
 
 (define-page mail-view "courier/^view/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber mail) (decode-id id)

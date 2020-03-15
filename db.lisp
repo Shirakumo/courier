@@ -52,7 +52,8 @@
   (db:create 'attribute
              '((campaign (:id campaign))
                (title (:varchar 32))
-               (type (:varchar 16)))
+               (type (:varchar 16))
+               (required :boolean))
              :indices '(campaign))
 
   (db:create 'attribute-value
@@ -187,12 +188,13 @@
     (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
     (when save
       (dm:insert campaign)
-      (loop for (attribute . type) in attributes
+      (loop for (attribute type required) in attributes
             do (unless (find type *attribute-types* :key #'car :test #'string=)
                  (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
                (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
                                        ("name" . ,attribute)
-                                       ("type" . ,type)))))
+                                       ("type" . ,type)
+                                       ("required" . ,required)))))
     campaign))
 
 (defun edit-campaign (campaign &key host author title description reply-to template attributes (save T))
@@ -200,7 +202,7 @@
     (setf-dm-fields campaign host author title description reply-to template)
     (db:with-transaction ()
       (let ((existing (list-attributes campaign)))
-        (loop for (attribute . type) in attributes
+        (loop for (attribute type required) in attributes
               for previous = (find attribute existing :key (lambda (dm) (dm:field dm "name")))
               do (unless (find type *attribute-types* :key #'car :test #'string=)
                    (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
@@ -208,11 +210,13 @@
                         (setf existing (delete previous existing))
                         (setf (dm:field previous "name") attribute)
                         (setf (dm:field previous "type") type)
+                        (setf (dm:field previous "required") required)
                         (dm:save previous))
                        (T
                         (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
                                                 ("name" . ,attribute)
-                                                ("type" . ,type))))))
+                                                ("type" . ,type)
+                                                ("required" . ,required))))))
         (dolist (attribute existing)
           (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
           (dm:delete attribute))))
@@ -223,9 +227,9 @@
   (or
    (etypecase campaign-ish
      (dm:data-model campaign-ish)
+     (db:id (dm:get-one 'campaign (db:query (:= '_id campaign-ish))))
      (string (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
-                                                   (:= 'title campaign-ish)))))
-     (db:id (dm:get-one 'campaign (db:query (:= '_id campaign-ish)))))
+                                                   (:= 'title campaign-ish))))))
    (error 'request-not-found :message "No such campaign.")))
 
 (defun delete-campaign (campaign-ish &optional (user (auth:current)))
@@ -240,9 +244,41 @@
 (defun list-attributes (campaign)
   (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((name :asc))))
 
+(defun make-subscriber (campaign address attributes &optional confirmed)
+  (db:with-transaction ()
+    (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                     (:= 'address address)))))
+      (error "You are already subscribed!"))
+    (dm:with-model subscriber ('subscriber NIL)
+      (setf (dm:field subscriber "campaign") (dm:id campaign))
+      (setf (dm:field subscriber "address") address)
+      (setf (dm:field subscriber "signup-time") (get-universal-time))
+      (setf (dm:field subscriber "confirmed") confirmed)
+      (dm:insert subscriber)
+      
+      (loop for (attribute . value) in attributes
+            do (dm:with-model attribute-value ('attribute-value NIL)
+                 (setf (dm:field attribute-value "attribute") (ensure-id attribute))
+                 (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
+                 (setf (dm:field attribute-value "value") value)
+                 (dm:insert attribute-value)))
+      subscriber)))
+
+(defun ensure-subscriber (subscriber-ish)
+  (or
+   (etypecase subscriber-ish
+     (dm:data-model subscriber-ish)
+     (T (dm:get-one 'subscriber (db:query (:= '_id (db:ensure-id subscriber-ish))))))
+   (error 'request-not-found :message "No such subscriber.")))
+
+(defun delete-subscriber (subscriber)
+  (db:with-transaction ()
+    ;; FIXME: cascade
+    (dm:delete subscriber)))
+
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
-                              (db:query (:= 'subscriber (ensure-id subscriber))))
+                                    (db:query (:= 'subscriber (ensure-id subscriber))))
         collect (gethash "title" attribute)
         collect (gethash "value" attribute)))
 

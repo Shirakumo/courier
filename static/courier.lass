@@ -116,28 +116,38 @@
    :color (hex FFFFFF))
 
   (form
-   ((:or input select textarea)
+   ((:or input select textarea .editor)
     :border 1px solid (hex E0E0E0)
     :background (hex F0F0F0)
     :font-size inherit
     :width 10em
     :padding 0.1em
     :box-sizing border-box)
-   ((:and (:or input select textarea) :focus)
+   ((:and (:or input select textarea .editor) :focus)
     :outline none
     :border-bottom 1px solid #(c=0))
-   ((:and (:or input select textarea) [readonly])
+   ((:and (:or input select textarea .editor) [readonly])
     :background (hex D0D0D0)
     :border-color (hex C0C0C0)
     :color (hex 505050))
    (.row
     :margin 0.1em 0
     :display flex
-    (label
+    (>label
      :display inline-block
      :min-width 10em)
-    ((:or input select textarea)
-     :flex-grow 1))
+    ((:or >input >select >textarea >div)
+     :flex-grow 1)
+    (>div
+     (>nav
+      :background (hex E0E0E0)
+      :padding 0.1em 0.3em)
+     (.editor
+      :position relative
+      :min-height 10em
+      :padding 0)
+     ((:or >.editor >textarea)
+      :width 100%)))
    (input[type=submit]
     :width 100%
     :cursor pointer)
@@ -173,7 +183,8 @@
      (.fa-check-circle :color (hex 00AA00))
      (.fa-question-circle :color (hex AAAAAA)))))
   (.page.campaign.edit
-   (textarea[name=template] :min-height 10em)
+   (textarea[name=template]
+    :min-height 10em)
    (.attributes
     :width 100%
     :list-style none

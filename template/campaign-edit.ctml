@@ -38,7 +38,14 @@
       </div>
       <div class="row">
         <label for="template">Email Template:</label>
-        <textarea id="template" name="template" lquery="(text template)" />
+        <div>
+          <nav>
+            <a href="courier/help/template" title="Templating help" target="_blank">
+              <i class="fas fa-info-circle"></i>
+            </a>
+          </nav>
+          <textarea id="template" name="template" lquery="(text template)" />
+        </div>
       </div>
       <input type="hidden" name="browser" value="true" />
       <div class="row">
@@ -49,10 +56,21 @@
             <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/campaign/delete" />
           </c:then>
           <c:else>
-            <input type="submit" value="Create Host" @formaction="courier/api/courier/campaign/new" />
+            <input type="submit" value="Create Campaign" @formaction="courier/api/courier/campaign/new" />
           </c:else>
         </c:if>
       </div>
     </form>
   </article>
 </c:using>
+<script src="https://unpkg.com/codeflask/build/codeflask.min.js"></script>
+<script>
+  const target = document.querySelector("#template");
+  target.style.display = "none";
+  const editor = document.createElement("div");
+  editor.classList.add("editor");
+  target.parentNode.appendChild(editor);
+  const flask = new CodeFlask(editor, {language: 'html'});
+  flask.updateCode(target.innerText);
+  flask.onUpdate((code) => target.innerText = code);
+</script>

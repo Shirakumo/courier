@@ -57,7 +57,9 @@
                             collection title))))
 
 (defun generate-id (subscriber &rest ids)
-  (encrypt (format NIL "~a/~a~{ ~a~}" (make-random-string 8) (ensure-id subscriber) ids)))
+  (let* ((id (ensure-id subscriber))
+         (hash (subseq (cryptos:sha1 id) 0 8)))
+    (encrypt (format NIL "~a/~a~{ ~a~}" hash id ids))))
 
 (defun decode-id (thing)
   (let* ((string (decrypt thing))
@@ -68,6 +70,6 @@
     (loop for i from (1+ slashpos) below (length string)
           for char = (aref string i)
           if (char= char #\Space)
-          collect (get-output-stream-string buffer)
+          collect (db:ensure-id (get-output-stream-string buffer))
           else
           do (write-char char buffer))))

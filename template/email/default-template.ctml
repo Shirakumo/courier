@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title lquery="(text subject)">Subject</title>
+  </head>
+  <body>
+    <div class="header">
+      <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
+      <a href="#" lquery="(attr :href mail-url)" class="in-browser">View this email in your browser</a>
+      <h1 lquery="(text subject)">Subject</h1>
+    </div>
+    <div class="main" lquery="(html body)">
+      Body
+    </div>
+    <div class="footer">
+      <div class="note">
+        You are receiving this email because you opted in via our website.
+        If you no longer want to receive these emails, you can unsubscribe <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe)">here</a>
+      </div>
+      <div class="address">
+        Our mailing address is:
+        Address
+      </div>
+      <div class="copy">
+        &#169; <span lquery="(time T)">2019</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>
+      </div>
+      <div class="software">
+        Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>
+      </div>
+    </div>
+  </body>
+</html>

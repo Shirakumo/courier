@@ -12,8 +12,8 @@
          (etypecase template
            (string template)
            (pathname (@template (namestring template))))
+         :copyright (config :copyright)
          :software-title (config :title)
-         :software-copyright (config :copyright)
          :software-version (asdf:component-version (asdf:find-system :courier))
          args))
 
@@ -33,7 +33,7 @@
      (values (extract-plaintext text)
              (plump:serialize text NIL)))))
 
-(defun send (host to subject message &optional reply-to)
+(defun send (host to subject message &key reply-to campaign unsubscribe)
   (multiple-value-bind (plaintext html) (format-email message)
     (l:trace :courier.mail "Sending to ~a via ~a/~a:~a"
              to
@@ -46,6 +46,14 @@
      (dm:field host "address")
      to subject plaintext
      :html-message html
+     :extra-headers `(("X-Mailer" . "Courier Mailer")
+                      ,@(when campaign
+                          `(("X-Campaign" . ,(princ-to-string campaign))
+                            ("X-campaignid" . ,(princ-to-string campaign))
+                            ("List-ID" . ,(princ-to-string campaign))))
+                      ,@(when unsubscribe
+                          `(("List-Unsubscribe" . ,unsubscribe)
+                            ("List-Unsubscribe-Post" . "List-Unsubscribe=One-Click"))))
      :ssl (ecase (dm:field host "encryption")
             (0 NIL) (1 :starttls) (2 :tls))
      :port (dm:field host "port")
@@ -63,6 +71,7 @@
 (defun mail-template-args (campaign mail subscriber)
   (list* :mail-receipt-image (mail-receipt-url mail subscriber)
          :mail-url (mail-url mail subscriber)
+         :unsubscribe (unsubscribe-url subscriber)
          :title (dm:field mail "title")
          :subject (dm:field mail "subject")
          :body (dm:field mail "body")
@@ -70,7 +79,7 @@
          :description (dm:field campaign "description")
          :reply-to (dm:field campaign "reply-to")
          :to (dm:field subscriber "address")
-         :tags (subscriber-tags)
+         :tags (subscriber-tags subscriber)
          (subscriber-attributes subscriber)))
 
 (defun compile-email-content (campaign mail subscriber)
@@ -85,4 +94,6 @@
     (send host (dm:field subscriber "address")
           (extract-subject html)
           html
-          (dm:field campaign "reply-to"))))
+          :reply-to (dm:field campaign "reply-to")
+          :campaign (dm:field mail "campaign")
+          :unsubscribe (unsubscribe-url subscriber))))

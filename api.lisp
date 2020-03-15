@@ -13,6 +13,7 @@
   (send-templated host (or (user:field "email" user)
                            (error "User must configure the email field!"))
                   (@template "email/confirm-host.ctml")
+                  :host (dm:field host "title")
                   :recipient (or (user:field "displayname" user)
                                  (user:username user))
                   :link (url> "courier/api/courier/host/confirm"
@@ -156,7 +157,39 @@
                           :query `(("message" . "Mail deleted."))))
           (api-output NIL)))))
 
+
+;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
+
+(define-api courier/campaign/subscribe (campaign address fields[] values[]) ()
+  (let* ((campaign (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign)))))
+         (attributes (loop for field in fields[]
+                           for value in values[]
+                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
+                           do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
+                                (error "Invalid attribute field."))
+                           collect (cons attribute value)))
+         (subscriber (make-subscriber campaign address attributes)))
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/subscribe/"
+                        :query `(("action" . "subscribed")
+                                 ("campaign" . ,(dm:id campaign)))))
+        (api-output subscriber))))
+
+(define-api courier/campaign/unsubscribe (id) ()
+  (let* ((subscriber (dm:get-one 'subscriber (db:query (:= '_id (decode-id id)))))
+         (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field subscriber "campaign"))))))
+    (delete-subscriber subscriber)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/unsubscribe")
+                        :query `(("action" . "unsubscribed")
+                                 ("campaign" . ,(dm:id campaign)))))
+        (api-output "Ok."))))
+
+(defun unsubscribe-url (subscriber)
+  (url> "courier/unsubscribe" 
+        :query `(("id" . ,(generate-id subscriber))
+                 ("browser" . "true"))))
 
 (define-api courier/mail/receipt (id) ()
   (destructuring-bind (subscriber mail) (decode-id id)
@@ -165,9 +198,8 @@
     *tracker*))
 
 (defun mail-receipt-url (subscriber mail)
-  (uri-to-url "courier/api/courier/mail/receipt"
-              :representation :external
-              :query `(("id" . ,(generate-id subscriber (ensure-id mail))))))
+  (url> "courier/api/courier/mail/receipt"
+        :query `(("id" . ,(generate-id subscriber (ensure-id mail))))))
 
 (define-api courier/link/resolve (id) ()
   (destructuring-bind (subscriber link &optional mail) (decode-id id)
@@ -177,6 +209,5 @@
       (redirect (gethash "url" link)))))
 
 (defun link-receipt-url (subscriber link mail)
-  (uri-to-url "courier/api/courier/link/resolve"
-              :representation :external
-              :query `(("id" . ,(generate-id subscriber (ensure-id link) (ensure-id mail))))))
+  (url> "courier/api/courier/link/resolve"
+        :query `(("id" . ,(generate-id subscriber (ensure-id link) (ensure-id mail))))))
