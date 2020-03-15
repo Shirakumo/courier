@@ -87,6 +87,29 @@
                (time (:integer 5)))
              :indices '(host subscriber))
 
+  (db:create 'tag
+             '((campaign (:id campaign))
+               (title (:varchar 32))
+               (description :text))
+             :indices '(campaign))
+
+  (db:create 'tag-table
+             '((tag (:id tag))
+               (subscriber (:id subscriber)))
+             :indices '(tag subscriber))
+
+  (db:create 'link
+             '((campaign (:id campaign))
+               (hash (:varchar 44))
+               (url (:varchar 256)))
+             :indices '(campaign hash))
+
+  (db:create 'link-receipt
+             '((link (:id link))
+               (subscriber (:id subscriber))
+               (time (:integer 5)))
+             :indices '(link subscriber))
+
   (db:create 'mail-trigger
              '((mail (:id mail))
                (to-mail (:id mail))
@@ -100,17 +123,6 @@
                (inverted :boolean))
              :indices '(mail-trigger))
 
-  (db:create 'tag
-             '((campaign (:id campaign))
-               (title (:varchar 32))
-               (description :text))
-             :indices '(campaign))
-
-  (db:create 'tag-table
-             '((tag (:id tag))
-               (subscriber (:id subscriber)))
-             :indices '(tag subscriber))
-
   (db:create 'tag-trigger
              '((tag (:id tag))
                (to-mail (:id mail))
@@ -122,21 +134,14 @@
              '((tag-trigger (:id tag-trigger))
                (tag (:id tag))
                (inverted :boolean))
-             :indices '(tag-trigger))
-
-  (db:create 'link
-             '((campaign (:id campaign))
-               (hash (:varchar 44))
-               (url (:varchar 256)))
-             :indices '(campaign hash))
-
-  (db:create 'link-receipt
-             '((link (:id link))
-               (subscriber (:id subscriber))
-               (time (:integer 5)))
-             :indices '(link subscriber)))
+             :indices '(tag-trigger)))
 
 ;; FIXME: check values
+
+(defun ensure-id (id-ish)
+  (etypecase id-ish
+    (db:id id-ish)
+    (dm:data-model (dm:id id-ish))))
 
 (defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
@@ -159,9 +164,9 @@
   (or
    (etypecase host-ish
      (dm:data-model host-ish)
+     (db:id (dm:get-one 'host (db:query (:= '_id host-ish))))
      (string (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
-                                               (:= 'title host-ish)))))
-     (db:id (dm:get-one 'host (db:query (:= '_id host-ish)))))
+                                               (:= 'title host-ish))))))
    (error 'request-not-found :message "No such host.")))
 
 (defun delete-host (host-ish &optional (user (auth:current)))
@@ -232,15 +237,24 @@
 (defun list-campaigns (&optional (user (auth:current)))
   (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
-(defun list-attributes (campaign-ish &optional (user (auth:current)))
-  (let ((campaign (ensure-campaign campaign-ish user)))
-    (dm:get 'attribute (db:query (:= 'campaign (dm:id campaign))) :sort '((name :asc)))))
+(defun list-attributes (campaign)
+  (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((name :asc))))
 
-(defun make-mail (campaign &key title subject body (save T) (create-links T))
+(defun subscriber-attributes (subscriber)
+  (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
+                              (db:query (:= 'subscriber (ensure-id subscriber))))
+        collect (gethash "title" attribute)
+        collect (gethash "value" attribute)))
+
+(defun subscriber-tags (subscriber)
+  (loop for tag in (db:select (rdb:join (tag _id) (tag-table tag))
+                              (db:query (:= 'subscriber (ensure-id subscriber))))
+        collect (gethash "title" tag)))
+
+(defun make-mail (campaign &key title subject body (save T))
   (let ((campaign (ensure-campaign campaign)))
     (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
                                                     (:= 'title title))))
-    ;; FIXME: links
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body)
       (setf (dm:field mail "campaign") (dm:id campaign))
@@ -366,8 +380,8 @@
     (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
 
 (defun link-received-p (link subscriber)
-  (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (dm:id link))
-                                               (:= 'subscriber (dm:id subscriber)))))))
+  (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (ensure-id link))
+                                               (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun link-coverage (link)
   (/ (db:count 'link-receipt (db:query (:= 'link (dm:id link))))
@@ -376,13 +390,13 @@
 (defun mark-link-received (link subscriber)
   (db:with-transaction ()
     (unless (link-received-p link subscriber)
-      (db:insert 'link-receipt `(("link" . ,(dm:id link))
-                                 ("subscriber" . ,(dm:id subscriber))
+      (db:insert 'link-receipt `(("link" . ,(ensure-id link))
+                                 ("subscriber" . ,(ensure-id subscriber))
                                  ("time" . ,(get-universal-time)))))))
 
 (defun mail-received-p (mail subscriber)
-  (< 0 (db:count 'mail-receipt (db:query (:and (:= 'mail (dm:id mail))
-                                               (:= 'subscriber (dm:id subscriber)))))))
+  (< 0 (db:count 'mail-receipt (db:query (:and (:= 'mail (ensure-id mail))
+                                               (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun mail-coverage (mail)
   (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
@@ -391,6 +405,6 @@
 (defun mark-mail-received (mail subscriber)
   (db:with-transaction ()
     (unless (mail-received-p mail subscriber)
-      (db:insert 'mail-receipt `(("mail" . ,(dm:id mail))
-                                 ("subscriber" . ,(dm:id subscriber))
+      (db:insert 'mail-receipt `(("mail" . ,(ensure-id mail))
+                                 ("subscriber" . ,(ensure-id subscriber))
                                  ("time" . ,(get-universal-time)))))))

@@ -155,10 +155,27 @@
                           :query `(("message" . "Mail deleted."))))
           (api-output NIL)))))
 
+(defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
+
 (define-api courier/mail/receipt (id) ()
-  ;; FIXME
-  )
+  (destructuring-bind (subscriber mail) (decode-id id)
+    (mark-mail-received mail subscriber)
+    (setf (header "Cache-Control") "public, max-age=31536000")
+    *tracker*))
+
+(defun mail-receipt-url (subscriber mail)
+  (uri-to-url "courier/api/courier/mail/receipt"
+              :representation :external
+              :query `(("id" . ,(generate-id subscriber (ensure-id mail))))))
 
 (define-api courier/link/resolve (id) ()
-  ;; FIXME
-  )
+  (destructuring-bind (subscriber link &optional mail) (decode-id id)
+    (mark-link-received link subscriber)
+    (when mail (mark-mail-received mail subscriber))
+    (let ((link (db:select 'link (db:query (:= '_id link)) :fields '("url"))))
+      (redirect (gethash "url" link)))))
+
+(defun link-receipt-url (subscriber link mail)
+  (uri-to-url "courier/api/courier/link/resolve"
+              :representation :external
+              :query `(("id" . ,(generate-id subscriber (ensure-id link) (ensure-id mail))))))

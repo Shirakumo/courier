@@ -44,7 +44,9 @@
                :campaigns (list-campaigns)))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier))
-  )
+  (render-page campaign
+               (@template "campaign-overview.ctml")
+               :campaign (ensure-campaign campaign)))
 
 (define-page campaign-new ("courier/^campaign/new$" 1) (:uri-groups () :access (perm courier))
   (render-page "New Campaign"
@@ -65,7 +67,10 @@
                :campaign campaign))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier))
-  )
+  (render-page mail
+               (@template "mail-overview.ctml")
+               :campaign (ensure-campaign campaign)
+               :mail (ensure-mail campaign mail)))
 
 (define-page mail-new ("courier/^campaign/([^/]+)/mail/new$" 1) (:uri-groups (campaign) :access (perm courier))
   (render-page "New Mail"
@@ -110,7 +115,10 @@
                :campaign campaign))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
-  )
+  (render-page tag
+               (@template "tag-overview.ctml")
+               :campaign (ensure-campaign campaign)
+               :tag (ensure-tag campaign tag)))
 
 (define-page tag-new ("courier/^campaign/([^/]+)/tag/new" 1) (:uri-groups (campaign) :access (perm courier))
   (render-page "New Tag"
@@ -130,3 +138,20 @@
 
 (define-page mail-log "courier/^log$" (:access (perm courier))
   (render-page "Mail Log" (@template "mail-log.ctml")))
+
+(define-page mail-view "courier/^view/(.+)" (:uri-groups (id))
+  (destructuring-bind (subscriber mail) (decode-id id)
+    (mark-mail-received mail subscriber)
+    (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
+           (subscriber (dm:get-one 'subscriber (db:query (:= '_id subscriber))))
+           (campaign (ensure-campaign (dm:field mail "campaign"))))
+      (r-clip:with-clip-processing ("view-mail.ctml")
+        (apply #'r-clip:process T
+               :mail mail
+               :campaign campaign
+               :subscriber subscriber
+               :content (compile-email-content campaign mail subscriber))))))
+
+(defun mail-url (mail subscriber)
+  (uri-to-url (format NIL "courier/view/~a" (generate-id subscriber (ensure-id mail)))
+              :representation :external))

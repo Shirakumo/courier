@@ -55,3 +55,19 @@
            :argument 'title
            :message (format NIL "A ~(~a~) titled ~s already exists."
                             collection title))))
+
+(defun generate-id (subscriber &rest ids)
+  (encrypt (format NIL "~a/~a~{ ~a~}" (make-random-string 8) (ensure-id subscriber) ids)))
+
+(defun decode-id (thing)
+  (let* ((string (decrypt thing))
+         (slashpos (position #\/ string))
+         (buffer (make-string-output-stream)))
+    (unless (and (eql 9 slashpos))
+      (error "Malformed ID"))
+    (loop for i from (1+ slashpos) below (length string)
+          for char = (aref string i)
+          if (char= char #\Space)
+          collect (get-output-stream-string buffer)
+          else
+          do (write-char char buffer))))

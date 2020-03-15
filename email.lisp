@@ -6,16 +6,15 @@
 
 (in-package #:courier)
 
-(defun compile-email (host template &rest args)
+(defun compile-email (template &rest args)
   ;; FIXME: softdrink apply stylesheet
   (apply #'r-clip:process
          (etypecase template
            (string template)
            (pathname (@template (namestring template))))
-         :host (dm:field host "title")
-         :title (config :title)
-         :copyright (config :copyright)
-         :version (asdf:component-version (asdf:find-system :courier))
+         :software-title (config :title)
+         :software-copyright (config :copyright)
+         :software-version (asdf:component-version (asdf:find-system :courier))
          args))
 
 (defun extract-plaintext (html)
@@ -58,38 +57,31 @@
      :display-name (dm:field host "title"))))
 
 (defun send-templated (host to template &rest args)
-  (let ((html (apply #'compile-email host template args)))
+  (let ((html (apply #'compile-email template args)))
     (send host to (extract-subject html) html)))
 
-(defun generate-id (id subscriber)
-  (cryptos:encrypt (format NIL "~a/~a ~a" (make-random-string 8) id (dm:id subscriber))
-                   (config :private-key)))
+(defun mail-template-args (campaign mail subscriber)
+  (list* :mail-receipt-image (mail-receipt-url mail subscriber)
+         :mail-url (mail-url mail subscriber)
+         :title (dm:field mail "title")
+         :subject (dm:field mail "subject")
+         :body (dm:field mail "body")
+         :campaign (dm:field campaign "title")
+         :description (dm:field campaign "description")
+         :reply-to (dm:field campaign "reply-to")
+         :to (dm:field subscriber "address")
+         :tags (subscriber-tags)
+         (subscriber-attributes subscriber)))
 
-(defun decode-id (thing)
-  (let ((string (cryptos:decrypt thing (config :private-key))))
-    (values (db:ensure-id (subseq string (1+ (position #\/ string)) (position #\Space string)))
-            (db:ensure-id (subseq string (1+ (position #\Space string)))))))
-
-(defun mail-receipt-url (mail subscriber)
-  (uri-to-url "courier/api/courier/mail/receipt"
-              :representation :external
-              :query `(("id" . ,(generate-id (dm:id mail) subscriber)))))
-
-(defun link-receipt-url (link subscriber)
-  (uri-to-url "courier/api/courier/link/resolve"
-              :representation :external
-              :query `(("id" . ,(generate-id (dm:id link) subscriber)))))
-
-(defun mail-template-args (mail subscriber)
-  (list :mail-receipt (mail-receipt-url mail subscriber)
-        ))
+(defun compile-email-content (campaign mail subscriber)
+  (apply #'compile-email (dm:field campaign "template")
+         (mail-template-args campaign mail subscriber)))
 
 (defun send-mail (mail subscriber)
   (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
   (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
-         (host (ensure-campaign (dm:field campaign "host")))
-         (html (apply #'compile-email host (dm:field campaign "template")
-                      (mail-template-args mail subscriber))))
+         (host (ensure-host (dm:field campaign "host")))
+         (html (compile-email-content campaign mail subscriber)))
     (send host (dm:field subscriber "address")
           (extract-subject html)
           html

@@ -28,6 +28,7 @@
                :r-data-model
                :r-clip
                :ratify
+               :alexandria
                :crypto-shortcuts
                :bordeaux-threads
                :softdrink
