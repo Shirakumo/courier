@@ -28,7 +28,7 @@
                (encryption (:integer 1))
                (batch-size :integer)
                (batch-cooldown :integer)
-               (last-send-time :integer)
+               (last-send-time (:integer 5))
                (confirmed :boolean))
              :indices '(author title))
 
@@ -150,7 +150,7 @@
     (setf-dm-fields host author title address hostname port username encryption batch-size batch-cooldown)
     (when password (setf (dm:field host "password") (encrypt password)))
     (setf (dm:field host "confirmed") NIL)
-    (setf (dm:field host "last-send-time") NIL)
+    (setf (dm:field host "last-send-time") 0)
     (when save (dm:insert host))
     host))
 
