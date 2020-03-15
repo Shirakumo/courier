@@ -10,7 +10,8 @@
 ;;        mail, tag, triggers, subscribers
 
 (defun send-confirm-host (host &optional (user (auth:current)))
-  (send-templated host (user:field "email" user)
+  (send-templated host (or (user:field "email" user)
+                           (error "User must configure the email field!"))
                   (@template "email/confirm-host.ctml")
                   :recipient (or (user:field "displayname" user)
                                  (user:username user))
