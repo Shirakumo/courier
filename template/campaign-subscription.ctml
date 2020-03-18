@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title><c:splice lquery="(text title)"/></title>
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="Mailing List" lquery="(attr :content description)" />
+    <meta name="robots" content="index, follow" />
+    <link rel="stylesheet" type="text/css" href="../static/courier.css" @href="/static/courier/courier.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous"/>
+  </head>
+  <body>
+    <header>
+    </header>
+    <main>
+      <div class="box info" lquery='(text (post/get "message"))'></div>
+      <div class="box error" lquery='(text (post/get "error"))'></div>
+      <article class="page campaign subscription">
+        <c:using value="campaign">
+          <h1 lquery="(text title)">Campaign</h1>
+          <c:when test='(equalp "subscribe" (** :action))'>
+            <form @action="courier/api/courier/subscription/new" method="post">
+              <p class="description" lquery="(text description)">Description</p>
+              <div class="row">
+                <label for="name">Your name</label>
+                <input type="text" name="name" id="name" autofocus />
+              </div>
+              <div class="row">
+                <label for="address">Email address</label>
+                <input type="email" name="address" id="address" placeholder="email@example.com" required />
+              </div>
+              <c:splice iterate="(** :fields)">
+                <div class="row">
+                  <label for="#" lquery="(attr :for title) (text title)">#</label>
+                  <input type="hidden"  name="fields[]" lquery="(attr :value _id)" />
+                  <input type="text"  name="values[]" id="#" lquery="(attr :type type :id title :required required)" />
+                </div>
+              </c:splice>
+              <input type="hidden" name="browser" value="true" />
+              <input type="hidden" name="campaign" lquery="(attr :value _id)" />
+              <input type="submit" value="Subscribe"/>
+              <p class="note">
+                A confirmation email will be sent to your address. Please click the link in the email to confirm your subscription.
+              </p>
+            </form>
+          </c:when>
+          <c:when test='(equalp "subscribed" (** :action))'>
+            <form>
+              <p>
+                We have sent a confirmation mail to your address. Please click the link in the email to confirm your subscription.
+              </p>
+            </form>
+          </c:when>
+          <c:when test='(equalp "confirmed" (** :action))'>
+            <form>
+              <p>
+                Thanks! Your subscription has been confirmed.
+              </p>
+            </form>
+          </c:when>
+          <c:when test='(equalp "unsubscribed" (** :action))'>
+            <form>
+              <p>
+                You have been unsubscribed.
+              </p>
+            </form>
+          </c:when>
+        </c:using>
+      </article>
+    </main>
+    <footer>
+      &copy; <time lquery="(time T)">2019</time> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>
+      Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text version)">0.0.0</c:splice></a>
+    </footer>
+  </body>
+</html>

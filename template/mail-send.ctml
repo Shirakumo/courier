@@ -1,0 +1,22 @@
+<article class="page mail send">
+  <c:using value="mail">
+    <form @action="courier/api/courier/mail/send" method="post">
+      <div class="row">
+        <label for="campaign">All campaign subscribers</label>
+        <input type="checkbox" name="campaign" id="campaign" lquery="(val campaign)" />
+      </div>
+      <div class="row">
+        <label>These subscribers</label>
+        <input type="text" name="subscriber[]" />
+      </div>
+      <div class="row">
+        <label>Subscribers with any of these tags</label>
+        <input type="text" name="tag[]" />
+        <!-- FIXME: make convenient with JS -->
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <input type="hidden" name="mail" lquery="(val _id)"/>
+      <input type="submit" value="Send" />
+    </form>
+  </c:using>
+</article>

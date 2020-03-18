@@ -1,0 +1,14 @@
+<article class="page mail log">
+  <header>
+    <span class="mail">Mail</span>
+    <span class="subscriber">Subscriber</span>
+    <span class="time">Send Time</span>
+  </header>
+  <ul class="log" iterate="log">
+    <li class="receipt">
+      <span class="mail" lquery="(text mail)">mail</span>
+      <span class="subscriber" lquery="(text subscriber)">Subscriber</span>
+      <time class="time" lquery="(time time)">2020</time>
+    </li>
+  </ul>
+</article>

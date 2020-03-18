@@ -8,9 +8,34 @@
 
 (defvar *mail-queue-thread* NIL)
 
+(defun enqueue-email (mail &key target time)
+  (let* ((time (or time 0))
+         (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field mail "campaign")))))
+         (host (dm:field campaign "host")))
+    (flet ((send (subscriber-id)
+             (db:insert 'mail-queue `(("host" . ,host)
+                                      ("subscriber" . ,subscriber-id)
+                                      ("mail" . ,(dm:id mail))
+                                      ("time" . ,time)))))
+      (unless target
+        (setf target campaign))
+      (etypecase target
+        (dm:data-model
+         (ecase (dm:collection target)
+           (subscriber
+            (send (dm:id target)))
+           (tag
+            (mapcar #'send (db:iterate 'tab-table (db:query (:= 'tag (dm:id target)))
+                                       (lambda (r) (gethash "subscriber" r) :fields '("subscriber") :accumulate T))))
+           (campaign
+            (mapcar #'send (db:iterate 'subscriber (db:query (:= 'campaign (dm:id target)))
+                                       (lambda (r) (gethash "_id" r)) :fields '("_id") :accumulate T)))))
+        (db:id
+         (send target))))))
+
 (defun send-queue (queue)
-  (send-mail (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))
-             (dm:get-one 'subscriber (db:query (:= '_id (dm:field queue "subscriber")))))
+  (send-email (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))
+              (dm:get-one 'subscriber (db:query (:= '_id (dm:field queue "subscriber")))))
   (dm:delete queue))
 
 (defun process-send-queue-for-host (host)

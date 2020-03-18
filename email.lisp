@@ -42,18 +42,18 @@
              (dm:field host "port"))
     ;; FIXME: better timeouts on unreachable host
     (cl-smtp:send-email
-     (dm:field host "hostname")
+     (copy-seq (dm:field host "hostname"))
      (dm:field host "address")
      to subject plaintext
      :html-message html
-     :extra-headers `(("X-Mailer" . "Courier Mailer")
+     :extra-headers `(("X-Mailer" "Courier Mailer")
                       ,@(when campaign
-                          `(("X-Campaign" . ,(princ-to-string campaign))
-                            ("X-campaignid" . ,(princ-to-string campaign))
-                            ("List-ID" . ,(princ-to-string campaign))))
+                          `(("X-Campaign" ,(princ-to-string campaign))
+                            ("X-campaignid" ,(princ-to-string campaign))
+                            ("List-ID" ,(princ-to-string campaign))))
                       ,@(when unsubscribe
-                          `(("List-Unsubscribe" . ,unsubscribe)
-                            ("List-Unsubscribe-Post" . "List-Unsubscribe=One-Click"))))
+                          `(("List-Unsubscribe" ,unsubscribe)
+                            ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
      :ssl (ecase (dm:field host "encryption")
             (0 NIL) (1 :starttls) (2 :tls))
      :port (dm:field host "port")
@@ -86,7 +86,7 @@
   (apply #'compile-email (dm:field campaign "template")
          (mail-template-args campaign mail subscriber)))
 
-(defun send-mail (mail subscriber)
+(defun send-email (mail subscriber)
   (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
   (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
          (host (ensure-host (dm:field campaign "host")))
@@ -96,4 +96,7 @@
           html
           :reply-to (dm:field campaign "reply-to")
           :campaign (dm:field mail "campaign")
-          :unsubscribe (unsubscribe-url subscriber))))
+          :unsubscribe (unsubscribe-url subscriber))
+    (db:insert 'mail-log `(("mail" . ,(dm:id mail))
+                           ("subscriber" . ,(dm:id subscriber))
+                           ("time" . ,(get-universal-time))))))

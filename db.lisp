@@ -44,6 +44,7 @@
 
   (db:create 'subscriber
              '((campaign (:id campaign))
+               (name (:varchar 64))
                (address (:varchar 64))
                (signup-time (:integer 5))
                (confirmed :boolean))
@@ -244,13 +245,14 @@
 (defun list-attributes (campaign)
   (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((name :asc))))
 
-(defun make-subscriber (campaign address attributes &optional confirmed)
+(defun make-subscriber (campaign name address attributes &optional confirmed)
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
       (error "You are already subscribed!"))
     (dm:with-model subscriber ('subscriber NIL)
       (setf (dm:field subscriber "campaign") (dm:id campaign))
+      (setf (dm:field subscriber "name") name)
       (setf (dm:field subscriber "address") address)
       (setf (dm:field subscriber "signup-time") (get-universal-time))
       (setf (dm:field subscriber "confirmed") confirmed)
@@ -259,7 +261,7 @@
       (loop for (attribute . value) in attributes
             do (dm:with-model attribute-value ('attribute-value NIL)
                  (setf (dm:field attribute-value "attribute") (ensure-id attribute))
-                 (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
+                 (setf (dm:field attribute-value "subscriber") (print (dm:id subscriber)))
                  (setf (dm:field attribute-value "value") value)
                  (dm:insert attribute-value)))
       subscriber)))
@@ -302,13 +304,12 @@
   (when save (dm:save mail))
   mail)
 
-(defun ensure-mail (campaign mail-ish &optional (user (auth:current)))
+(defun ensure-mail (mail-ish)
   (or
    (etypecase mail-ish
      (dm:data-model mail-ish)
-     (string (dm:get-one 'mail (db:query (:and (:= 'campaign (dm:id (ensure-campaign campaign user)))
-                                               (:= 'title mail-ish)))))
-     (db:id (dm:get-one 'mail (db:query (:= '_id mail-ish)))))
+     (db:id (dm:get-one 'mail (db:query (:= '_id mail-ish))))
+     (string (ensure-mail (db:ensure-id mail-ish))))
    (error 'request-not-found :message "No such mail.")))
 
 (defun delete-mail (mail)
@@ -369,13 +370,12 @@
       (when save (dm:insert tag))
       tag)))
 
-(defun ensure-tag (campaign tag-ish &optional (user (auth:current)))
+(defun ensure-tag (tag-ish)
   (or
    (etypecase tag-ish
      (dm:data-model tag-ish)
-     (string (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:id (ensure-campaign campaign user)))
-                                              (:= 'title tag-ish)))))
-     (db:id (dm:get-one 'tag (db:query (:= '_id tag-ish)))))
+     (db:id (dm:get-one 'tag (db:query (:= '_id tag-ish))))
+     (string (ensure-tag (db:ensure-id tag-ish))))
    (error 'request-not-found :message "No such tag.")))
 
 (defun delete-tag (tag)

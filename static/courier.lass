@@ -72,7 +72,6 @@
      :background (hex FFFFFF)
      (nav :display block)))
    (>main
-    :margin 1em
     (.box
      :position fixed
      :top 0 :left 50%
@@ -92,6 +91,7 @@
      :color (hex FFFFFF)))
    (>footer
     :margin-top 1em
+    :margin-bottom 0.5em
     :text-align center
     :font-size 0.8em))
 
@@ -135,7 +135,8 @@
     :display flex
     (>label
      :display inline-block
-     :min-width 10em)
+     :margin 0 1em 0 0
+     :min-width 50%)
     ((:or >input >select >textarea >div)
      :flex-grow 1)
     (>div
@@ -163,12 +164,11 @@
     :padding-left 1em
     :padding-right 1em))
 
-  ((:or .page.edit)
+  ((:and .page (:or .edit .list .send))
    :max-width 800px
-   :margin 0 auto)
+   :margin 1em auto)
   (.page.list
    :max-width 1024px
-   :margin 0 auto
    (>ul
     :border-left 2px solid (hex AAAAAA)
     :list-style none
@@ -196,4 +196,41 @@
      (select :flex-grow 0
              :margin 0 0.1em))))
   (.page.mail.edit
-   (textarea[name=body] :min-height 20em)))
+   (textarea[name=body] :min-height 20em))
+  (.page.mail.log
+   :max-width 1024px
+   :margin 1em auto
+   ((:or .mail .subscriber .time)
+    :padding 0.1em 0.2em)
+   (.mail :width 30%)
+   (.subscriber :width 30%)
+   (.time :flex-grow 1 :text-align right)
+   (header
+    :display flex
+    :border 1px solid (hex AAAAAA)
+    :border-radius 0.25em 0.25em 0 0)
+   (ul.log
+    :border 1px solid (hex AAAAAA)
+    :border-top none
+    :list-style none
+    :padding 0
+    :margin 0
+    (li.receipt
+     :display flex
+     :position relative)))
+  (.page.campaign.subscription
+   :background (hex E0E0E0)
+   :min-height 80vh
+   :min-height (calc (- 100vh 6em))
+   :padding 1em
+   (h1
+    :margin 0
+    :text-align center
+    :font-size 3em)
+   (form
+    :max-width 500px
+    :margin 1em auto
+    :background (hex FFFFFF)
+    :padding 1em
+    (.row
+     :margin 0.5em 0))))

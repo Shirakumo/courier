@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Confirm your subscription for <c:splice lquery="(text campaign)"/></title>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Confirm your subscription for <c:splice lquery="(text campaign)"/></h1>
+    </div>
+    <div class="main">
+      <p>
+        Hello, <c:splice lquery="(text recipient)"/>
+      </p>
+      <p>
+        You have signed up for the <c:splice lquery="(text campaign)"/> mailing list. To confirm your subscription, please visit the link below.
+      </p>
+      <a class="block" lquery="(attr :href link) (text link)">URL</a>
+      <p>
+        If this was not you, or you would like to cancel your subscription, you don't need to do anything.
+      </p>
+    </div>
+    <div class="footer">
+      &copy; <span lquery="(time T)">2019</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>
+      Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>
+    </div>
+  </body>
+</html>

@@ -8,6 +8,7 @@
 
 ;; FIXME: check access more thoroughly for objects that can't be checked against author immediately:
 ;;        mail, tag, triggers, subscribers
+;; FIXME: prune unconfirmed subscribers after a day
 
 (defun send-confirm-host (host &optional (user (auth:current)))
   (send-templated host (or (user:field "email" user)
@@ -20,6 +21,16 @@
                               :query `(("host" . ,(princ-to-string (dm:id host)))
                                        ("token" . ,(hash (dm:id host)))
                                        ("browser" . "true")))))
+
+(defun send-confirm-subscription (campaign subscriber)
+  (let ((host (dm:get-one 'host (db:query (:= '_id (dm:field campaign "host"))))))
+    (send-templated host (dm:field subscriber "address")
+                    (@template "email/confirm-subscription.ctml")
+                    :campaign (dm:field campaign "title")
+                    :recipient (dm:field subscriber "name")
+                    :link (url> "courier/api/courier/subscription/confirm"
+                                :query `(("id" . ,(generate-id subscriber))
+                                         ("browser" . "true"))))))
 
 (define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier))
   (check-title title)
@@ -138,7 +149,7 @@
 (define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier))
   (check-title title)
   (db:with-transaction ()
-    (let* ((mail (ensure-mail NIL (db:ensure-id mail)))
+    (let* ((mail (ensure-mail mail))
            (campaign (ensure-campaign (dm:field mail "campaign"))))
       (setf-dm-fields mail title subject body)
       (dm:save mail)
@@ -149,7 +160,7 @@
 
 (define-api courier/mail/delete (mail) (:access (perm courier))
   (db:with-transaction ()
-    (let* ((mail (ensure-mail NIL (db:ensure-id mail)))
+    (let* ((mail (ensure-mail mail))
            (campaign (ensure-campaign (dm:field mail "campaign"))))
       (delete-mail mail)
       (if (string= "true" (post/get "browser"))
@@ -157,37 +168,71 @@
                           :query `(("message" . "Mail deleted."))))
           (api-output NIL)))))
 
+(define-api courier/mail/test (mail) (:access (perm courier))
+  (let ((mail (ensure-mail mail)))
+    (enqueue-email mail :target  :time time)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/campaign/~a/mail/~a/" (dm:field mail "campaign") (dm:id mail))
+                        :query `(("message" . "Mail sent."))))
+        (api-output NIL))))
+
+(define-api courier/mail/send (mail &optional subscriber[] tag[] campaign time) (:access (perm courier))
+  (let ((mail (ensure-mail mail)))
+    (dolist (subscriber subscriber[])
+      (when (or* subscriber)
+        (enqueue-email mail :target (db:ensure-id subscriber) :time time)))
+    (dolist (tag tag[])
+      (when (or* tag)
+        (enqueue-email mail :target (ensure-tag tag) :time time)))
+    (when (or* campaign)
+      (enqueue-email mail :target (ensure-campaign (db:ensure-id campaign)) :time time))
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/campaign/~a/mail/~a/" (dm:field mail "campaign") (dm:id mail))
+                        :query `(("message" . "Mail sent."))))
+        (api-output NIL))))
 
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
-(define-api courier/campaign/subscribe (campaign address fields[] values[]) ()
-  (let* ((campaign (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign)))))
-         (attributes (loop for field in fields[]
-                           for value in values[]
-                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
-                           do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
-                                (error "Invalid attribute field."))
-                           collect (cons attribute value)))
-         (subscriber (make-subscriber campaign address attributes)))
-    (if (string= "true" (post/get "browser"))
-        (redirect (url> "courier/subscribe/"
-                        :query `(("action" . "subscribed")
-                                 ("campaign" . ,(dm:id campaign)))))
-        (api-output subscriber))))
+(define-api courier/subscription/new (campaign name address &optional fields[] values[]) ()
+  (db:with-transaction ()
+    (let* ((campaign (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign)))))
+           (attributes (loop for field in fields[]
+                             for value in values[]
+                             for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
+                             do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
+                                  (error "Invalid attribute field."))
+                             collect (cons attribute value)))
+           (subscriber (make-subscriber campaign name address attributes)))
+      (send-confirm-subscription campaign subscriber)
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> "courier/subscription"
+                          :query `(("action" . "subscribed")
+                                   ("campaign" . ,(princ-to-string (dm:id campaign))))))
+          (api-output subscriber)))))
 
-(define-api courier/campaign/unsubscribe (id) ()
-  (let* ((subscriber (dm:get-one 'subscriber (db:query (:= '_id (decode-id id)))))
+(define-api courier/subscription/confirm (id) ()
+  (let ((subscriber (dm:get-one 'subscriber (db:query (:= '_id (first (decode-id id)))))))
+    (setf (dm:field subscriber "confirmed") T)
+    (dm:save subscriber)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/subscription"
+                        :query `(("action" . "confirmed")
+                                 ("campaign" . ,(princ-to-string (dm:field subscriber "campaign"))))))
+        (api-output NIL))))
+
+(define-api courier/subscription/delete (id) ()
+  (let* ((subscriber (dm:get-one 'subscriber (db:query (:= '_id (first (decode-id id))))))
          (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field subscriber "campaign"))))))
     (delete-subscriber subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/unsubscribe")
+        (redirect (url> (format NIL "courier/subscription")
                         :query `(("action" . "unsubscribed")
-                                 ("campaign" . ,(dm:id campaign)))))
-        (api-output "Ok."))))
+                                 ("campaign" . ,(princ-to-string (dm:id campaign))))))
+        (api-output NIL))))
 
 (defun unsubscribe-url (subscriber)
-  (url> "courier/unsubscribe" 
+  (url> "courier/api/courier/subscription/delete" 
         :query `(("id" . ,(generate-id subscriber))
                  ("browser" . "true"))))
 
