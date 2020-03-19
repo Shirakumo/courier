@@ -64,7 +64,7 @@
 
 (define-page campaign-subscribers "courier/^campaign/([^/]+)/subscribers(?:/([^/]+))?" (:uri-groups (campaign page) :access (perm courier))
   (let ((campaign (ensure-campaign campaign))
-        (page (or (ignore-errors  (parse-integer (print page))) 0)))
+        (page (or (ignore-errors  (parse-integer page)) 0)))
     (render-page (format NIL "~a Subscribers" (dm:field campaign "title"))
                  (@template "campaign-subscribers.ctml")
                  :campaign campaign
@@ -129,7 +129,7 @@
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
   (render-page "Tags"
                (@template "tag-list.ctml")
-               :tags (list-tags campaign)
+               :tags (list-tags campaign)a_
                :campaign campaign))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
@@ -153,7 +153,7 @@
 (define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members(?:/([^/]+))?$" (:uri-groups (campaign tag page) :access (perm courier))
   (let ((campaign (ensure-campaign campaign))
         (tag (ensure-tag tag))
-        (page (or (ignore-errors  (parse-integer (print page))) 0)))
+        (page (or (ignore-errors (parse-integer page)) 0)))
     (render-page (format NIL "~a Members" (dm:field tag "title"))
                  (@template "campaign-subscribers.ctml")
                  :campaign campaign

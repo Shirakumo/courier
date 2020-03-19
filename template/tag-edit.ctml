@@ -1,0 +1,68 @@
+<article class="page tag edit">
+  <c:using value="tag">
+    <form method="post">
+      <div class="row">
+        <label for="host">Campaign:</label>
+        <input type="hidden" name="campaign" lquery="(val campaign)" />
+        <input type="text" readonly
+               id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
+      </div>
+      <div class="row">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row">
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" lquery="(text description)" />
+      </div>
+      <div class="row">
+        <label>Tag is added:</label>
+        <div>
+          <ul iterate="(courier::triggers *)" class="triggers">
+            <li class="trigger">
+              <a class="button remove-trigger">
+                <i class="fas fa-trash"></i>
+              </a>
+              <input type="text" name="to-mail[]" lquery="(val to-mail)"/>
+              <input type="text" name="to-link[]" lquery="(val to-link)"/>
+              <input type="number" name="time-offset[]" step="1" min="0" lquery="(val time-offset)"/>
+              <span>if user</span>
+              <input type="hidden" name="tag-count[]" lquery="(val (length (courier::trigger-tags *)))" />
+              <ul iterate="(courier::trigger-tags *)" class="tags">
+                <li class="tag">
+                  <input type="checkbox" name="tag-inverted[]" lquery="(attr :checked inverted)"/>
+                  <input type="text" name="tag-title[]" lquery="(val title)"/>
+                  <a class="button remove-tag">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </li>
+              </ul>
+              <a class="button add-tag">
+                <i class="fas fa-plus-circle"></i>
+              </a>
+            </li>
+          </ul>
+          <a class="button add-trigger">
+            <i class="fas fa-plus-circle"></i>
+            Add Trigger
+          </a>
+        </div>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="tag" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/tag/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/tag/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Tag" @formaction="courier/api/courier/tag/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+  </c:using>
+</article>
+<script @src="/static/courier/courier.js"></script>

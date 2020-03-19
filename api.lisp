@@ -191,6 +191,58 @@
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
 
+(define-api courier/tag/new (campaign title &optional description to-mail[] to-link[] time-offset[] tag-count[] tag-inverted[] tag-title[]) (:access (perm courier))
+  (let ((campaign (ensure-campaign (db:ensure-id campaign))))
+    (let ((tag (make-tag campaign :title title :description description
+                                  :triggers
+                         (loop for to-mail in to-mail[]
+                               for to-link in to-link[]
+                               for time-offset in time-offset[]
+                               for tag-count in tag-count[]
+                               collect (list :to-mail (db:ensure-id to-mail)
+                                             :to-link (db:ensure-id to-link)
+                                             :time-offset (parse-integer time-offset)
+                                             :constraints (loop repeat tag-count
+                                                                collect (list (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:id campaign))
+                                                                                                               (:= 'title (pop tag-title[])))))
+                                                                              (pop tag-inverted[]))))))))
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> (format NIL "courier/campaign/~a/tag" (dm:field campaign "title"))
+                          :query `(("message" . "Tag created."))))
+          (api-output tag)))))
+
+(define-api courier/tag/edit (tag &optional title description to-mail[] to-link[] time-offset[] tag-count[] tag-inverted[] tag-title[]) (:access (perm courier))
+  (let ((tag (ensure-tag tag)))
+    (edit-tag tag
+              :title title
+              :description description
+              :triggers
+              (loop for to-mail in to-mail[]
+                    for to-link in to-link[]
+                    for time-offset in time-offset[]
+                    for tag-count in tag-count[]
+                    collect (list :to-mail (when (or* to-mail) (db:ensure-id to-mail))
+                                  :to-link (when (or* to-link) (db:ensure-id to-link))
+                                  :time-offset (parse-integer time-offset)
+                                  :constraints (loop repeat (parse-integer tag-count)
+                                                     collect (list (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:field tag "campaign"))
+                                                                                                    (:= 'title (pop tag-title[])))))
+                                                                   (pop tag-inverted[]))))))
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/campaign/~a/tag" (dm:field tag "campaign"))
+                        :query `(("message" . "Tag edited."))))
+        (api-output tag))))
+
+(define-api courier/tag/delete (tag) (:access (perm courier))
+  (db:with-transaction ()
+    (let* ((tag (ensure-tag tag))
+           (campaign (ensure-campaign (dm:field tag "campaign"))))
+      (delete-tag tag)
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> (format NIL "courier/campaign/~a/tag/" (dm:field campaign "title"))
+                          :query `(("message" . "Tag deleted."))))
+          (api-output NIL)))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
