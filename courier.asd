@@ -27,6 +27,7 @@
                (:interface :auth)
                :r-data-model
                :r-clip
+               :i-json
                :ratify
                :alexandria
                :crypto-shortcuts

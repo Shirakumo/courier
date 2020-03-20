@@ -21,6 +21,21 @@
         <label for="body">Body:</label>
         <textarea id="body" name="body" lquery="(text body)" />
       </div>
+      <c:when test="_id">
+        <div class="row">
+          <label>Is sent on:</label>
+          <div>
+            <ul class="triggers" iterate="(courier::triggers *)">
+              <li class="trigger">
+                <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
+              </li>
+            </ul>
+            <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id">
+              <i class="fas fa-plus-circle"></i> Add a trigger
+            </a>
+          </div>
+        </div>
+      </c:when>
       <input type="hidden" name="browser" value="true" />
       <div class="row">
         <c:if test="_id">

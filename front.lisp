@@ -129,7 +129,7 @@
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
   (render-page "Tags"
                (@template "tag-list.ctml")
-               :tags (list-tags campaign)a_
+               :tags (list-tags campaign)
                :campaign campaign))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier))
@@ -160,6 +160,35 @@
                  :subscribers (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id tag)))
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
                  :next-page (1+ page))))
+
+(define-page trigger-list "courier/^campaign/([^/]+)/trigger/?$" (:uri-groups (campaign) :access (perm courier))
+  (let ((campaign (ensure-campaign campaign)))
+    (render-page "Triggers"
+                 (@template "trigger-list.ctml")
+                 :triggers (list-triggers campaign)
+                 :campaign campaign)))
+
+(define-page trigger-new ("courier/^campaign/([^/]+)/trigger/new" 1) (:uri-groups (campaign) :access (perm courier))
+  (let ((campaign (ensure-campaign campaign))
+        (source (cond ((string= "mail" (post/get "source-type"))
+                       (ensure-mail (post/get "source-id")))
+                      ((string= "link" (post/get "source-type"))
+                       (ensure-link (post/get "source-id")))
+                      (T (dm:hull 'mail))))
+        (target (cond ((string= "mail" (post/get "target-type"))
+                       (ensure-mail (post/get "target-id")))
+                      ((string= "tag" (post/get "target-type"))
+                       (ensure-tag (post/get "target-id")))
+                      (T (dm:hull 'mail)))))
+    (render-page "New Trigger"
+                 (@template "trigger-edit.ctml")
+                 :trigger (make-trigger campaign source target :save NIL))))
+
+(define-page trigger-edit "courier/^campaign/([^/]+)/trigger/([^/]+)/edit$" (:uri-groups (campaign trigger) :access (perm courier))
+  (let ((trigger (ensure-trigger trigger)))
+    (render-page (format NIL "Edit ~a" (dm:id trigger))
+                 (@template "trigger-edit.ctml")
+                 :trigger trigger)))
 
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))
   (let ((mail (ensure-mail mail)))

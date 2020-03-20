@@ -2,17 +2,26 @@
   <c:using value="mail">
     <form @action="courier/api/courier/mail/send" method="post">
       <div class="row">
-        <label for="campaign">All campaign subscribers</label>
-        <input type="checkbox" name="campaign" id="campaign" lquery="(val campaign)" />
+        <label>Mail</label>
+        <input type="text" readonly lquery="(val title)"/>
       </div>
       <div class="row">
-        <label>These subscribers</label>
-        <input type="text" name="subscriber[]" />
+        <label for="target">To</label>
+        <div class="type-select" lquery="(data :campaign campaign)">
+          <select name="target-type" id="target" lquery="(select target-type)">
+            <option value="4">campaign</option>
+            <option value="2">tagged</option>
+            <option value="3">subscriber</option>
+          </select>
+          <input type="courier-id" name="target-id" required lquery="(val target-id)" placeholder="id" />
+        </div>
       </div>
       <div class="row">
-        <label>Subscribers with any of these tags</label>
-        <input type="text" name="tag[]" />
-        <!-- FIXME: make convenient with JS -->
+        <label for="time">At</label>
+        <input type="datetime-local" id="time" name="time" 
+               lquery="(attr :min (format-machine-date (get-universal-time))) (val (format-machine-date (get-universal-time)))"
+               pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}" />
+        <span>UTC</span>
       </div>
       <input type="hidden" name="browser" value="true" />
       <input type="hidden" name="mail" lquery="(val _id)"/>
@@ -20,3 +29,5 @@
     </form>
   </c:using>
 </article>
+<script @src="/static/courier/courier.js"></script>
+

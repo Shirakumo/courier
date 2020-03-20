@@ -16,41 +16,23 @@
         <label for="description">Description:</label>
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
-      <div class="row">
-        <label>Tag is added:</label>
-        <div>
-          <ul iterate="(courier::triggers *)" class="triggers">
-            <li class="trigger">
-              <a class="button remove-trigger">
-                <i class="fas fa-trash"></i>
-              </a>
-              <input type="text" name="to-mail[]" lquery="(val to-mail)"/>
-              <input type="text" name="to-link[]" lquery="(val to-link)"/>
-              <input type="number" name="time-offset[]" step="1" min="0" lquery="(val time-offset)"/>
-              <span>if user</span>
-              <input type="hidden" name="tag-count[]" lquery="(val (length (courier::trigger-tags *)))" />
-              <ul iterate="(courier::trigger-tags *)" class="tags">
-                <li class="tag">
-                  <input type="checkbox" name="tag-inverted[]" lquery="(attr :checked inverted)"/>
-                  <input type="text" name="tag-title[]" lquery="(val title)"/>
-                  <a class="button remove-tag">
-                    <i class="fas fa-trash"></i>
-                  </a>
-                </li>
-              </ul>
-              <a class="button add-tag">
-                <i class="fas fa-plus-circle"></i>
-              </a>
-            </li>
-          </ul>
-          <a class="button add-trigger">
-            <i class="fas fa-plus-circle"></i>
-            Add Trigger
-          </a>
+      <c:when test="_id">
+        <div class="row">
+          <label>Is added on:</label>
+          <div>
+            <ul class="triggers" iterate="(courier::triggers *)">
+              <li class="trigger">
+                <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
+              </li>
+            </ul>
+            <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=tag&target-id={1} campaign _id">
+              <i class="fas fa-plus-circle"></i> Add a trigger
+            </a>
+          </div>
         </div>
-      </div>
-      <input type="hidden" name="browser" value="true" />
+      </c:when>
       <div class="row">
+        <input type="hidden" name="browser" value="true" />
         <c:if test="_id">
           <c:then>
             <input type="hidden" name="tag" lquery="(val _id)" />
@@ -65,4 +47,3 @@
     </form>
   </c:using>
 </article>
-<script @src="/static/courier/courier.js"></script>

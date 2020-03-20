@@ -1,0 +1,18 @@
+<article class="page trigger list">
+  <ul class="triggers" iterate="triggers">
+    <li class="trigger">
+      <a class="title" @href="courier/campaign/{0}/trigger/{1}/edit campaign _id" lquery="(text _id)">Trigger</a>
+      <span class="description" lquery="(text description)"></span>
+      <nav class="actions">
+        <a class="button" href="#" @href="courier/campaign/{0}/trigger/{1}/edit campaign _id">
+          <i class="fas fa-edit"></i>
+          Edit
+        </a>
+      </nav>
+    </li>
+  </ul>
+  <a class="button" href="#" @href="courier/campaign/{0}/trigger/new (clip campaign :title)">
+    <i class="fas fa-plus-circle"></i>
+    New Trigger
+  </a>
+</article>

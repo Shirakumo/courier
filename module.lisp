@@ -7,6 +7,7 @@
 (in-package #:modularize-user)
 (define-module #:courier
   (:use #:cl #:radiance)
+  (:shadow #:trigger)
   (:export))
 (in-package #:courier)
 

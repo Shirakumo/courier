@@ -112,38 +112,24 @@
                (time (:integer 5)))
              :indices '(link subscriber))
 
-  (db:create 'mail-trigger
-             '((mail (:id mail))
-               (to-mail (:id mail))
-               (to-link (:id link))
-               (time-offset (:integer 5)))
-             :indices '(mail to-mail to-link))
-
-  (db:create 'mail-trigger-tags
-             '((mail-trigger (:id mail-trigger))
-               (tag (:id tag))
-               (inverted :boolean))
-             :indices '(mail-trigger))
-
-  (db:create 'tag-trigger
-             '((tag (:id tag))
-               (to-mail (:id mail))
-               (to-link (:id link))
-               (time-offset (:integer 5)))
-             :indices '(tag to-mail to-link))
-
-  (db:create 'tag-trigger-tags
-             '((tag-trigger (:id tag-trigger))
-               (tag (:id tag))
-               (inverted :boolean))
-             :indices '(tag-trigger)))
+  (db:create 'trigger
+             '((campaign (:id campaign))
+               (description :text)
+               (source-type (:integer 1))
+               (source-id :id)
+               (target-type (:integer 1))
+               (target-id :id)
+               (time-offset (:integer 5))
+               (tag-constraint :text))
+             :indices '(campaign source-type source-id)))
 
 ;; FIXME: check values
 
 (defun ensure-id (id-ish)
   (etypecase id-ish
     (db:id id-ish)
-    (dm:data-model (dm:id id-ish))))
+    (dm:data-model (dm:id id-ish))
+    (T (db:ensure-id id-ish))))
 
 (defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
@@ -229,9 +215,9 @@
    (etypecase campaign-ish
      (dm:data-model campaign-ish)
      (db:id (dm:get-one 'campaign (db:query (:= '_id campaign-ish))))
-     (string (or (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign-ish))))
-                 (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
-                                                       (:= 'title campaign-ish)))))))
+     (string (or (dm:get-one 'campaign (db:query (:and (:= 'author (user:id user))
+                                                       (:= 'title campaign-ish))))
+                 (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign-ish)))))))
    (error 'request-not-found :message "No such campaign.")))
 
 (defun delete-campaign (campaign-ish &optional (user (auth:current)))
@@ -322,74 +308,20 @@
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
 
-(defun make-mail-trigger (mail &key to-mail to-link (time-offset 0) constraints (save T))
-  (dm:with-model trigger ('mail-trigger NIL)
-    (setf-dm-fields trigger time-offset)
-    (setf (dm:field trigger "mail") (dm:id mail))
-    (when to-mail (setf (dm:field trigger "to-mail") (dm:id to-mail)))
-    (when to-link (setf (dm:field trigger "to-link") (dm:id to-link)))
-    (setf (dm:field trigger "time-offset") time-offset)
-    (when save
-      (db:with-transaction ()
-        (dm:insert trigger)
-        (loop for (tag inverted) in constraints
-              do (db:insert 'mail-trigger-tags `(("mail-trigger" . ,(dm:id trigger))
-                                                 ("tag" . ,(dm:id tag))
-                                                 ("inverted" . ,inverted))))))
-    trigger))
-
-(defun edit-mail-trigger (mail-trigger &key (to-mail NIL to-mail-p) (to-link NIL to-link-p) time-offset constraints (save T))
-  (setf-dm-fields mail-trigger time-offset)
-  (when to-mail-p (setf (dm:field mail-trigger "to-mail") (dm:id to-mail)))
-  (when to-link-p (setf (dm:field mail-trigger "to-link") (dm:id to-link)))
-  (when save
-    (db:with-transaction ()
-      (dm:save mail-trigger)
-      (db:remove 'mail-trigger-tags (db:query (:= 'mail-trigger (dm:id mail-trigger))))
-      (loop for (tag inverted) in constraints
-            do (db:insert 'mail-trigger-tags `(("mail-trigger" . ,(dm:id mail-trigger))
-                                               ("tag" . ,(dm:id tag))
-                                               ("inverted" . ,inverted))))))
-  mail-trigger)
-
-(defun delete-mail-trigger (mail-trigger)
-  (db:with-transaction ()
-    (db:remove 'mail-trigger-tags (db:query (:= 'mail-trigger (dm:id mail-trigger))))
-    (dm:delete mail-trigger)))
-
-(defun ensure-mail-trigger (mail-trigger-ish)
-  (or
-   (etypecase mail-trigger-ish
-     (dm:data-model mail-trigger-ish)
-     (db:id (dm:get-one 'mail-trigger (db:query (:= '_id mail-trigger-ish))))
-     (T (ensure-mail-trigger (db:ensure-id mail-trigger-ish))))
-   (error 'request-not-found :message "No such mail-trigger.")))
-
-(defun make-tag (campaign &key title description triggers (save T))
+(defun make-tag (campaign &key title description (save T))
   (let ((campaign (ensure-campaign campaign)))
     (check-title-exists 'tag title (db:query (:and (:= 'campaign (dm:id campaign))
                                                    (:= 'title title))))
     (dm:with-model tag ('tag NIL)
       (setf-dm-fields tag title description)
       (setf (dm:field tag "campaign") (dm:id campaign))
-      (when save
-        (db:with-transaction ()
-          (dm:insert tag)
-          (loop for args in triggers
-                do (apply #'make-tag-trigger tag args))))
+      (when save (dm:insert tag))
       tag)))
 
-(defun edit-tag (tag-ish &key title description triggers (save T))
+(defun edit-tag (tag-ish &key title description (save T))
   (let ((tag (ensure-tag tag-ish)))
     (setf-dm-fields tag title description)
-    (when save
-      (db:with-transaction ()
-        (dm:save tag)
-        ;; FIXME: suboptimal...
-        (db:remove (rdb:join (tag-trigger-tags tag-trigger) (tag-trigger _id)) (db:query (:= 'tag (dm:id tag))))
-        (db:remove 'tag-trigger (db:query (:= 'tag (dm:id tag))))
-        (loop for args in triggers
-              do (apply #'make-tag-trigger tag args))))
+    (when save (dm:save tag))
     tag))
 
 (defun ensure-tag (tag-ish)
@@ -409,55 +341,52 @@
   (let ((campaign (ensure-campaign campaign-ish user)))
     (dm:get 'tag (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
 
-(defun make-tag-trigger (tag &key to-mail to-link (time-offset 0) constraints (save T))
-  (dm:with-model trigger ('tag-trigger NIL)
-    (setf-dm-fields trigger time-offset)
-    (setf (dm:field trigger "tag") (dm:id tag))
-    (when to-mail (setf (dm:field trigger "to-mail") (dm:id to-mail)))
-    (when to-link (setf (dm:field trigger "to-link") (dm:id to-link)))
-    (setf (dm:field trigger "time-offset") time-offset)
-    (when save
-      (db:with-transaction ()
-        (dm:insert trigger)
-        (loop for (tag inverted) in constraints
-              do (db:insert 'tag-trigger-tags `(("tag-trigger" . ,(dm:id trigger))
-                                                ("tag" . ,(dm:id tag))
-                                                ("inverted" . ,inverted))))))
+(defun make-trigger (campaign source target &key description (time-offset 0) tag-constraint (save T))
+  (dm:with-model trigger ('trigger NIL)
+    (setf-dm-fields trigger campaign description time-offset tag-constraint)
+    (setf (dm:field trigger "source-id") (dm:id source))
+    (setf (dm:field trigger "source-type") (ecase (dm:collection source)
+                                             (mail 0)
+                                             (link 1)))
+    (setf (dm:field trigger "target-id") (dm:id target))
+    (setf (dm:field trigger "target-type") (ecase (dm:collection target)
+                                             (mail 0)
+                                             (tag 2)))
+    (when save (dm:insert trigger))
     trigger))
 
-(defun edit-tag-trigger (tag-trigger &key (to-mail NIL to-mail-p) (to-link NIL to-link-p) time-offset constraints (save T))
-  (setf-dm-fields tag-trigger time-offset)
-  (when to-mail-p (setf (dm:field tag-trigger "to-mail") (dm:id to-mail)))
-  (when to-link-p (setf (dm:field tag-trigger "to-link") (dm:id to-link)))
-  (when save
-    (db:with-transaction ()
-      (dm:save tag-trigger)
-      (db:remove 'tag-trigger-tags (db:query (:= 'tag-trigger (dm:id tag-trigger))))
-      (loop for (tag inverted) in constraints
-            do (db:insert 'tag-trigger-tags `(("tag-trigger" . ,(dm:id tag-trigger))
-                                               ("tag" . ,(dm:id tag))
-                                               ("inverted" . ,inverted))))))
-  tag-trigger)
+(defun edit-trigger (trigger &key description source target time-offset tag-constraint (save T))
+  (setf-dm-fields trigger description time-offset tag-constraint)
+  (when source
+    (setf (dm:field trigger "source-id") (dm:id source))
+    (setf (dm:field trigger "source-type") (ecase (dm:collection source)
+                                             (mail 0)
+                                             (link 1))))
+  (when target
+    (setf (dm:field trigger "target-id") (dm:id target))
+    (setf (dm:field trigger "target-type") (ecase (dm:collection target)
+                                             (mail 0)
+                                             (tag 2))))
+  (when save (dm:save trigger))
+  trigger)
 
-(defun ensure-tag-trigger (tag-trigger-ish)
+(defun ensure-trigger (trigger-ish)
   (or
-   (etypecase tag-trigger-ish
-     (dm:data-model tag-trigger-ish)
-     (db:id (dm:get-one 'tag-trigger (db:query (:= '_id tag-trigger-ish))))
-     (T (ensure-tag-trigger (db:ensure-id tag-trigger-ish))))
-   (error 'request-not-found :message "No such tag-trigger.")))
+   (etypecase trigger-ish
+     (dm:data-model trigger-ish)
+     (db:id (dm:get-one 'trigger (db:query (:= '_id trigger-ish))))
+     (T (ensure-trigger (db:ensure-id trigger-ish))))
+   (error 'request-not-found :message "No such trigger.")))
+
+(defun list-triggers (campaign)
+  (dm:get 'trigger (db:query (:= 'campaign (dm:id campaign)))))
 
 (defun triggers (thing)
   (when (dm:id thing)
-    (ecase (dm:collection thing)
-      (tag (dm:get 'tag-trigger (db:query (:= 'tag (dm:id thing)))))
-      (mail (dm:get 'mail-trigger (db:query (:= 'mail (dm:id thing))))))))
-
-(defun trigger-tags (thing)
-  (when (dm:id thing)
-    (ecase (dm:collection thing)
-      (tag-trigger (dm:get (rdb:join (tag-trigger-tags tag) (tag _id)) (db:query (:= 'tag-trigger (dm:id thing)))))
-      (mail-trigger (dm:get (rdb:join (mail-trigger-tags tag) (tag _id)) (db:query (:= 'mail-trigger (dm:id thing))))))))
+    (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
+                                     (:= 'target-type (ecase (dm:collection thing)
+                                                        (mail 0)
+                                                        (tag 2))))))))
 
 (defun make-link (campaign &key url (save T))
   (let ((hash (cryptos:sha256 url :to :base64)))
@@ -517,3 +446,15 @@
       (db:insert 'mail-receipt `(("mail" . ,(ensure-id mail))
                                  ("subscriber" . ,(ensure-id subscriber))
                                  ("time" . ,(get-universal-time)))))))
+
+(defun resolve-typed (type id)
+  (let ((id (db:ensure-id id)))
+    (dm:get-one (ecase (etypecase type
+                         ((or symbol integer) type)
+                         (string (parse-integer type)))
+                  ((0 mail) 'mail)
+                  ((1 link) 'link)
+                  ((2 tag) 'tag)
+                  ((3 subscriber) 'subscriber)
+                  ((4 campaign) 'campaign))
+            (db:query (:= '_id id)))))
