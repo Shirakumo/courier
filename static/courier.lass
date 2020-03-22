@@ -152,6 +152,7 @@
       :padding 0)
      ((:or >.editor >textarea)
       :width 100%)))
+   (.template :display none !important)
    (input
     :position relative)
    (input[type=submit]
@@ -204,9 +205,11 @@
     (li
      :display flex
      :align-items center
+     :margin 0.2em 0
      (input :flex-grow 1)
      (select :flex-grow 0
-             :margin 0 0.1em))))
+             :margin 0 0.1em)
+     (input[type=checkbox] :flex-grow 0 :width auto))))
   (.page.mail.edit
    (textarea[name=body] :min-height 20em))
   (.page.mail.log

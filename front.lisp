@@ -211,6 +211,7 @@
                       :title (format NIL "Subscribe to ~a" (dm:field campaign "title"))
                       :description (dm:field campaign "description")
                       :campaign campaign
+                      :fields (list-attributes campaign)
                       :action (or (post/get "action") "subscribe")))))
 
 (define-page mail-view "courier/^view/(.+)" (:uri-groups (id))

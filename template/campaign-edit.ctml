@@ -4,7 +4,7 @@
       <div class="row">
         <label for="host">Host:</label>
         <select id="host" name="host" required iterate="(** :hosts)">
-          <option lquery="(val id) (text title)"></option>
+          <option lquery="(val _id) (text title)"></option>
         </select>
       </div>
       <div class="row">
@@ -24,14 +24,37 @@
       <div class="row">
         <label for="attributes">Attributes:</label>
         <div>
-          <ul class="attributes" iterate="(courier::list-attributes *)">
-            <li>
+          <ul class="attributes">
+            <li class="attribute template">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
+              </a>
               <input type="text" placeholder="Label" minlength="1" maxlength="32"
-                     id="attributes" name="attribute[]" lquery="(val title)" />
-              <select name="attribute-type[]" iterate="(** :attribute-types)">
-                <option lquery="(val (car *)) (text (cdr *)) (attr :selected (when (string= (car *) (** :type))))">Name</option>
+                     data-name="attribute[]" />
+              <select data-name="attribute-type[]" iterate="(symbol-value 'courier::*attribute-types*)">
+                <option lquery="(val (first *)) (text (third *))">Name</option>
+              </select>
+              <select data-name="attribute-required[]">
+                <option value="false">optional</option>
+                <option value="true">required</option>
               </select>
             </li>
+            <c:splice iterate="(courier::list-attributes *)">
+              <li class="attribute">
+                <a class="button remove-self">
+                  <i class="fas fa-trash"></i>
+                </a>
+                <input type="text" placeholder="Label" minlength="1" maxlength="32"
+                       name="attribute[]" lquery="(val title)" />
+                <select name="attribute-type[]" iterate="(symbol-value 'courier::*attribute-types*)" lquery="(select type)">
+                  <option lquery="(val (first *)) (text (third *))">Name</option>
+                </select>
+                <select name="attribute-required[]" lquery="(select (if required :false :true))">
+                  <option value="false">optional</option>
+                  <option value="true">required</option>
+                </select>
+              </li>
+            </c:splice>
           </ul>
           <a class="button new-attribute"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
         </div>
@@ -42,6 +65,9 @@
           <nav>
             <a href="courier/help/template" title="Templating help" target="_blank">
               <i class="fas fa-info-circle"></i>
+            </a>
+            <a href="#" title="Preview" class="preview">
+              <i class="fas fa-eye"></i>
             </a>
           </nav>
           <textarea id="template" name="template" lquery="(text template)" />
@@ -63,6 +89,7 @@
     </form>
   </article>
 </c:using>
+<script @src="/static/courier/courier.js"></script>
 <script src="https://unpkg.com/codeflask/build/codeflask.min.js"></script>
 <script>
   const target = document.querySelector("#template");

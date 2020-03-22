@@ -33,7 +33,8 @@
                 <div class="row">
                   <label for="#" lquery="(attr :for title) (text title)">#</label>
                   <input type="hidden"  name="fields[]" lquery="(attr :value _id)" />
-                  <input type="text"  name="values[]" id="#" lquery="(attr :type type :id title :required required)" />
+                  <input type="text"  name="values[]" id="#"
+                         lquery="(attr :type (second (nth type courier::*attribute-types*)) :id title :required required)" />
                 </div>
               </c:splice>
               <input type="hidden" name="browser" value="true" />

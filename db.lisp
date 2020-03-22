@@ -7,14 +7,12 @@
 (in-package #:courier)
 
 (defparameter *attribute-types*
-  '(("name" . "Name")
-    ("text" . "Free-Form Text")
-    ("number" . "Number")
-    ("url" . "URL")
-    ("date" . "Date")
-    ("color" . "Color")
-    ("password" . "Password")
-    ("tel" . "Telephone Number")))
+  '((0 "text" "Free-Form Text")
+    (1 "number" "Number")
+    (2 "url" "URL")
+    (3 "date" "Date")
+    (4 "color" "Color")
+    (5 "tel" "Telephone Number")))
 
 (define-trigger db:connected ()
   (db:create 'host
@@ -53,7 +51,7 @@
   (db:create 'attribute
              '((campaign (:id campaign))
                (title (:varchar 32))
-               (type (:varchar 16))
+               (type (:integer 1))
                (required :boolean))
              :indices '(campaign))
 
@@ -67,7 +65,8 @@
              '((campaign (:id campaign))
                (title (:varchar 32))
                (subject (:varchar 128))
-               (body :text))
+               (body :text)
+               (time (:integer 5)))
              :indices '(campaign title))
 
   (db:create 'mail-receipt
@@ -174,40 +173,48 @@
     (setf-dm-fields campaign author title description reply-to template)
     (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
     (when save
-      (dm:insert campaign)
-      (loop for (attribute type required) in attributes
-            do (unless (find type *attribute-types* :key #'car :test #'string=)
-                 (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
-               (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
-                                       ("name" . ,attribute)
-                                       ("type" . ,type)
-                                       ("required" . ,required)))))
+      (db:with-transaction ()
+        (dm:insert campaign)
+        (loop for (attribute type required) in attributes
+              do (setf type (etypecase type
+                              (string (parse-integer type))
+                              (integer type)))
+                 (unless (find type *attribute-types* :key #'car)
+                   (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
+                 (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
+                                         ("title" . ,attribute)
+                                         ("type" . ,type)
+                                         ("required" . ,required))))))
     campaign))
 
 (defun edit-campaign (campaign &key host author title description reply-to template attributes (save T))
   (let ((campaign (ensure-campaign campaign)))
     (setf-dm-fields campaign host author title description reply-to template)
-    (db:with-transaction ()
-      (let ((existing (list-attributes campaign)))
-        (loop for (attribute type required) in attributes
-              for previous = (find attribute existing :key (lambda (dm) (dm:field dm "name")))
-              do (unless (find type *attribute-types* :key #'car :test #'string=)
-                   (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
-                 (cond (previous
-                        (setf existing (delete previous existing))
-                        (setf (dm:field previous "name") attribute)
-                        (setf (dm:field previous "type") type)
-                        (setf (dm:field previous "required") required)
-                        (dm:save previous))
-                       (T
-                        (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
-                                                ("name" . ,attribute)
-                                                ("type" . ,type)
-                                                ("required" . ,required))))))
-        (dolist (attribute existing)
-          (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
-          (dm:delete attribute))))
-    (when save (dm:save campaign))
+    (when save
+      (db:with-transaction ()
+        (dm:save campaign)
+        (let ((existing (list-attributes campaign)))
+          (loop for (attribute type required) in attributes
+                for previous = (find attribute existing :key (lambda (dm) (dm:field dm "name")) :test #'string=)
+                do (setf type (etypecase type
+                                (string (parse-integer type))
+                                (integer type)))
+                   (unless (find type *attribute-types* :key #'car)
+                     (error "Invalid attribute type ~s.~%Must be one of ~s." type (mapcar #'car *attribute-types*)))
+                   (cond (previous
+                          (setf existing (delete previous existing))
+                          (setf (dm:field previous "title") attribute)
+                          (setf (dm:field previous "type") type)
+                          (setf (dm:field previous "required") required)
+                          (dm:save previous))
+                         (T
+                          (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
+                                                  ("title" . ,attribute)
+                                                  ("type" . ,type)
+                                                  ("required" . ,required))))))
+          (dolist (attribute existing)
+            (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
+            (dm:delete attribute)))))
     campaign))
 
 (defun ensure-campaign (campaign-ish &optional (user (auth:current)))
@@ -230,7 +237,7 @@
   (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
 (defun list-attributes (campaign)
-  (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((name :asc))))
+  (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc))))
 
 (defun make-subscriber (campaign name address attributes &optional confirmed)
   (db:with-transaction ()
@@ -281,8 +288,8 @@
     (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
                                                     (:= 'title title))))
     (dm:with-model mail ('mail NIL)
-      (setf-dm-fields mail title subject body)
-      (setf (dm:field mail "campaign") (dm:id campaign))
+      (setf-dm-fields mail title subject body campaign)
+      (setf (dm:field mail "time") (get-universal-time))
       (when save (dm:insert mail))
       mail)))
 
@@ -313,8 +320,7 @@
     (check-title-exists 'tag title (db:query (:and (:= 'campaign (dm:id campaign))
                                                    (:= 'title title))))
     (dm:with-model tag ('tag NIL)
-      (setf-dm-fields tag title description)
-      (setf (dm:field tag "campaign") (dm:id campaign))
+      (setf-dm-fields tag campaign title description)
       (when save (dm:insert tag))
       tag)))
 
@@ -393,9 +399,7 @@
     (or (dm:get-one 'link (db:query (:and (:= 'campaign (dm:id campaign))
                                           (:= 'hash hash))))
         (dm:with-model link ('link NIL)
-          (setf (dm:field link "url") url)
-          (setf (dm:field link "hash") hash)
-          (setf (dm:field link "campaign") (dm:id campaign))
+          (setf-dm-fields link url hash campaign)
           (when save (dm:insert link))
           link))))
 

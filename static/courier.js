@@ -19,6 +19,8 @@ class Courier{
         }
 
         self.registerAll(".type-select", self.registerTypeSelect);
+        if(document.querySelector(".campaign.edit"))
+            self.registerCampaignForm(document.querySelector(".campaign.edit"));
     }
 
     apiCall(endpoint, args){
@@ -121,6 +123,32 @@ class Courier{
         var evt = document.createEvent("HTMLEvents");
         evt.initEvent("change", false, true);
         type.dispatchEvent(evt);
+    }
+
+    instantiateTemplate(element){
+        var copy = element.querySelector(".template").cloneNode(true);
+        copy.classList.remove("template");
+        copy.removeAttribute("data-name");
+        [].forEach.call(copy.querySelectorAll("[data-name]"), (el)=>{
+            el.setAttribute("name", el.dataset.name);
+        });
+        return copy;
+    }
+
+    registerCampaignForm(element){
+        var self = this;
+        var reg = (element)=>{
+            element.querySelector(".remove-self").addEventListener("click",()=>{
+                element.parentNode.removeChild(element);
+            });
+            return element;
+        };
+        [].forEach.call(element.querySelector(".attribute"), (el)=>{
+            if(!el.classList.contains("template")) reg(el);
+        });
+        element.querySelector(".new-attribute").addEventListener("click",()=>{
+            element.querySelector(".attributes").appendChild(reg(self.instantiateTemplate(element)));
+        });
     }
 }
 
