@@ -89,7 +89,6 @@
     </form>
   </article>
 </c:using>
-<script @src="/static/courier/courier.js"></script>
 <script src="https://unpkg.com/codeflask/build/codeflask.min.js"></script>
 <script>
   const target = document.querySelector("#template");

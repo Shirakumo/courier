@@ -19,6 +19,7 @@ class Courier{
         }
 
         self.registerAll(".type-select", self.registerTypeSelect);
+        self.registerAll(".button.confirm", self.registerConfirm);
         if(document.querySelector(".campaign.edit"))
             self.registerCampaignForm(document.querySelector(".campaign.edit"));
     }
@@ -90,11 +91,22 @@ class Courier{
         }
     }
 
-    registerAll(element, regger){
+    registerAll(query, regger){
         var self = this;
-        var elements = document.querySelectorAll(".type-select");
+        var elements = document.querySelectorAll(query);
         for(var i=0; i<elements.length; ++i)
             regger.apply(self, [elements[i]]);
+    }
+
+    registerConfirm(element){
+        element.addEventListener("click", (ev)=>{
+            if(confirm("Are you sure?")){
+                return true;
+            }else{
+                ev.preventDefault();
+                return false;
+            }
+        });
     }
 
     registerTypeSelect(element){

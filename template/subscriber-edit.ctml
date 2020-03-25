@@ -1,4 +1,4 @@
-<article class="page tag edit">
+<article class="page subscriber edit">
   <form method="post">
     <c:using value="campaign">
       <div class="row">

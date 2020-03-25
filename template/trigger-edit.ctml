@@ -58,4 +58,3 @@
     </form>
   </c:using>
 </article>
-<script @src="/static/courier/courier.js"></script>

@@ -152,26 +152,26 @@
    (etypecase host-ish
      (dm:data-model host-ish)
      (db:id (dm:get-one 'host (db:query (:= '_id host-ish))))
-     (string (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
-                                               (:= 'title host-ish))))))
+     (T (or (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
+                                              (:= 'title host-ish))))
+            (dm:get-one 'host (db:query (:= '_id (db:ensure-id host-ish)))))))
    (error 'request-not-found :message "No such host.")))
 
-(defun delete-host (host-ish &optional (user (auth:current)))
+(defun delete-host (host)
   (db:with-transaction ()
-    (let ((host (ensure-host host-ish user)))
-      ;; FIXME: cascade
-      (dm:delete host)
-      host)))
+    ;; Don't delete campaigns, just set the host to NULL
+    (db:update 'campaign (db:query (:= 'host (dm:id host))) `(("campaign" . NIL)))
+    (dm:delete host)
+    host))
 
 (defun list-hosts (&optional (user (auth:current)))
   (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc))))
 
-(defun make-campaign (&key host author title description reply-to template attributes (save T))
+(defun make-campaign (author host title &key description reply-to template attributes (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
                                                       (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
-    (setf-dm-fields campaign author title description reply-to template)
-    (when host (setf (dm:field campaign "host") (dm:id (ensure-host host))))
+    (setf-dm-fields campaign author title host description reply-to template)
     (when save
       (db:with-transaction ()
         (dm:insert campaign)
@@ -184,7 +184,11 @@
                  (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
                                          ("title" . ,attribute)
                                          ("type" . ,type)
-                                         ("required" . ,required))))))
+                                         ("required" . ,required))))
+        (make-subscriber campaign
+                         (or (user:field "name" author) (user:username author))
+                         reply-to
+                         :confirmed T)))
     campaign))
 
 (defun edit-campaign (campaign &key host author title description reply-to template attributes (save T))
@@ -227,11 +231,14 @@
                  (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign-ish)))))))
    (error 'request-not-found :message "No such campaign.")))
 
-(defun delete-campaign (campaign-ish &optional (user (auth:current)))
+(defun delete-campaign (campaign)
   (db:with-transaction ()
-    (let ((campaign (ensure-campaign campaign-ish user)))
-      ;; FIXME: cascade
-      (dm:delete campaign))))
+    (mapcar #'delete-subscriber (list-subscribers campaign))
+    (mapcar #'delete-mail (list-mails campaign))
+    (mapcar #'delete-tag (list-tags campaign))
+    (mapcar #'delete-link (list-links campaign))
+    (db:remove 'attribute (db:query (:= 'campaign (dm:id campaign))))
+    (dm:delete campaign)))
 
 (defun list-campaigns (&optional (user (auth:current)))
   (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
@@ -271,7 +278,12 @@
 
 (defun delete-subscriber (subscriber)
   (db:with-transaction ()
-    ;; FIXME: cascade
+    (db:remove 'attribute-value (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'mail-log (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'mail-queue (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))
     (dm:delete subscriber)))
 
 (defun list-subscribers (thing)
@@ -317,7 +329,9 @@
 
 (defun delete-mail (mail)
   (db:with-transaction ()
-    ;; FIXME: cascade
+    (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
+    (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
+    (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
     (dm:delete mail)))
 
 (defun list-mails (campaign)
@@ -348,7 +362,7 @@
 
 (defun delete-tag (tag)
   (db:with-transaction ()
-    ;; FIXME: cascade
+    (db:remove 'tag-table (db:query (:= 'tag (dm:id tag))))
     (dm:delete tag)))
 
 (defun list-tags (thing)
@@ -386,6 +400,10 @@
                                              (tag 2))))
   (when save (dm:save trigger))
   trigger)
+
+(defun delete-trigger (trigger)
+  (db:with-transaction ()
+    (dm:delete trigger)))
 
 (defun ensure-trigger (trigger-ish)
   (or
@@ -425,10 +443,10 @@
 (defun delete-link (link-ish)
   (db:with-transaction ()
     (let ((link (ensure-link link-ish)))
-      ;; FIXME: cascade
+      (db:remove 'link-receipt (db:query (:= link (dm:id link))))
       (dm:delete link))))
 
-(defun list-links (campaign &optional (user (auth:current)))
+(defun list-links (campaign)
   (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
 
 (defun link-received-p (link subscriber)

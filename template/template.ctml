@@ -56,6 +56,7 @@
       <div class="box info" lquery='(text (post/get "message"))'></div>
       <div class="box error" lquery='(text (post/get "error"))'></div>
       <c:splice lquery="(html content)"/>
+      <script @src="/static/courier/courier.js"></script>
     </main>
     <footer>
       &copy; <time lquery="(time T)">2019</time> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>

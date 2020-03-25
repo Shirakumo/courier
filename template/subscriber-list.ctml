@@ -1,10 +1,13 @@
-<article class="page campaign subscribers list">
-  <ul class="subscriber" iterate="subscribers">
+<article class="page subscriber list">
+  <ul class="subscribers" iterate="subscribers">
     <li class="subscriber">
       <a class="title" @href="courier/campaign/{0}/subscriber/{1} campaign _id" lquery="(text address)">Subscriber</a>
-      <span class="tags" lquery="(text ())">a</span>
+      <ul class="tags" iterate="(courier::list-tags *)">
+        <li class="tag" lquery="(text title)"></li>
+      </ul>
+      <time lquery="(time signup-time)"></time>
       <nav class="actions">
-        <a class="button" href="#" @href="courier/api/courier//{0}/edit title">
+        <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0} _id">
           <i class="fas fa-trash"></i>
           Unsubscribe
         </a>
@@ -12,7 +15,7 @@
     </li>
   </ul>
   <c:using value="campaign">
-    <a class="button" href="#" @href="courier/campaign/{0}/subscribers/{1} title (** :next-page)">
+    <a class="button" href="#" @href="courier/campaign/{0}/subscriber?page={1} title (** :next-page)">
       <i class="fas fa-arrow-right"></i>
       Next page
     </a>

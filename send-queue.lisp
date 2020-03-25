@@ -49,7 +49,19 @@
                                                         (:<= 'time (get-universal-time))))
                             :amount (dm:field host "batch-size") :sort '((time :asc)))))
         (dolist (queue queued)
-          (send-queue queue))
+          (restart-case
+              (handler-bind ((error (lambda (e)
+                                      (v:error :courier.send-queue "Failed to send queued mail.")
+                                      (v:trace :courier.send-queue e)
+                                      (if radiance:*debugger*
+                                          (invoke-debugger e)
+                                          (invoke-restart 'ignore)))))
+                (send-queue queue))
+            (ignore ()
+              :report "Ignore the send and retry later.")
+            (forget ()
+              :report "Give up trying to send the queued mail."
+              (dm:delete queue))))
         (when queued
           (setf (dm:field host "last-send-time") (get-universal-time))
           (dm:save host))))

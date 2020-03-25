@@ -23,7 +23,7 @@
                (:file "send-queue")
                (:file "front")
                (:file "api"))
-  :depends-on ((:interface :database)
+  :depends-on ((:interface :relational-database)
                (:interface :auth)
                :r-data-model
                :r-clip

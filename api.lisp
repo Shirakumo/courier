@@ -6,7 +6,6 @@
 
 (in-package #:courier)
 
-;; FIXME: check access more thoroughly for objects that can't be checked against author immediately
 ;; FIXME: prune unconfirmed subscribers after a day
 
 (defun send-confirm-host (host &optional (user (auth:current)))
@@ -31,6 +30,12 @@
                                 :query `(("id" . ,(generate-id subscriber))
                                          ("browser" . "true"))))))
 
+(define-api courier/host (host) (:access (perm courier host))
+  (api-output (check-accessible (ensure-host host))))
+
+(define-api courier/host/list () (:access (perm courier host list))
+  (api-output (list-hosts)))
+
 (define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
   (check-title title)
   (ratify:with-parsed-forms ((:email address)
@@ -54,7 +59,7 @@
 
 (define-api courier/host/edit (host &optional title address hostname port username password encryption batch-size batch-cooldown) :access (perm courier host new)
   (when title (check-title title))
-  (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
+  (let ((host (check-accessible (ensure-host host))))
     (ratify:with-parsed-forms ((:email address)
                                (:host hostname)
                                (:port port)
@@ -87,14 +92,17 @@
   (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
     (send-confirm-host host)))
 
-(define-api courier/host/list () (:access (perm courier host list))
-  (api-output (list-hosts)))
+(define-api courier/campaign (campaign) (:access (perm courier campaign))
+  (api-output (check-accessible (ensure-campaign campaign))))
+
+(define-api courier/campaign/list () (:access (perm courier campaign))
+  (api-output (list-campaigns)))
 
 (define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
   (let* ((host (check-accessible (ensure-host host)))
-         (campaign (make-campaign :author (user:id (auth:current))
-                                  :host host :title title :description description :reply-to reply-to :template template
+         (campaign (make-campaign (user:id (auth:current)) host title
+                                  :description description :reply-to reply-to :template template
                                   :attributes (loop for title in attribute[]
                                                     for type in attribute-type[]
                                                     for required in attribute-required[]
@@ -122,8 +130,12 @@
         (redirect (url> "courier/campaign" :query `(("message" . "Campaign deleted."))))
         (api-output NIL))))
 
-(define-api courier/campaign/list () (:access (perm courier campaign))
-  (api-output (list-campaigns)))
+(define-api courier/mail (mail) (:access (perm courier mail))
+  (api-output (check-accessible (ensure-mail mail))))
+
+(define-api courier/mail/list (campaign) (:access (perm courier mail list))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-mails campaign))))
 
 (define-api courier/mail/new (campaign title subject body) (:access (perm courier mail new))
   (check-title title)
@@ -158,7 +170,7 @@
 
 (define-api courier/mail/test (mail) (:access (perm courier mail))
   (let ((mail (check-accessible (ensure-mail mail))))
-    (enqueue-email mail :target  :time time)
+    (enqueue-email mail :target (dm:field (ensure-campaign (dm:field mail "campaign")) "reply-to"))
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/campaign/~a/mail/~a/" (dm:field mail "campaign") (dm:id mail))
                         :query `(("message" . "Mail sent."))))
@@ -176,9 +188,16 @@
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
 
-(define-api courier/mail/list (campaign) (:access (perm courier mail list))
+(define-api courier/tag (tag) (:access (perm courier tag))
+  (api-output (check-accessible (ensure-tag tag))))
+
+(define-api courier/tag/list (campaign) (:access (perm courier tag))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-mails campaign))))
+    (api-output (list-tags campaign))))
+
+(define-api courier/tag/subscribers (tag) (:access (perm courier tag))
+  (let ((tag (check-accessible (ensure-tag tag))))
+    (api-output (list-subscribers tag))))
 
 (define-api courier/tag/new (campaign title &optional description) (:access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
@@ -205,13 +224,12 @@
                         :query `(("message" . "Tag deleted."))))
         (api-output NIL))))
 
-(define-api courier/tag/list (campaign) (:access (perm courier tag))
-  (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-tags campaign))))
+(define-api courier/trigger (trigger) (:access (perm courier trigger))
+  (api-output (check-accessible (ensure-trigger trigger))))
 
-(define-api courier/tag/subscribers (tag) (:access (perm courier tag))
-  (let ((tag (check-accessible (ensure-tag tag))))
-    (api-output (list-subscribers tag))))
+(define-api courier/trigger/list (campaign) (:access (perm courier trigger))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-triggers campaign))))
 
 (define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description time-offset tag-constraint) (:access (perm courier trigger new))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
@@ -245,13 +263,27 @@
                         :query `(("message" . "Tag deleted."))))
         (api-output NIL))))
 
-(define-api courier/trigger/list (campaign) (:access (perm courier trigger))
+(define-api courier/link (link) (:access (perm courier link))
+  (api-output (check-accessible (ensure-link link))))
+
+(define-api courier/link/new (campaign url) (:access (perm courier link new))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-triggers campaign))))
+    (api-output (make-link campaign :url url))))
 
 (define-api courier/link/list (campaign) (:access (perm courier link))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (api-output (list-links campaign))))
+
+(define-api courier/subscriber (subscriber) (:access (perm courier subscriber))
+  (api-output (check-accessible (ensure-subscriber subscriber))))
+
+(define-api courier/subscriber/list (campaign) (:access (perm courier subscriber))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-subscribers campaign))))
+
+(define-api courier/subscriber/tags (subscriber) (:access (perm courier subscriber))
+  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (api-output (list-tags subscriber))))
 
 (define-api courier/subscriber/new (campaign name address &optional tag[] fields[] values[]) (:access (perm courier subscriber new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
@@ -276,14 +308,6 @@
         (redirect (url> (format NIL "courier/campaign/~a/subscriber/" (dm:field subscriber "campaign"))
                         :query `(("message" . "Subscriber deleted."))))
         (api-output NIL))))
-
-(define-api courier/subscriber/tags (subscriber) (:access (perm courier subscriber))
-  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
-    (api-output (list-tags subscriber))))
-
-(define-api courier/subscriber/list (campaign) (:access (perm courier subscriber))
-  (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-subscribers campaign))))
 
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))

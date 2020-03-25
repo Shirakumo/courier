@@ -79,7 +79,7 @@
          :description (dm:field campaign "description")
          :reply-to (dm:field campaign "reply-to")
          :to (dm:field subscriber "address")
-         :tags (subscriber-tags subscriber)
+         :tags (list-tags subscriber)
          (subscriber-attributes subscriber)))
 
 (defun compile-email-content (campaign mail subscriber)

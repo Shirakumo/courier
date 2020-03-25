@@ -45,7 +45,7 @@
                :campaigns (list-campaigns)))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier))
-  (let ((campaign (check-accessible (ensure-campaign capmaign))))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page (dm:field campaign "title")
                  (@template "campaign-overview.ctml")
                  :campaign campaign)))
@@ -94,30 +94,6 @@
   (let ((mail (check-accessible (ensure-mail mail))))
     (render-page (format NIL "Send ~a" (dm:field mail "title"))
                  (@template "mail-send.ctml")
-                 :mail mail)))
-
-(define-page mail-trigger-list "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/?$" (:uri-groups (campaign mail) :access (perm courier))
-  (let ((mail (check-accessible (ensure-mail mail))))
-    (render-page (format NIL "~a Triggers" (dm:field mail "title"))
-                 (@template "mail-trigger-list.ctml")
-                 :triggers (list-mail-triggers mail)
-                 :campaign campaign
-                 :mail mail)))
-
-(define-page mail-trigger-new "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/new$" (:uri-groups (campaign mail) :access (perm courier))
-  (let ((mail (check-accessible (ensure-mail mail))))
-    (render-page (format NIL "New Trigger for ~a" mail)
-                 (@template "mail-trigger-edit.ctml")
-                 :trigger (make-mail-trigger mail :save NIL)
-                 :campaign campaign
-                 :mail mail)))
-
-(define-page mail-trigger-edit "courier/^campaign/([^/]+)/mail/([^/]+)/trigger/(\\d+)/edit$" (:uri-groups (campaign mail trigger) :access (perm courier))
-  (let ((mail (check-accessible (ensure-mail mail))))
-    (render-page (format NIL "Edit Trigger #~a for ~a" trigger mail)
-                 (@template "mail-trigger-edit.ctml")
-                 :trigger (ensure-mail-trigger trigger)
-                 :campaign campaign
                  :mail mail)))
 
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier))
@@ -185,15 +161,26 @@
                  (@template "trigger-edit.ctml")
                  :trigger trigger)))
 
-(define-page subscriber-list "courier/^campaign/([^/]+)/subscriber(?:/([^/]+))?" (:uri-groups (campaign page) :access (perm courier))
+(define-page subscriber-list "courier/^campaign/([^/]+)/subscriber$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
-        (page (or (ignore-errors  (parse-integer page)) 0)))
+        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
     (render-page (format NIL "~a Subscribers" (dm:field campaign "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (dm:get 'subscriber (db:query (:= 'campaign (dm:id campaign)))
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
                  :next-page (1+ page))))
+
+(define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/$" (:uri-groups (campaign subscriber) :access (perm courier))
+  (let* ((campaign (ensure-campaign campaign))
+         (subscriber (check-accessible (ensure-subscriber subscriber))))
+    (render-page (format NIL (dm:field subscriber "address"))
+                 (@template "subscriber-overview.ctml")
+                 :campaign campaign
+                 :fields (list-attributes campaign)
+                 :field-values (subscriber-attributes subscriber)
+                 :tags (list-tags campaign)
+                 :tag-values (list-tags subscriber))))
 
 (define-page subscriber-new "courier/^campaign/([^/]+)/subscriber/new" (:uri-groups (campaign) :access (perm courier))
   (let* ((campaign (check-accessible (ensure-campaign campaign))))

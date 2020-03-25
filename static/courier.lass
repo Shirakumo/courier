@@ -195,6 +195,9 @@
      (.confirmed :padding 0 1em)
      (.fa-check-circle :color (hex 00AA00))
      (.fa-question-circle :color (hex AAAAAA)))))
+  (.page.subscriber.list
+   (time :margin 0 0.2em)
+   (.tags :flex-grow 1))
   (.page.campaign.edit
    (textarea[name=template]
     :min-height 10em)
