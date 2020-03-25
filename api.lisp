@@ -31,7 +31,7 @@
                                 :query `(("id" . ,(generate-id subscriber))
                                          ("browser" . "true"))))))
 
-(define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier))
+(define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
   (check-title title)
   (ratify:with-parsed-forms ((:email address)
                              (:host hostname)
@@ -52,9 +52,9 @@
           (redirect (url> "courier/host/" :query `(("message" . "Host created. Please check your emails to confirm."))))
           (api-output host)))))
 
-(define-api courier/host/edit (host &optional title address hostname port username password encryption batch-size batch-cooldown) :access (perm courier)
+(define-api courier/host/edit (host &optional title address hostname port username password encryption batch-size batch-cooldown) :access (perm courier host new)
   (when title (check-title title))
-  (let ((host (ensure-host (db:ensure-id host))))
+  (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
     (ratify:with-parsed-forms ((:email address)
                                (:host hostname)
                                (:port port)
@@ -66,15 +66,16 @@
           (redirect (url> "courier/host" :query `(("message" . "Host edited."))))
           (api-output host)))))
 
-(define-api courier/host/delete (host) (:access (perm courier))
-  (delete-host (db:ensure-id host))
-  (if (string= "true" (post/get "browser"))
-      (redirect (url> "courier/host" :query `(("message" . "Host deleted."))))
-      (api-output NIL)))
+(define-api courier/host/delete (host) (:access (perm courier host delete))
+  (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
+    (delete-host host)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/host" :query `(("message" . "Host deleted."))))
+        (api-output NIL))))
 
-(define-api courier/host/confirm (host token) (:access (perm courier))
+(define-api courier/host/confirm (host token) (:access (perm courier host confirm))
   (db:with-transaction ()
-    (let ((host (ensure-host (db:ensure-id host))))
+    (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
       (check-hash token (dm:id host))
       (setf (dm:field host "confirmed") T)
       (dm:save host)
@@ -82,48 +83,51 @@
           (redirect (url> "courier/host" :query `(("message" . "Host confirmed."))))
           (api-output host)))))
 
-(define-api courier/host/test (host) (:access (perm courier))
-  (send-confirm-host host))
+(define-api courier/host/test (host) (:access (perm courier host test))
+  (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
+    (send-confirm-host host)))
 
-(define-api courier/host/list () (:access (perm courier))
-  (api-output (db:select 'courier (db:query (:= 'author (user:id (auth:current)))) :sort '((title :asc)))))
+(define-api courier/host/list () (:access (perm courier host list))
+  (api-output (list-hosts)))
 
-(define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier))
+(define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
-  (let ((campaign (make-campaign :author (user:id (auth:current))
-                                 :host host :title title :description description :reply-to reply-to :template template
-                                 :attributes (loop for title in attribute[]
-                                                   for type in attribute-type[]
-                                                   for required in attribute-required[]
-                                                   collect (list title type required)))))
+  (let* ((host (check-accessible (ensure-host host)))
+         (campaign (make-campaign :author (user:id (auth:current))
+                                  :host host :title title :description description :reply-to reply-to :template template
+                                  :attributes (loop for title in attribute[]
+                                                    for type in attribute-type[]
+                                                    for required in attribute-required[]
+                                                    collect (list title type required)))))
     (if (string= "true" (post/get "browser"))
         (redirect (url> "courier/campaign/" :query `(("message" . "Campaign created."))))
         (api-output campaign))))
 
-(define-api courier/campaign/edit (campaign &optional title host description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier)
+(define-api courier/campaign/edit (campaign &optional title host description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier campaign edit)
   (when title (check-title title))
-  (let ((campaign (ensure-campaign (db:ensure-id campaign))))
+  (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
     (edit-campaign campaign :host host :title title :description description :reply-to reply-to :template template
-                            :attributes (loop for title in (print attribute[])
-                                              for type in (print attribute-type[])
-                                              for required in (print attribute-required[])
+                            :attributes (loop for title in attribute[]
+                                              for type in attribute-type[]
+                                              for required in attribute-required[]
                                               collect (list title type required)))
     (if (string= "true" (post/get "browser"))
         (redirect (url> "courier/campaign" :query `(("message" . "Campaign edited."))))
         (api-output campaign))))
 
-(define-api courier/campaign/delete (campaign) (:access (perm courier))
-  (delete-campaign (db:ensure-id campaign))
-  (if (string= "true" (post/get "browser"))
-      (redirect (url> "courier/campaign" :query `(("message" . "Campaign deleted."))))
-      (api-output NIL)))
+(define-api courier/campaign/delete (campaign) (:access (perm courier campaign delete))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (delete-campaign campaign)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/campaign" :query `(("message" . "Campaign deleted."))))
+        (api-output NIL))))
 
-(define-api courier/campaign/list () (:access (perm courier))
-  (api-output (db:select 'campaign (db:query (:= 'author (user:id (auth:current)))) :sort '((title :asc)))))
+(define-api courier/campaign/list () (:access (perm courier campaign))
+  (api-output (list-campaigns)))
 
-(define-api courier/mail/new (campaign title subject body) (:access (perm courier))
+(define-api courier/mail/new (campaign title subject body) (:access (perm courier mail new))
   (check-title title)
-  (let* ((campaign (ensure-campaign (db:ensure-id campaign)))
+  (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign))))
          (mail (make-mail campaign
                           :title title
                           :subject subject
@@ -133,9 +137,9 @@
                         :query `(("message" . "Mail created."))))
         (api-output mail))))
 
-(define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier))
+(define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier mail edit))
   (check-title title)
-  (let* ((mail (ensure-mail mail))
+  (let* ((mail (check-accessible (ensure-mail mail)))
          (campaign (ensure-campaign (dm:field mail "campaign"))))
     (edit-mail mail :title title :subject subject :body body)
     (if (string= "true" (post/get "browser"))
@@ -143,8 +147,8 @@
                         :query `(("message" . "Mail edited."))))
         (api-output mail))))
 
-(define-api courier/mail/delete (mail) (:access (perm courier))
-  (let* ((mail (ensure-mail mail))
+(define-api courier/mail/delete (mail) (:access (perm courier mail delete))
+  (let* ((mail (check-accessible (ensure-mail mail)))
          (campaign (ensure-campaign (dm:field mail "campaign"))))
     (delete-mail mail)
     (if (string= "true" (post/get "browser"))
@@ -152,16 +156,16 @@
                         :query `(("message" . "Mail deleted."))))
         (api-output NIL))))
 
-(define-api courier/mail/test (mail) (:access (perm courier))
-  (let ((mail (ensure-mail mail)))
+(define-api courier/mail/test (mail) (:access (perm courier mail))
+  (let ((mail (check-accessible (ensure-mail mail))))
     (enqueue-email mail :target  :time time)
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/campaign/~a/mail/~a/" (dm:field mail "campaign") (dm:id mail))
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
 
-(define-api courier/mail/send (mail &optional target-type target-id time) (:access (perm courier))
-  (let ((mail (ensure-mail mail)))
+(define-api courier/mail/send (mail &optional target-type target-id time) (:access (perm courier mail send))
+  (let ((mail (check-accessible (ensure-mail mail))))
     (when time
       (setf time (local-time:timestamp-to-universal (local-time:parse-timestring time))))
     (if (or* target-type)
@@ -172,27 +176,28 @@
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
 
-(define-api courier/mail/list (campaign) (:access (perm courier))
-  (api-output (db:select 'mail (db:query (:= 'campaign (db:ensure-id campaign))) :sort '((time :desc)))))
+(define-api courier/mail/list (campaign) (:access (perm courier mail list))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-mails campaign))))
 
 (define-api courier/tag/new (campaign title &optional description) (:access (perm courier))
-  (let* ((campaign (ensure-campaign (db:ensure-id campaign)))
-         (tag (make-tag campaign :title title :description description)))
-    (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/campaign/~a/tag" (dm:field campaign "title"))
-                        :query `(("message" . "Tag created."))))
-        (api-output tag))))
+  (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
+    (let ((tag (make-tag campaign :title title :description description)))
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> (format NIL "courier/campaign/~a/tag" (dm:field campaign "title"))
+                          :query `(("message" . "Tag created."))))
+          (api-output tag)))))
 
-(define-api courier/tag/edit (tag &optional title description) (:access (perm courier))
-  (let ((tag (ensure-tag tag)))
+(define-api courier/tag/edit (tag &optional title description) (:access (perm courier tag edit))
+  (let ((tag (check-accessible (ensure-tag tag))))
     (edit-tag tag :title (or* title) :description (or* description))
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/campaign/~a/tag" (dm:field tag "campaign"))
                         :query `(("message" . "Tag edited."))))
         (api-output tag))))
 
-(define-api courier/tag/delete (tag) (:access (perm courier))
-  (let* ((tag (ensure-tag tag))
+(define-api courier/tag/delete (tag) (:access (perm courier tag delete))
+  (let* ((tag (check-accessible (ensure-tag tag)))
          (campaign (ensure-campaign (dm:field tag "campaign"))))
     (delete-tag tag)
     (if (string= "true" (post/get "browser"))
@@ -200,25 +205,30 @@
                         :query `(("message" . "Tag deleted."))))
         (api-output NIL))))
 
-(define-api courier/tag/list (campaign) (:access (perm courier))
-  (api-output (db:select 'tag (db:query (:= 'campaign (db:ensure-id campaign))))))
+(define-api courier/tag/list (campaign) (:access (perm courier tag))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-tags campaign))))
 
-(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description time-offset tag-constraint) (:access (perm courier))
-  (let* ((campaign (ensure-campaign campaign))
-         (source (resolve-typed source-type source-id))
-         (target (resolve-typed target-type target-id))
-         (trigger (make-trigger campaign source target
-                                :description description :time-offset time-offset
-                                :tag-constraint tag-constraint)))
-    (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/campaign/~a/trigger" (dm:field campaign "title"))
-                        :query `(("message" . "Trigger created."))))
-        (api-output trigger))))
+(define-api courier/tag/subscribers (tag) (:access (perm courier tag))
+  (let ((tag (check-accessible (ensure-tag tag))))
+    (api-output (list-subscribers tag))))
 
-(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description time-offset tag-constraint) (:access (perm courier))
-  (let ((trigger (ensure-trigger trigger))
-        (source (resolve-typed source-type source-id))
-        (target (resolve-typed target-type target-id)))
+(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description time-offset tag-constraint) (:access (perm courier trigger new))
+  (let ((campaign (check-accessible (ensure-campaign campaign)))
+        (source (check-accessible (resolve-typed source-type source-id)))
+        (target (check-accessible (resolve-typed target-type target-id))))
+    (let ((trigger (make-trigger campaign source target
+                                 :description description :time-offset time-offset
+                                 :tag-constraint tag-constraint)))
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> (format NIL "courier/campaign/~a/trigger" (dm:field campaign "title"))
+                          :query `(("message" . "Trigger created."))))
+          (api-output trigger)))))
+
+(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description time-offset tag-constraint) (:access (perm courier trigger edit))
+  (let ((trigger (check-accessible (ensure-trigger trigger)))
+        (source (check-accessible (resolve-typed source-type source-id)))
+        (target (check-accessible (resolve-typed target-type target-id))))
     (edit-trigger trigger :description description :time-offset time-offset :tag-constraint tag-constraint
                           :source source :target target)
     (if (string= "true" (post/get "browser"))
@@ -226,27 +236,67 @@
                         :query `(("message" . "Trigger edited."))))
         (api-output trigger))))
 
-(define-api courier/trigger/list (campaign) (:access (perm courier))
-  (api-output (db:select 'trigger (db:query (:= 'campaign (db:ensure-id campaign))))))
+(define-api courier/trigger/delete (trigger) (:access (perm courier trigger delete))
+  (let* ((trigger (check-accessible (ensure-trigger trigger)))
+         (campaign (ensure-campaign (dm:field trigger "campaign"))))
+    (delete-trigger trigger)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/campaign/~a/trigger/" (dm:field campaign "title"))
+                        :query `(("message" . "Tag deleted."))))
+        (api-output NIL))))
 
-(define-api courier/link/list (campaign) (:access (perm courier))
-  (api-output (db:select 'link (db:query (:= 'campaign (db:ensure-id campaign))))))
+(define-api courier/trigger/list (campaign) (:access (perm courier trigger))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-triggers campaign))))
 
-(define-api courier/subscriber/list (campaign) (:access (perm courier))
-  (api-output (db:select 'subscriber (db:query (:= 'campaign (db:ensure-id campaign))) :sort '((signup-time :desc)))))
+(define-api courier/link/list (campaign) (:access (perm courier link))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-links campaign))))
 
-;; User sections
-(defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
-
-(define-api courier/subscription/new (campaign name address &optional fields[] values[]) ()
-  (let* ((campaign (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign)))))
+(define-api courier/subscriber/new (campaign name address &optional tag[] fields[] values[]) (:access (perm courier subscriber new))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
          (attributes (loop for field in fields[]
                            for value in values[]
                            for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
                            do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
                                 (error "Invalid attribute field."))
                            collect (cons attribute value)))
-         (subscriber (make-subscriber campaign name address attributes)))
+         (tags (mapcar #'ensure-tag tag[]))
+         (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :confirmed T)))
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/subscription"
+                        :query `(("action" . "subscribed")
+                                 ("campaign" . ,(princ-to-string (dm:id campaign))))))
+        (api-output subscriber))))
+
+(define-api courier/subscriber/delete (subscriber) (:access (perm courier subscriber delete))
+  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (delete-subscriber subscriber)
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> (format NIL "courier/campaign/~a/subscriber/" (dm:field subscriber "campaign"))
+                        :query `(("message" . "Subscriber deleted."))))
+        (api-output NIL))))
+
+(define-api courier/subscriber/tags (subscriber) (:access (perm courier subscriber))
+  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (api-output (list-tags subscriber))))
+
+(define-api courier/subscriber/list (campaign) (:access (perm courier subscriber))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (api-output (list-subscribers campaign))))
+
+;; User sections
+(defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
+
+(define-api courier/subscription/new (campaign name address &optional fields[] values[]) ()
+  (let* ((campaign (ensure-campaign campaign))
+         (attributes (loop for field in fields[]
+                           for value in values[]
+                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
+                           do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
+                                (error "Invalid attribute field."))
+                           collect (cons attribute value)))
+         (subscriber (make-subscriber campaign name address :attributes attributes)))
     (send-confirm-subscription campaign subscriber)
     (if (string= "true" (post/get "browser"))
         (redirect (url> "courier/subscription"

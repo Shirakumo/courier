@@ -1,0 +1,70 @@
+<article class="page tag edit">
+  <form method="post">
+    <c:using value="campaign">
+      <div class="row">
+        <label for="host">Campaign:</label>
+        <input type="hidden" name="campaign" lquery="(val _id)" />
+        <input type="text" readonly id="campaign" lquery="(val title)" />
+      </div>
+    </c:using>
+    <c:using value="subscriber">
+      <div class="row">
+        <label for="name">Name:</label>
+        <input type="text" name="name" id="name" lquery="(val name)" />
+      </div>
+      <div class="row">
+        <label for="address">Email address:</label>
+        <input type="email" name="address" id="address" placeholder="email@example.com" required lquery="(val address)" />
+      </div>
+      <c:splice iterate="(** :fields)">
+        <div class="row">
+          <label for="#" lquery="(attr :for title) (text title)">#</label>
+          <input type="hidden"  name="fields[]" lquery="(attr :value _id)" />
+          <input type="text"  name="values[]" id="#"
+                 lquery="(attr :type (second (nth type courier::*attribute-types*)) :id title :required required)"
+                         (val (clip (*** :field-values ) title))/>
+        </div>
+      </c:splice>
+      <div class="row">
+        <label>Tags</label>
+        <ul class="tags">
+          <li class="tag template">
+            <a class="button remove-self">
+              <i class="fas fa-trash"></i>
+            </a>
+            <input type="hidden" data-name="tag[]"/>
+            <span class="title">Tag</span>
+          </li>
+          <c:splice iterate="(** :tag-values)">
+            <li class="tag">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
+              </a>
+              <input type="hidden" name="tag[]" lquery="(val _id)"/>
+              <span class="title" lquery="(text title)">Tag</span>
+            </li>
+          </c:splice>
+        </ul>
+        <select iterate="(** :tags)">
+          <option lquery="(val _id) (text title)">Tag</option>
+        </select>
+        <a class="button new-tag"><i class="fas fa-fw fa-plus-circle"></i> Add Tag</a>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <input type="submit" value="Subscribe"/>
+      <div class="row">
+        <input type="hidden" name="browser" value="true" />
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="tag" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/tag/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/tag/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Tag" @formaction="courier/api/courier/tag/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </c:using>
+  </form>
+</article>

@@ -239,7 +239,7 @@
 (defun list-attributes (campaign)
   (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc))))
 
-(defun make-subscriber (campaign name address attributes &optional confirmed)
+(defun make-subscriber (campaign name address &key attributes tags confirmed)
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
@@ -251,11 +251,13 @@
       (setf (dm:field subscriber "signup-time") (get-universal-time))
       (setf (dm:field subscriber "confirmed") confirmed)
       (dm:insert subscriber)
-      
+      (loop for tag in tags
+            do (db:insert 'tag-table `(("subscriber" . ,(dm:id subscriber))
+                                       ("tag" . ,(dm:id tag)))))
       (loop for (attribute . value) in attributes
             do (dm:with-model attribute-value ('attribute-value NIL)
                  (setf (dm:field attribute-value "attribute") (ensure-id attribute))
-                 (setf (dm:field attribute-value "subscriber") (print (dm:id subscriber)))
+                 (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
                  (setf (dm:field attribute-value "value") value)
                  (dm:insert attribute-value)))
       subscriber)))
@@ -272,16 +274,23 @@
     ;; FIXME: cascade
     (dm:delete subscriber)))
 
+(defun list-subscribers (thing)
+  (ecase (dm:collection thing)
+    (campaign
+     (dm:get 'subscriber (db:query (:= 'campaign (dm:id thing)))
+             :sort '((signup-time . :DESC))))
+    (tag
+     (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id thing)))
+             :sort '((signup-time . :DESC))))
+    (link
+     (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (db:query (:= 'link (dm:id thing)))
+             :sort '((signup-time . :DESC))))))
+
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
                                     (db:query (:= 'subscriber (ensure-id subscriber))))
         collect (gethash "title" attribute)
         collect (gethash "value" attribute)))
-
-(defun subscriber-tags (subscriber)
-  (loop for tag in (db:select (rdb:join (tag _id) (tag-table tag))
-                              (db:query (:= 'subscriber (ensure-id subscriber))))
-        collect (gethash "title" tag)))
 
 (defun make-mail (campaign &key title subject body (save T))
   (let ((campaign (ensure-campaign campaign)))
@@ -311,9 +320,8 @@
     ;; FIXME: cascade
     (dm:delete mail)))
 
-(defun list-mails (campaign-ish &optional (user (auth:current)))
-  (let ((campaign (ensure-campaign campaign-ish user)))
-    (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+(defun list-mails (campaign)
+  (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
 
 (defun make-tag (campaign &key title description (save T))
   (let ((campaign (ensure-campaign campaign)))
@@ -343,9 +351,12 @@
     ;; FIXME: cascade
     (dm:delete tag)))
 
-(defun list-tags (campaign-ish &optional (user (auth:current)))
-  (let ((campaign (ensure-campaign campaign-ish user)))
-    (dm:get 'tag (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+(defun list-tags (thing)
+  (ecase (dm:collection thing)
+    (campaign
+     (dm:get 'tag (db:query (:= 'campaign (dm:id thing))) :sort '((title :asc))))
+    (subscriber
+     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing))) :sort '((title :asc))))))
 
 (defun make-trigger (campaign source target &key description (time-offset 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
@@ -417,9 +428,8 @@
       ;; FIXME: cascade
       (dm:delete link))))
 
-(defun list-links (campaign-ish &optional (user (auth:current)))
-  (let ((campaign (ensure-campaign campaign-ish user)))
-    (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc)))))
+(defun list-links (campaign &optional (user (auth:current)))
+  (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
 
 (defun link-received-p (link subscriber)
   (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (ensure-id link))
@@ -462,3 +472,29 @@
                   ((3 subscriber) 'subscriber)
                   ((4 campaign) 'campaign))
             (db:query (:= '_id id)))))
+
+(defun check-accessible (dm &optional (user (auth:current)))
+  (labels ((check (author)
+             (unless (equal (user:id user) author)
+               (error 'radiance:request-denied :message (format NIL "You do not own the ~a you were trying to access."
+                                                                (dm:collection dm)))))
+           (check-campaign (campaign)
+             (db:iterate 'campaign (db:query (:= '_id campaign))
+                         (lambda (r) (check (gethash "author" r)))
+                         :fields '(author) :amount 1)))
+    (ecase (dm:collection dm)
+      (host
+       (check (dm:field dm "author")))
+      (campaign
+       (check (dm:field dm "author")))
+      (mail
+       (check-campaign (dm:field dm "campaign")))
+      (tag
+       (check-campaign (dm:field dm "campaign")))
+      (trigger
+       (check-campaign (dm:field dm "campaign")))
+      (link
+       (check-campaign (dm:field dm "campaign")))
+      (subscriber
+       (check-campaign (dm:field dm "campaign"))))
+    dm))
