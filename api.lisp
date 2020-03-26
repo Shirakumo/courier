@@ -34,7 +34,7 @@
   (api-output (check-accessible (ensure-host host))))
 
 (define-api courier/host/list () (:access (perm courier host list))
-  (api-output (list-hosts)))
+  (api-output (list-hosts (auth:current))))
 
 (define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
   (check-title title)
@@ -96,7 +96,7 @@
   (api-output (check-accessible (ensure-campaign campaign))))
 
 (define-api courier/campaign/list () (:access (perm courier campaign))
-  (api-output (list-campaigns)))
+  (api-output (list-campaigns (auth:current))))
 
 (define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)

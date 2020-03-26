@@ -26,7 +26,7 @@
 (define-page host-list "courier/^host/?$" (:access (perm courier))
   (render-page "Configured Hosts"
                (@template "host-list.ctml")
-               :hosts (list-hosts)))
+               :hosts (list-hosts (auth:current))))
 
 (define-page host-new ("courier/^host/new$" 1) (:uri-groups () :access (perm courier))
   (render-page "New Host"
@@ -42,7 +42,7 @@
 (define-page campaign-list "courier/^campaign/?$" (:access (perm courier))
   (render-page "Campaigns"
                (@template "campaign-list.ctml")
-               :campaigns (list-campaigns)))
+               :campaigns (list-campaigns (auth:current))))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
@@ -55,14 +55,14 @@
     (setf (dm:field campaign "template") (alexandria:read-file-into-string (@template "email/default-template.ctml")))
     (render-page "New Campaign"
                  (@template "campaign-edit.ctml")
-                 :hosts (list-hosts)
+                 :hosts (list-hosts (auth:current))
                  :campaign campaign)))
 
 (define-page campaign-edit "courier/^campaign/([^/]+)/edit$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page (format NIL "Edit ~a" (dm:field campaign "title"))
                  (@template "campaign-edit.ctml")
-                 :hosts (list-hosts)
+                 :hosts (list-hosts (auth:current))
                  :campaign campaign)))
 
 (define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))

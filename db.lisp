@@ -164,8 +164,10 @@
     (dm:delete host)
     host))
 
-(defun list-hosts (&optional (user (auth:current)))
-  (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc))))
+(defun list-hosts (&optional user)
+  (if user
+      (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc)))
+      (dm:get 'host (db:query :all) :sort '((title :asc)))))
 
 (defun make-campaign (author host title &key description reply-to template attributes (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
@@ -240,8 +242,10 @@
     (db:remove 'attribute (db:query (:= 'campaign (dm:id campaign))))
     (dm:delete campaign)))
 
-(defun list-campaigns (&optional (user (auth:current)))
-  (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc))))
+(defun list-campaigns (&optional user)
+  (if user
+      (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc)))
+      (dm:get 'campaign (db:query :all) :sort '((title :asc)))))
 
 (defun list-attributes (campaign)
   (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc))))
