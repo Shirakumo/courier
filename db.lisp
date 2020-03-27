@@ -118,11 +118,31 @@
                (source-id :id)
                (target-type (:integer 1))
                (target-id :id)
+               ;; FIXME: rename to delay
                (time-offset (:integer 5))
-               (tag-constraint :text))
-             :indices '(campaign source-type source-id)))
+               (tag-constraint (:varchar 64))
+               (normalized-constraint :text))
+             :indices '(campaign source-type source-id))
+
+  (db:create 'sequence
+             '((campaign (:id campaign))
+               (title :text))
+             :indices '(campaign))
+  
+  (db:create 'sequence-mail
+             '((sequence (:id sequence))
+               (trigger (:id trigger)))
+             :indices '(sequence)))
 
 ;; FIXME: check values
+;; TODO: trigger execution
+;; TODO: sequence interface
+;; TODO: mail archive page
+;; TODO: overview pages
+;; TODO: better template editor
+;; TODO: email content preview
+;; TODO: permission sharing
+;; FIXME: consistent naming mail/email
 
 (defun ensure-id (id-ish)
   (etypecase id-ish
@@ -262,15 +282,15 @@
       (setf (dm:field subscriber "signup-time") (get-universal-time))
       (setf (dm:field subscriber "confirmed") confirmed)
       (dm:insert subscriber)
-      (loop for tag in tags
-            do (db:insert 'tag-table `(("subscriber" . ,(dm:id subscriber))
-                                       ("tag" . ,(dm:id tag)))))
       (loop for (attribute . value) in attributes
             do (dm:with-model attribute-value ('attribute-value NIL)
                  (setf (dm:field attribute-value "attribute") (ensure-id attribute))
                  (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
                  (setf (dm:field attribute-value "value") value)
                  (dm:insert attribute-value)))
+      (loop for tag in tags
+            do (tag subscriber tag))
+      (process-triggers subscriber subscriber)
       subscriber)))
 
 (defun ensure-subscriber (subscriber-ish)
@@ -379,29 +399,24 @@
 (defun make-trigger (campaign source target &key description (time-offset 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
     (setf-dm-fields trigger campaign description time-offset tag-constraint)
+    (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign tag-constraint))
     (setf (dm:field trigger "source-id") (dm:id source))
-    (setf (dm:field trigger "source-type") (ecase (dm:collection source)
-                                             (mail 0)
-                                             (link 1)))
+    (setf (dm:field trigger "source-type") (collection-type source))
     (setf (dm:field trigger "target-id") (dm:id target))
-    (setf (dm:field trigger "target-type") (ecase (dm:collection target)
-                                             (mail 0)
-                                             (tag 2)))
+    (setf (dm:field trigger "target-type") (collection-type target))
     (when save (dm:insert trigger))
     trigger))
 
 (defun edit-trigger (trigger &key description source target time-offset tag-constraint (save T))
   (setf-dm-fields trigger description time-offset tag-constraint)
+  (when tag-constraint
+    (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
   (when source
     (setf (dm:field trigger "source-id") (dm:id source))
-    (setf (dm:field trigger "source-type") (ecase (dm:collection source)
-                                             (mail 0)
-                                             (link 1))))
+    (setf (dm:field trigger "source-type") (collection-type source)))
   (when target
     (setf (dm:field trigger "target-id") (dm:id target))
-    (setf (dm:field trigger "target-type") (ecase (dm:collection target)
-                                             (mail 0)
-                                             (tag 2))))
+    (setf (dm:field trigger "target-type") (collection-type target)))
   (when save (dm:save trigger))
   trigger)
 
@@ -422,10 +437,8 @@
 
 (defun triggers (thing)
   (when (dm:id thing)
-    (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
-                                     (:= 'target-type (ecase (dm:collection thing)
-                                                        (mail 0)
-                                                        (tag 2))))))))
+    (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))
+                                     (:= 'source-type (collection-type thing)))))))
 
 (defun make-link (campaign &key url (save T))
   (let ((hash (cryptos:sha256 url :to :base64)))
@@ -466,11 +479,18 @@
     (unless (link-received-p link subscriber)
       (db:insert 'link-receipt `(("link" . ,(ensure-id link))
                                  ("subscriber" . ,(ensure-id subscriber))
-                                 ("time" . ,(get-universal-time)))))))
+                                 ("time" . ,(get-universal-time))))
+      (process-triggers subscriber link))))
 
 (defun mail-received-p (mail subscriber)
   (< 0 (db:count 'mail-receipt (db:query (:and (:= 'mail (ensure-id mail))
                                                (:= 'subscriber (ensure-id subscriber)))))))
+
+(defun mail-sent-p (mail subscriber)
+  (let ((query (db:query (:and (:= 'mail (ensure-id mail))
+                               (:= 'subscriber (ensure-id subscriber))))))
+    (or (< 0 (db:count 'mail-log query))
+        (< 0 (db:count 'mail-queue query)))))
 
 (defun mail-coverage (mail)
   (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
@@ -481,19 +501,45 @@
     (unless (mail-received-p mail subscriber)
       (db:insert 'mail-receipt `(("mail" . ,(ensure-id mail))
                                  ("subscriber" . ,(ensure-id subscriber))
-                                 ("time" . ,(get-universal-time)))))))
+                                 ("time" . ,(get-universal-time))))
+      (process-triggers subscriber mail))))
+
+(defun tagged-p (subscriber tag)
+  (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))
+                                            (:= 'tag (ensure-id tag)))))))
+
+(defun tag (subscriber tag)
+  (db:with-transaction ()
+    (unless (tagged-p subscriber tag)
+      (db:insert 'tag-table `(("tag" . ,(ensure-id tag))
+                              ("subscriber" . ,(ensure-id subscriber))))
+      (process-triggers subscriber tag))))
+
+(defun collection-type (collection)
+  (ecase (etypecase collection
+           (symbol collection)
+           (dm:data-model (dm:collection collection)))
+    (mail 0)
+    (link 1)
+    (tag 2)
+    (subscriber 3)
+    (campaign 4)))
+
+(defun type-collection (type)
+  (ecase type
+    ((0 mail) 'mail)
+    ((1 link) 'link)
+    ((2 tag) 'tag)
+    ((3 subscriber) 'subscriber)
+    ((4 campaign) 'campaign)))
 
 (defun resolve-typed (type id)
   (let ((id (db:ensure-id id)))
-    (dm:get-one (ecase (etypecase type
-                         ((or symbol integer) type)
-                         (string (parse-integer type)))
-                  ((0 mail) 'mail)
-                  ((1 link) 'link)
-                  ((2 tag) 'tag)
-                  ((3 subscriber) 'subscriber)
-                  ((4 campaign) 'campaign))
-            (db:query (:= '_id id)))))
+    (dm:get-one (type-collection
+                 (etypecase type
+                   ((or symbol integer) type)
+                   (string (parse-integer type))))
+                (db:query (:= '_id id)))))
 
 (defun check-accessible (dm &optional (user (auth:current)))
   (labels ((check (author)

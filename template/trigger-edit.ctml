@@ -17,6 +17,8 @@
           <select name="source-type" id="source" lquery="(select source-type)">
             <option value="0">mail opened</option>
             <option value="1">link visited</option>
+            <option value="2">tag assigned</option>
+            <option value="3">subscribed</option>
           </select>
           <input type="courier-id" name="source-id" required lquery="(val source-id)" placeholder="id" />
         </div>

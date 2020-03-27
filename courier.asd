@@ -20,6 +20,7 @@
                (:file "toolkit")
                (:file "email")
                (:file "db")
+               (:file "trigger")
                (:file "send-queue")
                (:file "front")
                (:file "api"))
