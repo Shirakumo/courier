@@ -228,9 +228,9 @@
   (destructuring-bind (subscriber mail) (decode-id id)
     (mark-mail-received mail subscriber)
     (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
-           (subscriber (dm:get-one 'subscriber (db:query (:= '_id subscriber))))
+           (subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field mail "campaign"))))
-      (r-clip:with-clip-processing ("view-mail.ctml")
+      (r-clip:with-clip-processing ("mail-view.ctml")
         (apply #'r-clip:process T
                :mail mail
                :campaign campaign
@@ -239,4 +239,19 @@
 
 (defun mail-url (mail subscriber)
   (uri-to-url (format NIL "courier/view/~a" (generate-id subscriber (ensure-id mail)))
+              :representation :external))
+
+(define-page mail-archive "courier/^archive/(.+)" (:uri-groups (id))
+  (destructuring-bind (subscriber) (decode-id id)
+    (let* ((mails (dm:get (rdb:join (mail _id) (mail-log mail)) (db:query (:= 'subscriber subscriber))))
+           (subscriber (ensure-subscriber subscriber))
+           (campaign (ensure-campaign (dm:field subscriber "campaign"))))
+      (r-clip:with-clip-processing ("mail-archive.ctml")
+        (apply #'r-clip:process T
+               :mails mails
+               :campaign campaign
+               :subscriber subscriber)))))
+
+(defun archive-url (subscriber)
+  (uri-to-url (format NIL "courier/archive/~a" (generate-id subscriber))
               :representation :external))

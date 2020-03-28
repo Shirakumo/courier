@@ -103,6 +103,9 @@
   (time
    :font-variant-numeric tabular-nums)
 
+  (.hidden
+   :display none)
+
   (.button
    :user-select none
    :cursor pointer
@@ -118,18 +121,26 @@
    :background #(c=0)
    :color (hex FFFFFF))
 
+  (.editor
+   ((:or textarea ".CodeMirror" iframe)
+    :min-height 80em)
+   (iframe
+    :border none
+    :box-sizing border-box
+    :width 100%))
+
   (form
-   ((:or input select textarea .editor)
+   ((:or input select textarea)
     :border 1px solid (hex E0E0E0)
     :background (hex F0F0F0)
     :font-size inherit
     :width 10em
     :padding 0.1em
     :box-sizing border-box)
-   ((:and (:or input select textarea .editor) :focus)
+   ((:and (:or input select textarea) :focus)
     :outline none
     :border-bottom 1px solid #(c=0))
-   ((:and (:or input select textarea .editor) [readonly])
+   ((:and (:or input select textarea) [readonly])
     :background (hex D0D0D0)
     :border-color (hex C0C0C0)
     :color (hex 505050))
@@ -146,12 +157,12 @@
      (>nav
       :background (hex E0E0E0)
       :padding 0.1em 0.3em)
-     (.editor
-      :position relative
-      :min-height 10em
-      :padding 0)
-     ((:or >.editor >textarea)
-      :width 100%)))
+     (>textarea
+      :width 100%))
+    (".CodeMirror"
+     :font-size 0.8em))
+   ((:and .row .big)
+    :flex-direction column)
    (.template :display none !important)
    (input
     :position relative)

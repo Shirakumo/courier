@@ -59,9 +59,9 @@
           <a class="button new-attribute"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
         </div>
       </div>
-      <div class="row">
+      <div class="row big">
         <label for="template">Email Template:</label>
-        <div>
+        <div class="editor" data-type="html">
           <nav>
             <a href="courier/help/template" title="Templating help" target="_blank">
               <i class="fas fa-info-circle"></i>
@@ -89,14 +89,3 @@
     </form>
   </article>
 </c:using>
-<script src="https://unpkg.com/codeflask/build/codeflask.min.js"></script>
-<script>
-  const target = document.querySelector("#template");
-  target.style.display = "none";
-  const editor = document.createElement("div");
-  editor.classList.add("editor");
-  target.parentNode.appendChild(editor);
-  const flask = new CodeFlask(editor, {language: 'html'});
-  flask.updateCode(target.innerText);
-  flask.onUpdate((code) => target.innerText = code);
-</script>

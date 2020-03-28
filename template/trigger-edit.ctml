@@ -41,7 +41,7 @@
       </div>
       <div class="row">
         <label for="tag-constraint">Constrain to tagged:</label>
-        <input type="constraint" name="tag-constraint" id="tag-constraint" placeholder="a b -c"
+        <input type="constraint" name="tag-constraint" id="tag-constraint" placeholder="a b -c" maxlength="64"
                lquery="(val tag-constraint)" />
       </div>
       <div class="row">

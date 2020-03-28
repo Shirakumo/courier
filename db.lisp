@@ -135,7 +135,6 @@
              :indices '(sequence)))
 
 ;; FIXME: check values
-;; TODO: trigger execution
 ;; TODO: sequence interface
 ;; TODO: mail archive page
 ;; TODO: overview pages

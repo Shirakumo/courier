@@ -71,6 +71,7 @@
 (defun mail-template-args (campaign mail subscriber)
   (list* :mail-receipt-image (mail-receipt-url mail subscriber)
          :mail-url (mail-url mail subscriber)
+         :archive-url (archive-url subscriber)
          :unsubscribe (unsubscribe-url subscriber)
          :title (dm:field mail "title")
          :subject (dm:field mail "subject")

@@ -20,8 +20,56 @@ class Courier{
 
         self.registerAll(".type-select", self.registerTypeSelect);
         self.registerAll(".button.confirm", self.registerConfirm);
+        self.registerAll(".editor", self.registerEditor);
         if(document.querySelector(".campaign.edit"))
             self.registerCampaignForm(document.querySelector(".campaign.edit"));
+    }
+
+    loadCSS(source){
+        var self = this;
+        return new Promise((ok)=>{
+            var links = document.querySelectorAll("link[rel=stylesheet]");
+            for(var i=0; i<links.length; i++){
+                if(links[i].getAttribute("href") == source){
+                    ok();
+                    return;
+                }
+            }
+            self.log("Loading", source);
+            var el = self.constructElement("link",{
+                attributes: {
+                    type: "text/css",
+                    rel: "stylesheet",
+                    crossorigin: "anonymous",
+                    href: source
+                }
+            });
+            el.addEventListener("load", ok);
+            document.querySelector("header").appendChild(el);
+        });
+    }
+
+    loadJS(source){
+        var self = this;
+        return new Promise((ok)=>{
+            var scripts = document.querySelectorAll("script");
+            for(var i=0; i<scripts.length; i++){
+                if(scripts[i].getAttribute("src") == source){
+                    ok();
+                    return;
+                }
+            }
+            self.log("Loading", source);
+            var el = self.constructElement("script",{
+                attributes: {
+                    type: "text/javascript",
+                    crossorigin: "anonymous",
+                    src: source
+                }
+            });
+            el.addEventListener("load", ok);
+            document.querySelector("body").appendChild(el);
+        });
     }
 
     apiCall(endpoint, args){
@@ -160,6 +208,40 @@ class Courier{
         });
         element.querySelector(".new-attribute").addEventListener("click",()=>{
             element.querySelector(".attributes").appendChild(reg(self.instantiateTemplate(element)));
+        });
+    }
+
+    registerEditor(element){
+        var self = this;
+        var textarea = element.querySelector("textarea");
+        var nav = element.querySelector("nav");
+        var mode = (element.dataset.type == "html") ? "htmlmixed"
+            :(element.dataset.type == "js") ? "javascript"
+            :(element.dataset.type == "css") ? "css"
+            :(element.dataset.type == "markless") ? "markless"
+            : "";
+        self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.js")
+            .then(()=>self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/xml/xml.min.js"))
+            .then(()=>self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/htmlmixed/htmlmixed.min.js"))
+            .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"))
+            .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/theme/mdn-like.min.css"))
+            .then(()=>CodeMirror.fromTextArea(textarea, {
+                mode: mode,
+                theme: "mdn-like",
+                lineNumbers: true,
+                lineWrapping: true
+            }));
+        var preview = self.constructElement("iframe",{classes: ["preview", "hidden"]});
+        element.appendChild(preview);
+        nav.querySelector(".preview").addEventListener("click",()=>{
+            if(preview.classList.contains("hidden")){
+                preview.src = "data:text/html;charset=utf-8,"+escape(textarea.innerText);
+                preview.classList.remove("hidden");
+                element.querySelector(".CodeMirror").classList.add("hidden");
+            }else{
+                element.querySelector(".CodeMirror").classList.remove("hidden");
+                preview.classList.add("hidden");
+            }
         });
     }
 }
