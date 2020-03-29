@@ -130,6 +130,24 @@
         (redirect (url> "courier/campaign" :query `(("message" . "Campaign deleted."))))
         (api-output NIL))))
 
+(define-api courier/campaign/preview (&optional campaign host template title description reply-to) (:access (perm courier mail))
+  (let* ((campaign (cond (campaign (check-accessible (ensure-campaign campaign)))
+                         (host (make-campaign (user:id (auth:current)) (ensure-host host)
+                                              (or title "Test") :save NIL))
+                         (T (error "Need CAMPAIGN or HOST."))))
+         (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                             (:= 'address (dm:field campaign "reply-to"))))))
+         (mail (make-mail campaign :title "Test Email"
+                                   :subject "This is a test!"
+                                   :body (alexandria:read-file-into-string
+                                          (@template "email/sample-body.mess"))
+                                   :save NIL)))
+    (setf (content-type *response*) "text/html; encoding=utf-8")
+    (setf-dm-fields campaign template title description reply-to)
+    (let ((data (compile-email-content campaign mail subscriber))
+          (plump:*tag-dispatchers* plump:*html-tags*))
+      (plump:serialize data NIL))))
+
 (define-api courier/mail (mail) (:access (perm courier mail))
   (api-output (check-accessible (ensure-mail mail))))
 
@@ -187,6 +205,17 @@
         (redirect (url> (format NIL "courier/campaign/~a/mail/~a/send" (dm:field mail "campaign") (dm:id mail))
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
+
+(define-api courier/mail/preview (mail &optional title subject body) (:access (perm courier mail))
+  (let* ((mail (check-accessible (ensure-mail mail)))
+         (campaign (ensure-campaign (dm:field mail "campaign")))
+         (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                             (:= 'address (dm:field campaign "reply-to")))))))
+    (setf (content-type *response*) "text/html; encoding=utf-8")
+    (setf-dm-fields mail title subject body)
+    (let ((data (compile-email-content campaign mail subscriber))
+          (plump:*tag-dispatchers* plump:*html-tags*))
+      (plump:serialize data NIL))))
 
 (define-api courier/tag (tag) (:access (perm courier tag))
   (api-output (check-accessible (ensure-tag tag))))
@@ -354,10 +383,11 @@
                  ("browser" . "true"))))
 
 (define-api courier/mail/receipt (id) ()
-  (destructuring-bind (subscriber mail) (decode-id id)
-    (mark-mail-received mail subscriber)
-    (setf (header "Cache-Control") "public, max-age=31536000")
-    *tracker*))
+  (ignore-errors
+   (destructuring-bind (subscriber mail) (decode-id id)
+     (mark-mail-received mail subscriber))
+   (setf (header "Cache-Control") "public, max-age=31536000"))
+  *tracker*)
 
 (defun mail-receipt-url (subscriber mail)
   (url> "courier/api/courier/mail/receipt"

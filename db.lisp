@@ -138,8 +138,6 @@
 ;; TODO: sequence interface
 ;; TODO: mail archive page
 ;; TODO: overview pages
-;; TODO: better template editor
-;; TODO: email content preview
 ;; TODO: permission sharing
 ;; FIXME: consistent naming mail/email
 
@@ -313,13 +311,13 @@
   (ecase (dm:collection thing)
     (campaign
      (dm:get 'subscriber (db:query (:= 'campaign (dm:id thing)))
-             :sort '((signup-time . :DESC))))
+             :sort '((signup-timea :DESC))))
     (tag
      (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id thing)))
-             :sort '((signup-time . :DESC))))
+             :sort '((signup-time :DESC))))
     (link
      (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (db:query (:= 'link (dm:id thing)))
-             :sort '((signup-time . :DESC))))))
+             :sort '((signup-time :DESC))))))
 
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))

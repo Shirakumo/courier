@@ -17,10 +17,6 @@
         <input type="text" minlength="3" maxlength="128" autocomplete="none"
                id="subject" name="subject" lquery="(val subject)" />
       </div>
-      <div class="row">
-        <label for="body">Body:</label>
-        <textarea id="body" name="body" lquery="(text body)" />
-      </div>
       <c:when test="_id">
         <div class="row">
           <label>Is sent on:</label>
@@ -36,6 +32,20 @@
           </div>
         </div>
       </c:when>
+      <div class="row big">
+        <label for="body">Body:</label>
+        <div class="editor" data-type="markless" data-preview-endpoint="mail/preview">
+          <nav>
+            <a @href="courier/help/template" title="Templating help" target="_blank">
+              <i class="fas fa-info-circle"></i>
+            </a>
+            <a href="#" title="Preview" class="preview">
+              <i class="fas fa-eye"></i>
+            </a>
+          </nav>
+          <textarea id="body" name="body" lquery="(text body)" />
+        </div>
+      </div>
       <input type="hidden" name="browser" value="true" />
       <div class="row">
         <c:if test="_id">

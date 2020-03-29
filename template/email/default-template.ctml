@@ -3,27 +3,90 @@
   <head>
     <meta charset="utf-8">
     <title lquery="(text subject)">Subject</title>
+    <style type="text/css">
+      html{
+          background: #F0F0F0;
+          font-size: 14pt;
+      }
+      body{
+          max-width: 700px;
+          margin: 20px auto;
+      }
+      .header{
+          text-align: center;
+          margin: 20px 0;
+      }
+      .header a.in-browser{
+          text-align: center;
+          font-size: 10pt;
+          color: #505050;
+      }
+      .img.track{
+          width: 1px;
+          height: 1px;
+      }
+      .main{
+          position: relative;
+          background: #FFFFFF;
+          padding: 10px;
+      }
+      .main code{
+          font-size: 11pt;
+          background: #F0F0F0;
+          padding: 5px;
+      }
+      .main blockquote{
+          border-left: 4px solid #A0A0A0;
+          margin: 20px 10px;
+          padding: 0 10px;
+      }
+      .main cite{
+          display: block;
+          text-align: right;
+      }
+      .footer hr{
+          margin: 0 0 20px 0;
+          border: 1px solid #A0A0A0;
+      }
+      .footer{
+          font-size: 10pt;
+          text-align: center;
+          color: #505050;
+      }
+      .footer .line{
+          font-weight: bold;
+      }
+      .footer .address{
+          margin: 10px;
+      }
+      img{
+          max-width: 100%;
+      }
+    </style>
   </head>
   <body>
     <div class="header">
       <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
       <a href="#" lquery="(attr :href mail-url)" class="in-browser">View this email in your browser</a>
-      <h1 lquery="(text subject)">Subject</h1>
     </div>
     <div class="main" lquery="(html body)">
       Body
     </div>
     <div class="footer">
+      <hr>
       <div class="note">
-        You are receiving this email because you opted in via our website.
-        If you no longer want to receive these emails, you can unsubscribe <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe)">here</a>
+        You are receiving this email because you opted in via our website.<br>
+        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe)">unsubscribe here</a>
       </div>
       <div class="address">
-        Our mailing address is:
-        Address
+        <div class="line">Our mailing address is:</div>
+        Example<br>
+        Somestreet 33<br>
+        Anytown<br>
+        Country
       </div>
       <div class="copy">
-        &#169; <span lquery="(time T)">2019</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>
+        Copyright © <span lquery="(time T :year)">20XX</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>
       </div>
       <div class="software">
         Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>

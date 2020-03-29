@@ -18,6 +18,7 @@
   :serial T
   :components ((:file "module")
                (:file "toolkit")
+               (:file "body")
                (:file "email")
                (:file "db")
                (:file "trigger")

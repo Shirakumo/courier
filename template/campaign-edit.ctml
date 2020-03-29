@@ -61,9 +61,9 @@
       </div>
       <div class="row big">
         <label for="template">Email Template:</label>
-        <div class="editor" data-type="html">
+        <div class="editor" data-type="html" data-preview-endpoint="campaign/preview">
           <nav>
-            <a href="courier/help/template" title="Templating help" target="_blank">
+            <a @href="courier/help/template" title="Templating help" target="_blank">
               <i class="fas fa-info-circle"></i>
             </a>
             <a href="#" title="Preview" class="preview">

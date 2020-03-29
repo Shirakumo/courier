@@ -18,7 +18,7 @@
             <option value="0">mail opened</option>
             <option value="1">link visited</option>
             <option value="2">tag assigned</option>
-            <option value="3">subscribed</option>
+            <option value="4">subscribed</option>
           </select>
           <input type="courier-id" name="source-id" required lquery="(val source-id)" placeholder="id" />
         </div>
@@ -36,7 +36,7 @@
       <div class="row">
         <label for="delay">With delay:</label>
         <select id="delay" name="time-offset" lquery="(select time-offset)">
-          <c:splice lquery='(html (plump:parse (template-file "time-offset.ctml" "courier")))' />
+          <c:splice lquery='(html (plump:parse (template-file "time-offset.ctml" :courier)))' />
         </select>
       </div>
       <div class="row">

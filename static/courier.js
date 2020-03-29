@@ -72,21 +72,31 @@ class Courier{
         });
     }
 
-    apiCall(endpoint, args){
+    apiCall(endpoint, args, methodArgs){
         var self = this;
+        methodArgs = methodArgs || {};
+        methodArgs.format = methodArgs.format || "json";
         return new Promise((ok, fail)=>{
             var request = new XMLHttpRequest();
-            var formData = new FormData();
+            var formData;
 
-            formData.append("data-format", "json");
-            for(var field in args){
-                formData.append(field, args[field]);
+            if(args instanceof HTMLElement){
+                formData = new FormData(args);
+            }else{
+                formData = new FormData();
+                for(var field in args){
+                    formData.append(field, args[field]);
+                }
             }
+
+            if(methodArgs.format == "json")
+                formData.append("data-format", "json");
             request.onload = ()=>{
-                var data = JSON.parse(request.responseText);
-                if(request.status === 200 && data.status == 200){
-                    self.log("Request succeeded", data.data);
-                    ok(data.data);
+                var data = (methodArgs.format=="json")? JSON.parse(request.responseText)
+                    : request.responseText;
+                if(request.status === 200){
+                    self.log("Request succeeded", data);
+                    ok(data);
                 }else{
                     self.log("Request failed", data);
                     fail(data);
@@ -106,7 +116,7 @@ class Courier{
             });
         }else{
             return self.apiCall(type+"/list", {campaign: campaign})
-                .then((data)=>{self.cache[type] = data; return data;});
+                .then((data)=>{self.cache[type] = data.data; return data.data;});
         }
     }
 
@@ -225,24 +235,34 @@ class Courier{
             .then(()=>self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/htmlmixed/htmlmixed.min.js"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/theme/mdn-like.min.css"))
-            .then(()=>CodeMirror.fromTextArea(textarea, {
-                mode: mode,
-                theme: "mdn-like",
-                lineNumbers: true,
-                lineWrapping: true
-            }));
+            .then(()=>{
+                let editor = CodeMirror.fromTextArea(textarea, {
+                    mode: mode,
+                    theme: "mdn-like",
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    viewportMargin: Infinity
+                });
+                editor.on("change", ()=>editor.save());});
         var preview = self.constructElement("iframe",{classes: ["preview", "hidden"]});
         element.appendChild(preview);
-        nav.querySelector(".preview").addEventListener("click",()=>{
-            if(preview.classList.contains("hidden")){
-                preview.src = "data:text/html;charset=utf-8,"+escape(textarea.innerText);
-                preview.classList.remove("hidden");
-                element.querySelector(".CodeMirror").classList.add("hidden");
-            }else{
-                element.querySelector(".CodeMirror").classList.remove("hidden");
-                preview.classList.add("hidden");
-            }
+        preview.addEventListener("load", ()=>{
+            preview.style.height = preview.contentWindow.document.body.scrollHeight + 'px';
         });
+        if(nav.querySelector(".preview")){
+            var previewEndpoint = element.dataset.previewEndpoint;
+            nav.querySelector(".preview").addEventListener("click",()=>{
+                if(preview.classList.contains("hidden")){
+                    self.apiCall(previewEndpoint, element.closest("form"), {format:"html"})
+                        .then((r)=>preview.src = "data:text/html;charset=utf-8,"+escape(r));
+                    preview.classList.remove("hidden");
+                    element.querySelector(".CodeMirror").classList.add("hidden");
+                }else{
+                    element.querySelector(".CodeMirror").classList.remove("hidden");
+                    preview.classList.add("hidden");
+                }
+            });
+        }
     }
 }
 

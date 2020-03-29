@@ -122,8 +122,10 @@
    :color (hex FFFFFF))
 
   (.editor
-   ((:or textarea ".CodeMirror" iframe)
-    :min-height 80em)
+   ((:or textarea iframe)
+    :min-height 30em)
+   (".CodeMirror"
+    :height auto)
    (iframe
     :border none
     :box-sizing border-box

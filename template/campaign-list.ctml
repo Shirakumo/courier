@@ -4,10 +4,6 @@
       <a class="title" @href="courier/campaign/{0} title" lquery="(text title)">Campaign</a>
       <span class="description" lquery="(text description)">Description</span>
       <nav class="actions">
-        <a class="button" href="#" @href="courier/campaign/{0}/tag title">
-          <i class="fas fa-tag"></i>
-          Tags
-        </a>
         <a class="button" href="#" @href="courier/campaign/{0}/mail title">
           <i class="fas fa-envelope"></i>
           Mails
@@ -15,6 +11,14 @@
         <a class="button" href="#" @href="courier/campaign/{0}/subscriber title">
           <i class="fas fa-user"></i>
           Subscribers
+        </a>
+        <a class="button" href="#" @href="courier/campaign/{0}/trigger _id">
+          <i class="fas fa-bolt"></i>
+          Triggers
+        </a>
+        <a class="button" href="#" @href="courier/campaign/{0}/tag title">
+          <i class="fas fa-tag"></i>
+          Tags
         </a>
         <a class="button" href="#" @href="courier/campaign/{0}/edit title">
           <i class="fas fa-edit"></i>
