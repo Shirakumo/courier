@@ -8,7 +8,10 @@
 (define-module #:courier
   (:use #:cl #:radiance)
   (:shadow #:trigger)
-  (:export))
+  (:export)
+  (:local-nicknames
+   (#:markless #:org.shirakumo.markless)
+   (#:components #:org.shirakumo.markless.components)))
 (in-package #:courier)
 
 (define-trigger startup ()
