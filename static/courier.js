@@ -266,4 +266,5 @@ class Courier{
     }
 }
 
-var courier = new Courier();
+var courier;
+document.addEventListener("DOMContentLoaded", ()=>courier = courier || new Courier());
