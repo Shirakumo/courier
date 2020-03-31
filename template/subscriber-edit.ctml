@@ -21,8 +21,8 @@
           <label for="#" lquery="(attr :for title) (text title)">#</label>
           <input type="hidden"  name="fields[]" lquery="(attr :value _id)" />
           <input type="text"  name="values[]" id="#"
-                 lquery="(attr :type (second (nth type courier::*attribute-types*)) :id title :required required)"
-                         (val (clip (*** :field-values ) title))/>
+                 lquery="(attr :type (second (nth type courier::*attribute-types*)) :id title :required required)
+                         (val (clip (*** :field-values ) title))" />
         </div>
       </c:splice>
       <div class="row">
@@ -50,8 +50,6 @@
         </select>
         <a class="button new-tag"><i class="fas fa-fw fa-plus-circle"></i> Add Tag</a>
       </div>
-      <input type="hidden" name="browser" value="true" />
-      <input type="submit" value="Subscribe"/>
       <div class="row">
         <input type="hidden" name="browser" value="true" />
         <c:if test="_id">
@@ -61,7 +59,7 @@
             <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/tag/delete" />
           </c:then>
           <c:else>
-            <input type="submit" value="Create Tag" @formaction="courier/api/courier/tag/new" />
+            <input type="submit" value="Create Subscriber" @formaction="courier/api/courier/tag/new" />
           </c:else>
         </c:if>
       </div>
