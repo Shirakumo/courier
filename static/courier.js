@@ -21,6 +21,7 @@ class Courier{
         self.registerAll(".type-select", self.registerTypeSelect);
         self.registerAll(".button.confirm", self.registerConfirm);
         self.registerAll(".editor", self.registerEditor);
+        self.registerAll(".chart", self.registerChart);
         if(document.querySelector(".campaign.edit"))
             self.registerCampaignForm(document.querySelector(".campaign.edit"));
     }
@@ -263,6 +264,43 @@ class Courier{
                 }
             });
         }
+    }
+
+    registerChart(element){
+        var self = this;
+        var ctx = element.querySelector("canvas").getContext("2d");
+        var chart = null;
+        var refresh = ()=>
+            self.apiCall(element.getAttribute("action"),element)
+            .then((r)=>{
+                chart.data.labels = r.data.labels;
+                chart.data.datasets[0].data = r.data.points;
+                chart.update();
+            });
+        self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js")
+            .then(()=>{
+                chart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        datasets: [{
+                            data: [],
+                            backgroundColor: 'rgba(245,166,49,0.2)',
+                            borderColor: 'rgba(245,166,49,1)',
+                            pointRadius: 10
+                        }],
+                        labels: []
+                    },
+                    options: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                });
+                refresh();
+            });
+        [].forEach.call(element.querySelectorAll("select"), (el)=>{
+            el.addEventListener("change", refresh);
+        });
     }
 }
 

@@ -134,12 +134,12 @@
                (trigger (:id trigger)))
              :indices '(sequence)))
 
-;; FIXME: check values
-;; TODO: sequence interface
-;; TODO: mail archive page
 ;; TODO: overview pages
-;; TODO: permission sharing
+;; TODO: mail archive page
+;; TODO: sequence interface
 ;; FIXME: consistent naming mail/email
+;; FIXME: check values
+;; TODO: permission sharing
 
 (defun ensure-id (id-ish)
   (etypecase id-ish
@@ -511,6 +511,15 @@
       (db:insert 'tag-table `(("tag" . ,(ensure-id tag))
                               ("subscriber" . ,(ensure-id subscriber))))
       (process-triggers subscriber tag))))
+
+(defun subscriber-count (thing)
+  (ecase (dm:collection thing)
+    (campaign (db:count 'subscriber (db:query (:= 'campaign (dm:id thing)))))
+    (tag (db:count 'tag-table (db:query (:= 'tag (dm:id thing)))))))
+
+(defun mail-count (thing)
+  (ecase (dm:collection thing)
+    (campaign (db:count 'mail (db:query (:= 'campaign (dm:id thing)))))))
 
 (defun collection-type (collection)
   (ecase (etypecase collection

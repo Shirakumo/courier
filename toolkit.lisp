@@ -77,3 +77,9 @@
                    (write-char char buffer))
             finally (collect))
       (nreverse results))))
+
+(defun mktable (&rest entries)
+  (let ((table (make-hash-table)))
+    (loop for (k v) on entries by #'cddr
+          do (setf (gethash k table) v))
+    table))

@@ -266,4 +266,36 @@
     (label
      :min-width 50%)
     (.row
-     :margin 0.5em 0))))
+     :margin 0.5em 0)))
+
+  (.page.overview
+   :display flex
+   :flex-wrap wrap
+   :justify-content center
+   ((:or .panel .chart)
+    :background (hex F0F0F0)
+    :border-bottom 0.2em solid (hex E0E0E0)
+    :margin 1em
+    :padding 1em)
+   (.panel
+    :display flex
+    :flex-direction column
+    :justify-content center
+    :align-items center
+    :width 15em
+    :text-align center
+    (.count
+     :display block
+     :font-size 3em
+     :margin 0.2em 0
+     :font-weight bold
+     :text-align center)
+    (a.overview
+     :font-size 1.2em))
+   (.chart
+    :width 800px
+    (h2 :margin 0)
+    (canvas
+     :width 100%
+     :height 10em
+     :background (hex FFFFFF)))))

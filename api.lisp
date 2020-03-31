@@ -338,6 +338,38 @@
                         :query `(("message" . "Subscriber deleted."))))
         (api-output NIL))))
 
+(define-api courier/subscriber/trend (campaign &optional (scale "week")) (:access (perm courier subscriber))
+  (let ((campaign (check-accessible (ensure-campaign campaign)))
+        (labels ())
+        (data ()))
+    (flet ((compute (start step y-labels)
+             (loop for i from 0 below (length y-labels)
+                   for d = (mod (- start i) (length y-labels))
+                   for tmax = (get-universal-time) then tmin
+                   for tmin = (- tmax step)
+                   do (push (aref y-labels d) labels)
+                      (push (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                                  (:<= 'signup-time tmax)
+                                                                  (:< tmin 'signup-time))))
+                            data))))
+      (cond ((equal scale "week")
+             (compute (nth-value 6 (decode-universal-time (get-universal-time) 0))
+                      (* 60 60 24)
+                      #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")))
+            ((equal scale "month")
+             (compute (1- (nth-value 3 (decode-universal-time (get-universal-time) 0)))
+                      (* 60 60 24)
+                      (coerce (nreverse (loop for i downfrom (nth-value 3 (decode-universal-time (get-universal-time) 0)) to 1
+                                              collect i))
+                              'vector)))
+            ((equal scale "year")
+             (compute (1- (nth-value 4 (decode-universal-time (get-universal-time) 0)))
+                      (* 60 60 24 30)
+                      #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")))
+            (T
+             (error 'api-argument-invalid :argument "scale"))))
+    (api-output (mktable "labels" labels "points" data))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
