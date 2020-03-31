@@ -82,7 +82,7 @@
                      :tags (list-tags subscriber)
                      :time (get-universal-time)
                      (subscriber-attributes subscriber))))
-    (list* :body (compile-email-body (dm:field mail "body") args)
+    (list* :body (compile-email-body campaign (dm:field mail "body") args)
            args)))
 
 (defun compile-email-content (campaign mail subscriber)

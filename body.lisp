@@ -7,11 +7,24 @@
 (in-package #:courier)
 
 (defclass mail-format (org.shirakumo.markless.plump:plump)
-  ((vars :initarg :vars :reader vars)))
+  ((vars :initarg :vars :reader vars)
+   (campaign :initarg :campaign :reader campaign)))
 
 (defclass parser (markless:parser)
   ()
   (:default-initargs :directives (list* 'template-var markless:*default-directives*)))
+
+(defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f mail-format))
+  (let ((element (call-next-method)))
+    (when (string= "a" (plump-dom:tag-name element))
+      (setf (plump-dom:attribute element "href")
+            (make-link (campaign f) :url (plump-dom:attribute element "href"))))))
+
+(defmethod markless:output-component ((c components:compound) (target plump-dom:nesting-node) (f mail-format))
+  (let ((element (call-next-method)))
+    (when (string= "a" (plump-dom:tag-name element))
+      (setf (plump-dom:attribute element "href")
+            (make-link (campaign f) :url (plump-dom:attribute element "href"))))))
 
 (defclass var (components:inline-component)
   ((name :initarg :name :initform (error "NAME required") :accessor name)))
@@ -39,8 +52,8 @@
                     (vector-push-extend (make-instance 'var :name (subseq line cursor i)) children)
                     (return (1+ i))))))
 
-(defun compile-email-body (content vars)
+(defun compile-email-body (campaign content vars)
   (let ((dom (plump-dom:make-root)))
     (markless:output (markless:parse content (make-instance 'parser))
                      :target dom
-                     :format (make-instance 'mail-format :vars vars))))
+                     :format (make-instance 'mail-format :vars vars :campaign campaign))))
