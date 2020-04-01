@@ -1,3 +1,28 @@
 <article class="page dashboard">
-  
+  <c:if test="(null hosts)">
+    <c:then>
+      <div class="panel single advice">
+        <a @href="courier/host/new">
+          <i class="fas fa-fw fa-server"></i>
+          Create a mail host
+        </a>
+      </div>
+    </c:then>
+    <c:elseif test="(null campaigns)">
+      <div class="panel single advice">
+        <a @href="courier/campaign/new">
+          <i class="fas fa-fw fa-box-open"></i>
+          Create a campaign
+        </a>
+      </div>
+    </c:elseif>
+    <c:elseif test="(null (cdr campaigns))">
+      <c:let campaign="(first campaigns)">
+        <c:import file='(template-file "campaign-overview.ctml" "COURIER")'/>
+      </c:let>
+    </c:elseif>
+    <c:else>
+      <c:import file='(template-file "campaign-list.ctml" "COURIER")'/>
+    </c:else>
+  </c:fi>
 </article>

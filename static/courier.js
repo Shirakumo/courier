@@ -2,6 +2,7 @@ class Courier{
     constructor(){
         var self = this;
         self.cache = {};
+        self.loading = {};
         if(console.log === undefined)
             self.log = ()=>{};
         else
@@ -28,49 +29,53 @@ class Courier{
 
     loadCSS(source){
         var self = this;
-        return new Promise((ok)=>{
-            var links = document.querySelectorAll("link[rel=stylesheet]");
-            for(var i=0; i<links.length; i++){
-                if(links[i].getAttribute("href") == source){
-                    ok();
-                    return;
+        if(!self.loading[source])
+            self.loading[source] = new Promise((ok)=>{
+                var links = document.querySelectorAll("link[rel=stylesheet]");
+                for(var i=0; i<links.length; i++){
+                    if(links[i].getAttribute("href") == source){
+                        ok();
+                        return;
+                    }
                 }
-            }
-            self.log("Loading", source);
-            var el = self.constructElement("link",{
-                attributes: {
-                    type: "text/css",
-                    rel: "stylesheet",
-                    crossorigin: "anonymous",
-                    href: source
-                }
-            });
-            el.addEventListener("load", ok);
-            document.querySelector("header").appendChild(el);
+                self.log("Loading", source);
+                var el = self.constructElement("link",{
+                    attributes: {
+                        type: "text/css",
+                        rel: "stylesheet",
+                        crossorigin: "anonymous",
+                        href: source
+                    }
+                });
+                el.addEventListener("load", ok);
+                document.querySelector("header").appendChild(el);
         });
+        return self.loading[source];
     }
 
     loadJS(source){
         var self = this;
-        return new Promise((ok)=>{
-            var scripts = document.querySelectorAll("script");
-            for(var i=0; i<scripts.length; i++){
-                if(scripts[i].getAttribute("src") == source){
-                    ok();
-                    return;
+        if(!self.loading[source])
+            self.loading[source] = new Promise((ok)=>{
+                var scripts = document.querySelectorAll("script");
+                for(var i=0; i<scripts.length; i++){
+                    if(scripts[i].getAttribute("src") == source){
+                        ok();
+                        return;
+                    }
                 }
-            }
-            self.log("Loading", source);
-            var el = self.constructElement("script",{
-                attributes: {
-                    type: "text/javascript",
-                    crossorigin: "anonymous",
-                    src: source
-                }
+                self.log("Loading", source);
+                var el = self.constructElement("script",{
+                    attributes: {
+                        type: "text/javascript",
+                        crossorigin: "anonymous",
+                        src: source
+                    }
+                });
+                el.addEventListener("load", ok);
+                document.querySelector("body").appendChild(el);
             });
-            el.addEventListener("load", ok);
-            document.querySelector("body").appendChild(el);
-        });
+        return self.loading[source];
     }
 
     apiCall(endpoint, args, methodArgs){
@@ -280,7 +285,7 @@ class Courier{
         self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js")
             .then(()=>{
                 chart = new Chart(ctx, {
-                    type: "line",
+                    type: element.dataset.type,
                     data: {
                         datasets: [{
                             data: [],
@@ -291,6 +296,9 @@ class Courier{
                         labels: []
                     },
                     options: {
+                        layout: {
+                            padding: 5
+                        },
                         legend: {
                             display: false
                         }

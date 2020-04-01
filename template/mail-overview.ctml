@@ -1,0 +1,27 @@
+<article class="page campaign overview">
+  <c:using value="mail">
+    <div class="panel single sent-count">
+      <span class="count" lquery="(text (courier::mail-sent-count *))">1000000</span>
+      <a @href="courier/log/mail/{0} _id" class="overview">Sent</a>
+    </div>
+    <form class="panel chart open-rate" data-type="doughnut" action="mail/open-rate">
+      <h2>Open Rate</h2>
+      <input type="hidden" name="mail" lquery="(val _id)"/>
+      <canvas></canvas>
+    </form>
+    <nav class="panel wide">
+      <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/send campaign _id">
+        <i class="fas fa-fw fa-paper-plane"></i>
+        Send
+      </a>
+      <a class="button" href="#" @href="courier/log/mail/{0} _id">
+        <i class="fas fa-fw fa-clipboard"></i>
+        Log
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/edit campaign _id">
+        <i class="fas fa-fw fa-edit"></i>
+        Edit
+      </a>
+    </nav>
+  </c:using>
+</article>

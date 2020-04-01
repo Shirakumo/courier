@@ -20,7 +20,10 @@
 
 (define-page frontpage "courier/^$" ()
   (if (user:check (auth:current "anonymous") (perm courier))
-      (render-page "Dashboard" (@template "dashboard.ctml"))
+      (render-page "Dashboard"
+                   (@template "dashboard.ctml")
+                   :hosts (list-hosts (auth:current))
+                   :campaigns (list-campaigns (auth:current)))
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
 (define-page host-list "courier/^host/?$" (:access (perm courier))
@@ -51,7 +54,7 @@
                  :campaign campaign)))
 
 (define-page campaign-new ("courier/^campaign/new$" 1) (:uri-groups () :access (perm courier))
-  (let ((campaign (make-campaign :save NIL)))
+  (let ((campaign (make-campaign (auth:current) NIL NIL :reply-to (user:field "email" (auth:current)) :save NIL)))
     (setf (dm:field campaign "template") (alexandria:read-file-into-string (@template "email/default-template.ctml")))
     (render-page "New Campaign"
                  (@template "campaign-edit.ctml")
@@ -214,8 +217,8 @@
                               :sort '(("time" :desc)) :amount 100))))
 
 ;; User sections
-(define-page campaign-subscription "courier/^subscription(:?/.*)?" ()
-  (let ((campaign (ensure-campaign (db:ensure-id (post/get "campaign")))))
+(define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))
+  (let ((campaign (ensure-campaign (db:ensure-id campaign))))
     (r-clip:with-clip-processing ("campaign-subscription.ctml")
       (r-clip:process T
                       :title (format NIL "Subscribe to ~a" (dm:field campaign "title"))

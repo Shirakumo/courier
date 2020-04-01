@@ -31,7 +31,7 @@
   (let ((modelg (gensym "MODEL")))
     `(let ((,modelg ,model))
        ,@(loop for var in vars
-               collect (destructuring-bind (var field) (radiance::enlist var (string-downcase var))
+               collect (destructuring-bind (var &optional (field (string-downcase var))) (radiance::enlist var)
                          `(etypecase ,var
                             (null)
                             ((or string integer)

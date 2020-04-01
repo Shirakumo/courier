@@ -1,6 +1,6 @@
 <article class="page campaign overview">
   <c:using value="campaign">
-    <div class="panel subscriber">
+    <div class="panel single subscriber">
       <span class="count" lquery="(text (courier::subscriber-count *))">1000000</span>
       <a @href="courier/campaign/{0}/subscriber title" class="overview">Subscribers</a>
       <a @href="courier/campaign/{0}/subscriber/new title" class="button">
@@ -8,7 +8,7 @@
         Add
       </a>
     </div>
-    <div class="panel mail">
+    <div class="panel single mail">
       <span class="count" lquery="(text (courier::mail-count *))">5</span>
       <a @href="courier/campaign/{0}/mail title" class="overview">Mails</a>
       <a @href="courier/campaign/{0}/mail/new title" class="button">
@@ -16,7 +16,29 @@
         Add
       </a>
     </div>
-    <form class="chart subscriber" action="subscriber/trend">
+    <nav class="panel wide">
+      <a class="button" href="#" @href="courier/subscription/{0} _id">
+        <i class="fas fa-link"></i>
+        Link
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/invite title">
+        <i class="fas fa-paper-plane"></i>
+        Invite
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/trigger title">
+        <i class="fas fa-bolt"></i>
+        Triggers
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/tag title">
+        <i class="fas fa-tag"></i>
+        Tags
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/edit title">
+        <i class="fas fa-edit"></i>
+        Edit
+      </a>
+    </nav>
+    <form class="panel chart subscriber wide" data-type="line" action="subscriber/trend">
       <h2>Subscriber Trend</h2>
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <select name="scale">
@@ -24,6 +46,11 @@
         <option value="month">Month</option>
         <option value="year">Year</option>
       </select>
+      <canvas></canvas>
+    </form>
+    <form class="panel chart open-rate wide" data-type="bar" action="mail/trend">
+      <h2>Open Rate</h2>
+      <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>
   </c:using>

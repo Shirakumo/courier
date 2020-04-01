@@ -8,32 +8,57 @@
 
 (defclass mail-format (org.shirakumo.markless.plump:plump)
   ((vars :initarg :vars :reader vars)
-   (campaign :initarg :campaign :reader campaign)))
+   (campaign :initarg :campaign :reader campaign)
+   (mail :initarg :mail :reader mail)
+   (subscriber :initarg :subscriber :reader subscriber)))
+
+(defmethod variable-value (var (f mail-format))
+  (loop for (key val) on (vars f) by #'cddr
+        do (when (string-equal key var)
+             (return val))))
 
 (defclass parser (markless:parser)
   ()
   (:default-initargs :directives (list* 'template-var markless:*default-directives*)))
 
+(defun transform-link (element f)
+  (when (campaign f)
+    (let ((link (make-link (campaign f) :url (plump-dom:attribute element "href"))))
+      (setf (plump-dom:attribute element "href") (link-receipt-url (subscriber f) link (mail f))))))
+
 (defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f mail-format))
   (let ((element (call-next-method)))
     (when (string= "a" (plump-dom:tag-name element))
-      (setf (plump-dom:attribute element "href")
-            (make-link (campaign f) :url (plump-dom:attribute element "href"))))))
+      (transform-link element f))))
 
 (defmethod markless:output-component ((c components:compound) (target plump-dom:nesting-node) (f mail-format))
   (let ((element (call-next-method)))
     (when (string= "a" (plump-dom:tag-name element))
-      (setf (plump-dom:attribute element "href")
-            (make-link (campaign f) :url (plump-dom:attribute element "href"))))))
+      (transform-link element f))))
 
 (defclass var (components:inline-component)
   ((name :initarg :name :initform (error "NAME required") :accessor name)))
 
 (defmethod markless:output-component ((var var) (target plump-dom:nesting-node) (f mail-format))
-  (let ((value (loop for (key val) on (vars f) by #'cddr
-                     do (when (string-equal key (name var))
-                          (return val)))))
-    (plump-dom:make-text-node target (princ-to-string value))))
+  (plump-dom:make-text-node target (princ-to-string (variable-value (name var) f))))
+
+(defclass button (components:embed)
+  ())
+
+(defmethod markless:output-component ((button button) (target plump-dom:nesting-node) (f mail-format))
+  (let* ((element (plump-dom:make-element target "a"))
+         (target (components:target button)))
+    (when (and (< 2 (length target))
+               (char= #\{ (char target 0))
+               (char= #\} (char target (1- (length target)))))
+      (setf target (princ-to-string (variable-value (subseq target 1 (1- (length target))) f))))
+    (setf (plump-dom:attribute element "class") "button")
+    (setf (plump-dom:attribute element "href") target)
+    (transform-link element f)
+    (loop for option in (components:options button)
+          do (when (typep option 'components:caption-option)
+               (return (markless:output-component option element f)))
+          finally (plump-dom:make-text-node element target))))
 
 (defclass template-var (markless:inline-directive)
   ())
@@ -52,8 +77,12 @@
                     (vector-push-extend (make-instance 'var :name (subseq line cursor i)) children)
                     (return (1+ i))))))
 
-(defun compile-email-body (campaign content vars)
+(defun compile-email-body (content vars &key campaign subscriber mail)
   (let ((dom (plump-dom:make-root)))
     (markless:output (markless:parse content (make-instance 'parser))
                      :target dom
-                     :format (make-instance 'mail-format :vars vars :campaign campaign))))
+                     :format (make-instance 'mail-format
+                                            :vars vars
+                                            :campaign campaign
+                                            :subscriber subscriber
+                                            :mail mail))))

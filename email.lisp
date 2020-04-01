@@ -82,7 +82,10 @@
                      :tags (list-tags subscriber)
                      :time (get-universal-time)
                      (subscriber-attributes subscriber))))
-    (list* :body (compile-email-body campaign (dm:field mail "body") args)
+    (list* :body (compile-email-body (dm:field mail "body") args
+                                     :campaign campaign
+                                     :subscriber subscriber
+                                     :mail mail)
            args)))
 
 (defun compile-email-content (campaign mail subscriber)
@@ -103,3 +106,15 @@
     (db:insert 'mail-log `(("mail" . ,(dm:id mail))
                            ("subscriber" . ,(dm:id subscriber))
                            ("time" . ,(get-universal-time))))))
+
+(defun send-system-email (body address host campaign &rest args)
+  (let ((html (apply #'compile-email #p"email/system-template.ctml"
+                     (list* :body (compile-email-body body args)
+                            args))))
+    (send host address
+          (extract-subject html)
+          html
+          :reply-to (if campaign
+                        (dm:field campaign "reply-to")
+                        (dm:field host "address"))
+          :campaign (dm:id campaign))))

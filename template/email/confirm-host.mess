@@ -1,0 +1,4 @@
+# Hello, {recipient}
+You have recently added a new email host to your Courier instance. Please click the below link to confirm that it is working.
+
+[ button {link}, caption Confirm Host ]

@@ -155,6 +155,9 @@
      :min-width 10em)
     ((:or >input >select >textarea >div)
      :flex-grow 1)
+    (input[type=checkbox]
+     :width auto
+     :flex-grow 0)
     (>div
      (>nav
       :background (hex E0E0E0)
@@ -272,12 +275,12 @@
    :display flex
    :flex-wrap wrap
    :justify-content center
-   ((:or .panel .chart)
+   (.panel
     :background (hex F0F0F0)
     :border-bottom 0.2em solid (hex E0E0E0)
-    :margin 1em
+    :margin 1em 1em 0 1em
     :padding 1em)
-   (.panel
+   (.panel.single
     :display flex
     :flex-direction column
     :justify-content center
@@ -292,9 +295,26 @@
      :text-align center)
     (a.overview
      :font-size 1.2em))
+   (.panel.wide
+    :width 34em)
+   (nav.panel
+    :text-align center
+    (a
+     :display inline-block
+     :padding 0.2em
+     :min-width 3em
+     :text-align center
+     (i
+      :display block
+      :margin auto
+      :font-size 1.5em)))
    (.chart
-    :width 800px
-    (h2 :margin 0)
+    :display flex
+    :flex-wrap wrap
+    :justify-content space-between
+    :align-items center
+    (h2
+     :margin 0 0 0.2em 0)
     (canvas
      :width 100%
      :height 10em

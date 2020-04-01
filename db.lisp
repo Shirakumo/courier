@@ -190,7 +190,8 @@
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
                                                       (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
-    (setf-dm-fields campaign author title host description reply-to template)
+    (setf-dm-fields campaign title host description reply-to template)
+    (setf (dm:field campaign "author") (user:id author))
     (when save
       (db:with-transaction ()
         (dm:insert campaign)
@@ -265,9 +266,10 @@
       (dm:get 'campaign (db:query :all) :sort '((title :asc)))))
 
 (defun list-attributes (campaign)
-  (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc))))
+  (when (dm:id campaign)
+    (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc)))))
 
-(defun make-subscriber (campaign name address &key attributes tags confirmed)
+(defun make-subscriber (campaign name address &key attributes tags confirmed (save t))
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
@@ -278,16 +280,17 @@
       (setf (dm:field subscriber "address") address)
       (setf (dm:field subscriber "signup-time") (get-universal-time))
       (setf (dm:field subscriber "confirmed") confirmed)
-      (dm:insert subscriber)
-      (loop for (attribute . value) in attributes
-            do (dm:with-model attribute-value ('attribute-value NIL)
-                 (setf (dm:field attribute-value "attribute") (ensure-id attribute))
-                 (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
-                 (setf (dm:field attribute-value "value") value)
-                 (dm:insert attribute-value)))
-      (loop for tag in tags
-            do (tag subscriber tag))
-      (process-triggers subscriber subscriber)
+      (when save
+        (dm:insert subscriber)
+        (loop for (attribute . value) in attributes
+              do (dm:with-model attribute-value ('attribute-value NIL)
+                   (setf (dm:field attribute-value "attribute") (ensure-id attribute))
+                   (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
+                   (setf (dm:field attribute-value "value") value)
+                   (dm:insert attribute-value)))
+        (loop for tag in tags
+              do (tag subscriber tag))
+        (process-triggers subscriber subscriber))
       subscriber)))
 
 (defun ensure-subscriber (subscriber-ish)
@@ -327,12 +330,14 @@
 
 (defun make-mail (campaign &key title subject body (save T))
   (let ((campaign (ensure-campaign campaign)))
-    (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
-                                                    (:= 'title title))))
+    ;; (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
+    ;;                                                 (:= 'title title))))
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body campaign)
       (setf (dm:field mail "time") (get-universal-time))
-      (when save (dm:insert mail))
+      (when save
+        (v:info :test "aaaa")
+        (dm:insert mail))
       mail)))
 
 (defun edit-mail (mail &key title subject body (save T))
@@ -491,7 +496,10 @@
 
 (defun mail-coverage (mail)
   (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
-     (db:count 'subscriber (db:query (:= 'campaign (dm:field mail "campaign"))))))
+     (db:count 'mail-log (db:query (:= 'mail (dm:id mail))))))
+
+(defun mail-sent-count (mail)
+  (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
 
 (defun mark-mail-received (mail subscriber)
   (db:with-transaction ()

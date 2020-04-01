@@ -17,21 +17,29 @@
         <input type="text" minlength="3" maxlength="128" autocomplete="none"
                id="subject" name="subject" lquery="(val subject)" />
       </div>
-      <c:when test="_id">
-        <div class="row">
-          <label>Is sent on:</label>
-          <div>
-            <ul class="triggers" iterate="(courier::triggers *)">
-              <li class="trigger">
-                <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
-              </li>
-            </ul>
-            <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id">
-              <i class="fas fa-plus-circle"></i> Add a trigger
-            </a>
+      <c:if test="_id">
+        <c:then>
+          <div class="row">
+            <label>Is sent on:</label>
+            <div>
+              <ul class="triggers" iterate="(courier::triggers *)">
+                <li class="trigger">
+                  <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
+                </li>
+              </ul>
+              <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id">
+                <i class="fas fa-plus-circle"></i> Add a trigger
+              </a>
+            </div>
           </div>
-        </div>
-      </c:when>
+        </c:then>
+        <c:else>
+          <div class="row">
+            <label for="send">Send now:</label>
+            <input type="checkbox" name="send" value="true" />
+          </div>
+        </c:else>
+      </c:if>
       <div class="row big">
         <label for="body">Body:</label>
         <div class="editor" data-type="markless" data-preview-endpoint="mail/preview">

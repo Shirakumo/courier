@@ -8,28 +8,6 @@
 
 ;; FIXME: prune unconfirmed subscribers after a day
 
-(defun send-confirm-host (host &optional (user (auth:current)))
-  (send-templated host (or (user:field "email" user)
-                           (error "User must configure the email field!"))
-                  (@template "email/confirm-host.ctml")
-                  :host (dm:field host "title")
-                  :recipient (or (user:field "displayname" user)
-                                 (user:username user))
-                  :link (url> "courier/api/courier/host/confirm"
-                              :query `(("host" . ,(princ-to-string (dm:id host)))
-                                       ("token" . ,(hash (dm:id host)))
-                                       ("browser" . "true")))))
-
-(defun send-confirm-subscription (campaign subscriber)
-  (let ((host (dm:get-one 'host (db:query (:= '_id (dm:field campaign "host"))))))
-    (send-templated host (dm:field subscriber "address")
-                    (@template "email/confirm-subscription.ctml")
-                    :campaign (dm:field campaign "title")
-                    :recipient (dm:field subscriber "name")
-                    :link (url> "courier/api/courier/subscription/confirm"
-                                :query `(("id" . ,(generate-id subscriber))
-                                         ("browser" . "true"))))))
-
 (define-api courier/host (host) (:access (perm courier host))
   (api-output (check-accessible (ensure-host host))))
 
@@ -52,7 +30,11 @@
                            :encryption encryption
                            :batch-size batch-size
                            :batch-cooldown batch-cooldown)))
-      (send-confirm-host host)
+      (send-system-email (@template "email/confirm-host.mess") address host NIL
+                         :link (url> "courier/api/courier/host/confirm"
+                                     :query `(("host" . ,(princ-to-string (dm:id host)))
+                                              ("token" . ,(hash (dm:id host)))
+                                              ("browser" . "true"))))
       (if (string= "true" (post/get "browser"))
           (redirect (url> "courier/host/" :query `(("message" . "Host created. Please check your emails to confirm."))))
           (api-output host)))))
@@ -90,7 +72,11 @@
 
 (define-api courier/host/test (host) (:access (perm courier host test))
   (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
-    (send-confirm-host host)))
+    (send-system-email (@template "email/confirm-host.mess") (dm:field host "address") host NIL
+                       :link (url> "courier/api/courier/host/confirm"
+                                   :query `(("host" . ,(princ-to-string (dm:id host)))
+                                            ("token" . ,(hash (dm:id host)))
+                                            ("browser" . "true"))))))
 
 (define-api courier/campaign (campaign) (:access (perm courier campaign))
   (api-output (check-accessible (ensure-campaign campaign))))
@@ -130,11 +116,8 @@
         (redirect (url> "courier/campaign" :query `(("message" . "Campaign deleted."))))
         (api-output NIL))))
 
-(define-api courier/campaign/preview (&optional campaign host template title description reply-to) (:access (perm courier mail))
-  (let* ((campaign (cond (campaign (check-accessible (ensure-campaign campaign)))
-                         (host (make-campaign (user:id (auth:current)) (ensure-host host)
-                                              (or title "Test") :save NIL))
-                         (T (error "Need CAMPAIGN or HOST."))))
+(define-api courier/campaign/preview (campaign &optional template title description reply-to) (:access (perm courier mail))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
          (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                              (:= 'address (dm:field campaign "reply-to"))))))
          (mail (make-mail campaign :title "Test Email"
@@ -155,13 +138,14 @@
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (api-output (list-mails campaign))))
 
-(define-api courier/mail/new (campaign title subject body) (:access (perm courier mail new))
+(define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier mail new))
   (check-title title)
   (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign))))
          (mail (make-mail campaign
                           :title title
                           :subject subject
                           :body body)))
+    (when send (enqueue-email mail))
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/campaign/~a/mail/" (dm:field campaign "title"))
                         :query `(("message" . "Mail created."))))
@@ -206,8 +190,10 @@
                         :query `(("message" . "Mail sent."))))
         (api-output NIL))))
 
-(define-api courier/mail/preview (mail &optional title subject body) (:access (perm courier mail))
-  (let* ((mail (check-accessible (ensure-mail mail)))
+(define-api courier/mail/preview (&optional mail campaign title subject body) (:access (perm courier mail))
+  (let* ((mail (cond (mail (check-accessible (ensure-mail mail)))
+                     (campaign (make-mail (ensure-campaign campaign) :save NIL))
+                     (T (error "Need MAIL or CAMPAIGN."))))
          (campaign (ensure-campaign (dm:field mail "campaign")))
          (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                              (:= 'address (dm:field campaign "reply-to")))))))
@@ -216,6 +202,22 @@
     (let ((data (compile-email-content campaign mail subscriber))
           (plump:*tag-dispatchers* plump:*html-tags*))
       (plump:serialize data NIL))))
+
+(define-api courier/mail/trend (campaign) (:access (perm courier subscriber))
+  (let ((campaign (check-accessible (ensure-campaign campaign)))
+        (labels ())
+        (data ()))
+    (loop for mail in (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((time :DESC)) :amount 10)
+          do (push (dm:field mail "title") labels)
+             (push (mail-coverage mail) data))
+    (api-output (mktable "labels" labels "points" data))))
+
+(define-api courier/mail/open-rate (mail) (:access (perm courier subscriber))
+  (let* ((mail (check-accessible (ensure-mail mail)))
+         (opened (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail)))))
+         (sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail))))))
+    (api-output (mktable "labels" '("Opened" "Unopened")
+                         "points" (list opened (- sent opened))))))
 
 (define-api courier/tag (tag) (:access (perm courier tag))
   (api-output (check-accessible (ensure-tag tag))))
@@ -325,9 +327,8 @@
          (tags (mapcar #'ensure-tag tag[]))
          (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :confirmed T)))
     (if (string= "true" (post/get "browser"))
-        (redirect (url> "courier/subscription"
-                        :query `(("action" . "subscribed")
-                                 ("campaign" . ,(princ-to-string (dm:id campaign))))))
+        (redirect (url> (format NIL "courier/campaign/~a/subscriber" (dm:id campaign))
+                        :query '(("message" . "Subscriber added"))))
         (api-output subscriber))))
 
 (define-api courier/subscriber/delete (subscriber) (:access (perm courier subscriber delete))
@@ -382,11 +383,18 @@
                                 (error "Invalid attribute field."))
                            collect (cons attribute value)))
          (subscriber (make-subscriber campaign name address :attributes attributes)))
+    (send-system-email (@template "email/confirm-subscription.mess") address
+                       (ensure-host (dm:field campaign "host"))
+                       campaign
+                       :campaign (dm:field campaign "title")
+                       :recipient (dm:field subscriber "name")
+                       :link (url> "courier/api/courier/subscription/confirm"
+                                   :query `(("id" . ,(generate-id subscriber))
+                                            ("browser" . "true"))))
     (send-confirm-subscription campaign subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> "courier/subscription"
-                        :query `(("action" . "subscribed")
-                                 ("campaign" . ,(princ-to-string (dm:id campaign))))))
+        (redirect (url> (format NIL "courier/subscription/~a" (dm:id campaign))
+                        :query '(("action" . "subscribed"))))
         (api-output subscriber))))
 
 (define-api courier/subscription/confirm (id) ()
@@ -394,9 +402,8 @@
     (setf (dm:field subscriber "confirmed") T)
     (dm:save subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> "courier/subscription"
-                        :query `(("action" . "confirmed")
-                                 ("campaign" . ,(princ-to-string (dm:field subscriber "campaign"))))))
+        (redirect (url> (format NIL "courier/subscription/~a" (dm:field subscriber "campaign"))
+                        :query '(("action" . "confirmed"))))
         (api-output NIL))))
 
 (define-api courier/subscription/delete (id) ()
@@ -404,9 +411,8 @@
          (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field subscriber "campaign"))))))
     (delete-subscriber subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/subscription")
-                        :query `(("action" . "unsubscribed")
-                                 ("campaign" . ,(princ-to-string (dm:id campaign))))))
+        (redirect (url> (format NIL "courier/subscription/~a" (dm:id campaign))
+                        :query '(("action" . "unsubscribed"))))
         (api-output NIL))))
 
 (defun unsubscribe-url (subscriber)
@@ -415,10 +421,10 @@
                  ("browser" . "true"))))
 
 (define-api courier/mail/receipt (id) ()
-  (ignore-errors
-   (destructuring-bind (subscriber mail) (decode-id id)
-     (mark-mail-received mail subscriber))
-   (setf (header "Cache-Control") "public, max-age=31536000"))
+  (destructuring-bind (subscriber mail) (decode-id id)
+    (mark-mail-received (ensure-mail mail) (ensure-subscriber subscriber)))
+  (setf (content-type *response*) "image/gif")
+  (setf (header "Cache-Control") "public, max-age=31536000")
   *tracker*)
 
 (defun mail-receipt-url (subscriber mail)
@@ -427,8 +433,8 @@
 
 (define-api courier/link/resolve (id) ()
   (destructuring-bind (subscriber link &optional mail) (decode-id id)
-    (mark-link-received link subscriber)
-    (when mail (mark-mail-received mail subscriber))
+    (mark-link-received (ensure-link link) (ensure-subscriber subscriber))
+    (when mail (mark-mail-received (ensure-mail mail) (ensure-subscriber subscriber)))
     (let ((link (db:select 'link (db:query (:= '_id link)) :fields '("url"))))
       (redirect (gethash "url" link)))))
 

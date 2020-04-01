@@ -1,0 +1,8 @@
+# Confirm your subscription for {campaign}
+Hello, {recipient}
+
+You have signed up for the {campaign} mailing list. To confirm your subscription, please visit the link below.
+
+[ button {link}, caption Confirm Subscription ]
+
+If this was not you, or you would like to cancel your subscription, you don't need to do anything.
