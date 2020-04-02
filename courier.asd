@@ -36,4 +36,5 @@
                :bordeaux-threads
                :softdrink
                :cl-markless-plump
-               :cl-smtp))
+               :cl-smtp
+               :cl-ppcre))

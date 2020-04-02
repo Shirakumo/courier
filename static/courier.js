@@ -98,9 +98,13 @@ class Courier{
             if(methodArgs.format == "json")
                 formData.append("data-format", "json");
             request.onload = ()=>{
-                var data = (methodArgs.format=="json")? JSON.parse(request.responseText)
-                    : request.responseText;
-                if(request.status === 200){
+                var data = request.responseText;
+                var status = request.status;
+                if(request.getResponseHeader("Content-Type").includes("application/json")){
+                    data = JSON.parse(data);
+                    status = data.status || status;
+                }
+                if(status === 200){
                     self.log("Request succeeded", data);
                     ok(data);
                 }else{
@@ -260,7 +264,8 @@ class Courier{
             nav.querySelector(".preview").addEventListener("click",()=>{
                 if(preview.classList.contains("hidden")){
                     self.apiCall(previewEndpoint, element.closest("form"), {format:"html"})
-                        .then((r)=>preview.src = "data:text/html;charset=utf-8,"+escape(r));
+                        .then((r)=>preview.src = "data:text/html;charset=utf-8,"+escape(r),
+                              (r)=>preview.src = "data:text/html;charset=utf-8,"+escape("Preview failed: "+r.message));
                     preview.classList.remove("hidden");
                     element.querySelector(".CodeMirror").classList.add("hidden");
                 }else{

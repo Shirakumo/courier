@@ -40,7 +40,9 @@
   ((name :initarg :name :initform (error "NAME required") :accessor name)))
 
 (defmethod markless:output-component ((var var) (target plump-dom:nesting-node) (f mail-format))
-  (plump-dom:make-text-node target (princ-to-string (variable-value (name var) f))))
+  (let ((value (variable-value (name var) f)))
+    (when value
+      (plump-dom:make-text-node target (princ-to-string value)))))
 
 (defclass button (components:embed)
   ())
@@ -51,7 +53,10 @@
     (when (and (< 2 (length target))
                (char= #\{ (char target 0))
                (char= #\} (char target (1- (length target)))))
-      (setf target (princ-to-string (variable-value (subseq target 1 (1- (length target))) f))))
+      (let ((value (variable-value (subseq target 1 (1- (length target))) f)))
+        (if value
+            (setf target (princ-to-string value))
+            (error "No such variable ~a for button target." target))))
     (setf (plump-dom:attribute element "class") "button")
     (setf (plump-dom:attribute element "href") target)
     (transform-link element f)
@@ -79,6 +84,8 @@
 
 (defun compile-email-body (content vars &key campaign subscriber mail)
   (let ((dom (plump-dom:make-root)))
+    (when (typep content 'string)
+      (setf content (cl-ppcre:regex-replace-all "\\r\\n" content (string #\Linefeed))))
     (markless:output (markless:parse content (make-instance 'parser))
                      :target dom
                      :format (make-instance 'mail-format

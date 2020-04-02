@@ -19,6 +19,7 @@
 
 (defun extract-plaintext (html)
   ;; KLUDGE: This is real dumb.
+  ;; FIXME: links do not get retained
   (with-output-to-string (out)
     (lquery:$ html "body" (text) (each (lambda (text) (write-line text out))))))
 
@@ -117,4 +118,5 @@
           :reply-to (if campaign
                         (dm:field campaign "reply-to")
                         (dm:field host "address"))
-          :campaign (dm:id campaign))))
+          :campaign (when campaign
+                      (dm:id campaign)))))

@@ -30,7 +30,9 @@
                            :encryption encryption
                            :batch-size batch-size
                            :batch-cooldown batch-cooldown)))
-      (send-system-email (@template "email/confirm-host.mess") address host NIL
+      (send-system-email (@template "email/confirm-host.mess")
+                         address host NIL
+                         :subject "Confirm your Courier host"
                          :link (url> "courier/api/courier/host/confirm"
                                      :query `(("host" . ,(princ-to-string (dm:id host)))
                                               ("token" . ,(hash (dm:id host)))
@@ -72,11 +74,16 @@
 
 (define-api courier/host/test (host) (:access (perm courier host test))
   (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
-    (send-system-email (@template "email/confirm-host.mess") (dm:field host "address") host NIL
+    (send-system-email (@template "email/confirm-host.mess")
+                       (dm:field host "address") host NIL
+                       :subject "Courier host test"
                        :link (url> "courier/api/courier/host/confirm"
                                    :query `(("host" . ,(princ-to-string (dm:id host)))
                                             ("token" . ,(hash (dm:id host)))
-                                            ("browser" . "true"))))))
+                                            ("browser" . "true"))))
+    (if (string= "true" (post/get "browser"))
+        (redirect (url> "courier/host" :query `(("message" . "Test email sent."))))
+        (api-output NIL))))
 
 (define-api courier/campaign (campaign) (:access (perm courier campaign))
   (api-output (check-accessible (ensure-campaign campaign))))
@@ -86,6 +93,7 @@
 
 (define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
+  ;; FIXME: Check template valid
   (let* ((host (check-accessible (ensure-host host)))
          (campaign (make-campaign (user:id (auth:current)) host title
                                   :description description :reply-to reply-to :template template
@@ -99,6 +107,7 @@
 
 (define-api courier/campaign/edit (campaign &optional title host description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier campaign edit)
   (when title (check-title title))
+  ;; FIXME: Check template valid
   (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
     (edit-campaign campaign :host host :title title :description description :reply-to reply-to :template template
                             :attributes (loop for title in attribute[]
@@ -127,9 +136,12 @@
                                    :save NIL)))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields campaign template title description reply-to)
-    (let ((data (compile-email-content campaign mail subscriber))
-          (plump:*tag-dispatchers* plump:*html-tags*))
-      (plump:serialize data NIL))))
+    (handler-case
+        (let ((data (compile-email-content campaign mail subscriber))
+              (plump:*tag-dispatchers* plump:*html-tags*))
+          (plump:serialize data NIL))
+      (error (e)
+        (api-output NIL :status 500 :message (princ-to-string e))))))
 
 (define-api courier/mail (mail) (:access (perm courier mail))
   (api-output (check-accessible (ensure-mail mail))))
@@ -140,6 +152,7 @@
 
 (define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier mail new))
   (check-title title)
+  ;; FIXME: Check body valid
   (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign))))
          (mail (make-mail campaign
                           :title title
@@ -153,6 +166,7 @@
 
 (define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier mail edit))
   (check-title title)
+  ;; FIXME: Check body valid
   (let* ((mail (check-accessible (ensure-mail mail)))
          (campaign (ensure-campaign (dm:field mail "campaign"))))
     (edit-mail mail :title title :subject subject :body body)
@@ -199,9 +213,12 @@
                                                              (:= 'address (dm:field campaign "reply-to")))))))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields mail title subject body)
-    (let ((data (compile-email-content campaign mail subscriber))
-          (plump:*tag-dispatchers* plump:*html-tags*))
-      (plump:serialize data NIL))))
+    (handler-case
+        (let ((data (compile-email-content campaign mail subscriber))
+              (plump:*tag-dispatchers* plump:*html-tags*))
+          (plump:serialize data NIL))
+      (error (e)
+        (api-output NIL :status 500 :message (princ-to-string e))))))
 
 (define-api courier/mail/trend (campaign) (:access (perm courier subscriber))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
@@ -386,6 +403,7 @@
     (send-system-email (@template "email/confirm-subscription.mess") address
                        (ensure-host (dm:field campaign "host"))
                        campaign
+                       :subject (format NIL "Confirm your subscription for ~a" (dm:field campaign "title"))
                        :campaign (dm:field campaign "title")
                        :recipient (dm:field subscriber "name")
                        :link (url> "courier/api/courier/subscription/confirm"
