@@ -134,13 +134,6 @@
                (trigger (:id trigger)))
              :indices '(sequence)))
 
-;; TODO: overview pages
-;; TODO: mail archive page
-;; TODO: sequence interface
-;; FIXME: consistent naming mail/email
-;; FIXME: check values
-;; TODO: permission sharing
-
 (defun ensure-id (id-ish)
   (etypecase id-ish
     (db:id id-ish)

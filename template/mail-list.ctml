@@ -4,7 +4,7 @@
       <a class="title" @href="courier/campaign/{0}/mail/{1} campaign _id" lquery="(text title)">Mail</a>
       <span class="subject" lquery="(text subject)">Subject</span>
       <nav class="actions">
-        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/send (** :campaign) _id">
+        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/send campaign _id">
           <i class="fas fa-paper-plane"></i>
           Send
         </a>
@@ -12,7 +12,7 @@
           <i class="fas fa-clipboard"></i>
           Log
         </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/edit (** :campaign) _id">
+        <a class="button" href="#" @href="courier/campaign/{0}/mail/{1}/edit campaign _id">
           <i class="fas fa-edit"></i>
           Edit
         </a>

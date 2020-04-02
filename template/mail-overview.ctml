@@ -4,7 +4,7 @@
       <span class="count" lquery="(text (courier::mail-sent-count *))">1000000</span>
       <a @href="courier/log/mail/{0} _id" class="overview">Sent</a>
     </div>
-    <form class="panel chart open-rate" data-type="doughnut" action="mail/open-rate">
+    <form class="panel single chart open-rate" data-type="doughnut" action="mail/open-rate">
       <h2>Open Rate</h2>
       <input type="hidden" name="mail" lquery="(val _id)"/>
       <canvas></canvas>

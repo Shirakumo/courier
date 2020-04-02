@@ -23,6 +23,7 @@ class Courier{
         self.registerAll(".button.confirm", self.registerConfirm);
         self.registerAll(".editor", self.registerEditor);
         self.registerAll(".chart", self.registerChart);
+        self.registerAll("form", self.registerForm);
         if(document.querySelector(".campaign.edit"))
             self.registerCampaignForm(document.querySelector(".campaign.edit"));
     }
@@ -86,8 +87,13 @@ class Courier{
             var request = new XMLHttpRequest();
             var formData;
 
+            if(!(endpoint.startsWith("http://") || endpoint.startsWith("https://"))){
+                endpoint = self.apiRoot+endpoint;
+            }
+
             if(args instanceof HTMLElement){
                 formData = new FormData(args);
+                formData.delete("browser");
             }else{
                 formData = new FormData();
                 for(var field in args){
@@ -112,8 +118,8 @@ class Courier{
                     fail(data);
                 }
             };
-            self.log("Sending request to",endpoint,args);
-            request.open("POST", self.apiRoot+endpoint);
+            self.log("Sending request to",endpoint);
+            request.open("POST", endpoint);
             request.send(formData);
         });
     }
@@ -164,6 +170,23 @@ class Courier{
         var elements = document.querySelectorAll(query);
         for(var i=0; i<elements.length; ++i)
             regger.apply(self, [elements[i]]);
+    }
+
+    registerForm(element){
+        var self = this;
+        var save = element.querySelector("input[type=submit]");
+        if(!save) return;
+        save.addEventListener("click", (ev)=>{
+            ev.preventDefault();
+            if(element.checkValidity()){
+                self.apiCall(save.getAttribute("formaction") || element.getAttribute("action"), element)
+                    .then((r)=>{window.location.replace(r.target);},
+                          (r)=>{document.querySelector(".box.error").innerText = r.message;});
+            }else{
+                element.reportValidity();
+            }
+            return false;
+        });
     }
 
     registerConfirm(element){
