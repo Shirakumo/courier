@@ -78,7 +78,8 @@
   (db:create 'mail-log
              '((mail (:id mail))
                (subscriber (:id subscriber))
-               (time (:integer 5)))
+               (send-time (:integer 5))
+               (state (:integer 1)))
              :indices '(mail subscriber))
 
   (db:create 'mail-queue
@@ -268,11 +269,8 @@
                                                      (:= 'address address)))))
       (error "You are already subscribed!"))
     (dm:with-model subscriber ('subscriber NIL)
-      (setf (dm:field subscriber "campaign") (dm:id campaign))
-      (setf (dm:field subscriber "name") name)
-      (setf (dm:field subscriber "address") address)
+      (setf-dm-fields subscriber campaign name address confirmed)
       (setf (dm:field subscriber "signup-time") (get-universal-time))
-      (setf (dm:field subscriber "confirmed") confirmed)
       (when save
         (dm:insert subscriber)
         (loop for (attribute . value) in attributes
@@ -281,6 +279,28 @@
                    (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
                    (setf (dm:field attribute-value "value") value)
                    (dm:insert attribute-value)))
+        (loop for tag in tags
+              do (tag subscriber tag))
+        (process-triggers subscriber subscriber))
+      subscriber)))
+
+(defun edit-subscriber (subscriber &key name address attributes tags confirmed (save T))
+  (db:with-transaction ()
+    (let ((subscriber (ensure-subscriber subscriber)))
+      (setf-dm-fields subscriber name address confirmed)
+      (when save
+        (dm:save subscriber)
+        (loop for (attribute . value) in attributes
+              do (let ((attribute-value (or (dm:get-one 'attribute-value (db:query (:and (:= 'attribute (ensure-id attribute))
+                                                                                         (:= 'subscriber (dm:id subscriber)))))
+                                            (dm:hull 'attribute-value))))
+                   (setf (dm:field attribute-value "attribute") (ensure-id attribute))
+                   (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
+                   (setf (dm:field attribute-value "value") value)
+                   (if (dm:hull-p attribute-value)
+                       (dm:insert attribute-value)
+                       (dm:save attribute-value))))
+        (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
         (loop for tag in tags
               do (tag subscriber tag))
         (process-triggers subscriber subscriber))
@@ -334,9 +354,10 @@
       mail)))
 
 (defun edit-mail (mail &key title subject body (save T))
-  (setf-dm-fields mail title subject body)
-  (when save (dm:save mail))
-  mail)
+  (let ((mail (ensure-mail mail)))
+    (setf-dm-fields mail title subject body)
+    (when save (dm:save mail))
+    mail))
 
 (defun ensure-mail (mail-ish)
   (or
@@ -491,8 +512,12 @@
   (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
      (db:count 'mail-log (db:query (:= 'mail (dm:id mail))))))
 
-(defun mail-sent-count (mail)
-  (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
+(defun mail-sent-count (thing)
+  (ecase (dm:collection thing)
+    (mail
+     (db:count 'mail-log (db:query (:= 'mail (dm:id thing)))))
+    (subscriber
+     (db:count 'mail-log (db:query (:= 'subscriber (dm:id thing)))))))
 
 (defun mark-mail-received (mail subscriber)
   (db:with-transaction ()

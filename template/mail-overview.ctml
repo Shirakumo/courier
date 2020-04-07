@@ -1,4 +1,4 @@
-<article class="page campaign overview">
+<article class="page mail overview">
   <c:using value="mail">
     <div class="panel single sent-count">
       <span class="count" lquery="(text (courier::mail-sent-count *))">1000000</span>

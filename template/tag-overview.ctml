@@ -1,0 +1,23 @@
+<article class="page tag overview">
+  <c:using value="tag">
+    <div class="panel single subscriber-count">
+      <span class="count" lquery="(text (courier::subscriber-count *))">1000000</span>
+      <a @href="courier/campaign/{0}/tag/{1}/members campaign _id" class="overview">Tagged</a>
+    </div>
+    <form class="panel single chart tagged-rate" data-type="doughnut" action="tag/tagged-rate">
+      <h2>Tagged Rate</h2>
+      <input type="hidden" name="tag" lquery="(val _id)"/>
+      <canvas></canvas>
+    </form>
+    <nav class="panel wide">
+      <a class="button" href="#" @href="courier/campaign/{0}/tag/{1}/edit campaign _id">
+        <i class="fas fa-fw fa-edit"></i>
+        Edit
+      </a>
+      <a class="button confirm" href="#" @href="courier/api/courier/tag/delete?tag={0} _id">
+        <i class="fas fa-fw fa-trash"></i>
+        Delete
+      </a>
+    </nav>
+  </c:using>
+</article>

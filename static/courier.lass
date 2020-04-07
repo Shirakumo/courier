@@ -208,9 +208,10 @@
      :align-items center
      (.title :min-width 10em)
      ((:or .address .description .subject) :flex-grow 1)
-     (.confirmed :padding 0 1em)
-     (.fa-check-circle :color (hex 00AA00))
-     (.fa-question-circle :color (hex AAAAAA)))))
+     (.status :padding 0 1em)
+     (.status.fa-check-circle :color (hex 00AA00))
+     (.status.fa-question-circle :color (hex AAAAAA))
+     (.status.fa-exclamation-triangle :color (hex 880000)))))
   (.page.subscriber.list
    (time :margin 0 0.2em)
    (.tags :flex-grow 1))
@@ -237,8 +238,8 @@
    ((:or .mail .subscriber .time)
     :padding 0.1em 0.2em)
    (.mail :width 30%)
-   (.subscriber :width 30%)
-   (.time :flex-grow 1 :text-align right)
+   (.subscriber :flex-grow 1)
+   (.time :text-align right)
    (header
     :display flex
     :border 1px solid (hex AAAAAA)
@@ -252,6 +253,20 @@
     (li.receipt
      :display flex
      :position relative)))
+  (.page.subscriber.edit
+   (.tag-list
+    (ul.tags
+     :margin 0
+     :padding 0
+     :list-style none
+     (.tag
+      :display inline-block
+      :border 1px solid (hex E0E0E0)
+      :background (hex F0F0F0)
+      :color (hex 000000)
+      :padding 0.1em 0.2em
+      :margin 0 0.1em
+      :border-radius 0.3em))))
   (.page.campaign.subscription
    :background (hex E0E0E0)
    :min-height 80vh
@@ -279,7 +294,11 @@
     :background (hex F0F0F0)
     :border-bottom 0.2em solid (hex E0E0E0)
     :margin 1em 1em 0 1em
-    :padding 1em)
+    :padding 1em
+    (h2 :margin 0 0 0.2em 0)
+    (label
+     :display inline-block
+     :min-width 8em))
    (.panel.single
     :display flex
     :flex-direction column
@@ -313,8 +332,6 @@
     :flex-wrap wrap
     :justify-content space-between
     :align-items center
-    (h2
-     :margin 0 0 0.2em 0)
     (canvas
      :width 100%
      :height 10em

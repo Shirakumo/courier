@@ -219,6 +219,13 @@
   (let ((tag (check-accessible (ensure-tag tag))))
     (api-output (list-subscribers tag))))
 
+(define-api courier/tag/tagged-rate (tag) (:access (perm courier tag))
+  (let* ((tag (check-accessible (ensure-tag tag)))
+         (tagged (db:count 'tag-table (db:query (:= 'tag (dm:id tag)))))
+         (total (db:count 'subscriber (db:query (:= 'campaign (dm:field tag "campaign"))))))
+    (api-output (mktable "labels" '("Tagged" "Untagged")
+                         "points" (list tagged (- total tagged))))))
+
 (define-api courier/tag/new (campaign title &optional description) (:access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
     (let ((tag (make-tag campaign :title title :description description)))
@@ -297,6 +304,18 @@
          (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :confirmed T)))
     (output subscriber "Subscriber added." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
+(define-api courier/subscriber/edit (subscriber &optional name tag[] fields[] values[]) (:access (perm courier subscriber edit))
+  (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
+         (attributes (loop for field in fields[]
+                           for value in values[]
+                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
+                           do (unless (equal (dm:field subscriber "campaign") (dm:field attribute "campaign"))
+                                (error "Invalid attribute field."))
+                           collect (cons attribute value)))
+         (tags (mapcar #'ensure-tag tag[])))
+    (edit-subscriber subscriber :name name :tags tags :attributes attributes)
+    (output subscriber "Subscriber edited." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
+
 (define-api courier/subscriber/delete (subscriber) (:access (perm courier subscriber delete))
   (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
     (delete-subscriber subscriber)
@@ -333,6 +352,13 @@
             (T
              (error 'api-argument-invalid :argument "scale"))))
     (api-output (mktable "labels" labels "points" data))))
+
+(define-api courier/subscriber/open-rate (subscriber) (:access (perm courier subscriber))
+  (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
+         (opened (db:count 'tag-receipt (db:query (:= 'subscriber (dm:id subscriber)))))
+         (sent (db:count 'mail-log (db:query (:= 'subscriber (dm:id subscriber))))))
+    (api-output (mktable "labels" '("Opened" "Unopened")
+                         "points" (list opened (- sent opened))))))
 
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))

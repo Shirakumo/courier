@@ -3,7 +3,7 @@
     <li class="host">
       <span class="title" lquery="(text title)">Host</span>
       <span class="address" lquery="(text address)">Address</span>
-      <i class="fas confirmed" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
+      <i class="fas status" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
       <nav class="actions">
         <a class="button" href="#" @href="courier/api/courier/host/test?host={0} _id">
           <i class="fas fa-paper-plane"></i>

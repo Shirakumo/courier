@@ -12,6 +12,10 @@
           Unsubscribe
         </a>
       </nav>
+      <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/edit campaign _id">
+        <i class="fas fa-edit"></i>
+        Edit
+      </a>
     </li>
   </ul>
   <c:using value="campaign">

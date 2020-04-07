@@ -21,7 +21,7 @@
         <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" autocomplete="email"
                id="reply-to" name="reply-to" lquery="(val reply-to)" />
       </div>
-      <div class="row">
+      <div class="row dynamic-list">
         <label for="attributes">Attributes:</label>
         <div>
           <ul class="attributes">
@@ -56,7 +56,7 @@
               </li>
             </c:splice>
           </ul>
-          <a class="button new-attribute"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
+          <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
         </div>
       </div>
       <div class="row big">

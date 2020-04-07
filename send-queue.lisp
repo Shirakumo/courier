@@ -58,7 +58,9 @@
                                           (invoke-restart 'ignore)))))
                 (send-queue queue))
             (ignore ()
-              :report "Ignore the send and retry later.")
+              :report "Ignore the send and retry later."
+              (setf (dm:field queued "time") (+ (get-universal-time) 60))
+              (dm:save queued))
             (forget ()
               :report "Give up trying to send the queued mail."
               (dm:delete queue))))

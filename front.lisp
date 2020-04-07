@@ -110,7 +110,6 @@
   (let ((tag (check-accessible (ensure-tag tag))))
     (render-page (dm:field tag "title")
                  (@template "tag-overview.ctml")
-                 :campaign (ensure-campaign campaign)
                  :tag tag)))
 
 (define-page tag-new ("courier/^campaign/([^/]+)/tag/new" 1) (:uri-groups (campaign) :access (perm courier))
@@ -132,7 +131,7 @@
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id tag)))
-                                      :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
+                                      :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)) :hull 'subscriber)
                  :next-page (1+ page))))
 
 (define-page trigger-list "courier/^campaign/([^/]+)/trigger/?$" (:uri-groups (campaign) :access (perm courier))
@@ -174,12 +173,13 @@
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
                  :next-page (1+ page))))
 
-(define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/$" (:uri-groups (campaign subscriber) :access (perm courier))
+(define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/?$" (:uri-groups (campaign subscriber) :access (perm courier))
   (let* ((campaign (ensure-campaign campaign))
          (subscriber (check-accessible (ensure-subscriber subscriber))))
     (render-page (format NIL (dm:field subscriber "address"))
                  (@template "subscriber-overview.ctml")
                  :campaign campaign
+                 :subscriber subscriber
                  :fields (list-attributes campaign)
                  :field-values (subscriber-attributes subscriber)
                  :tags (list-tags campaign)
@@ -198,23 +198,35 @@
     (render-page (format NIL "Edit ~a" (dm:field subscriber "address"))
                  (@template "subscriber-edit.ctml")
                  :campaign campaign
-                 :fields (list-attributes campaign)
-                 :field-values (subscriber-attributes subscriber)
-                 :tags (list-tags campaign)
-                 :tag-values (list-tags subscriber))))
+                 :subscriber subscriber
+                 :fields (dm:get (rdb:join (attribute-value attribute) (attribute _id))
+                                 (db:query (:= 'subscriber (dm:id subscriber))) :sort '(("title" :desc)))
+                 :tags (list-tags subscriber)
+                 :all-tags (list-tags campaign))))
 
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))
     (render-page "Mail Log"
                  (@template "mail-log.ctml")
-                 :log (dm:get 'mail-log (db:query (:= 'mail (dm:id mail))) :sort '(("time" :desc)) :amount 100))))
+                 :log (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
+                              (db:query (:= 'mail (dm:id mail)))
+                              :sort '(("send-time" :desc)) :amount 100))))
 
 (define-page campaign-log "courier/^log/campaign/([^/]+)" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page "Mail Log"
                  (@template "mail-log.ctml")
-                 :log (dm:get (rdb:join (mail-log mail) (mail _id)) (db:query (:= 'campaign (dm:id campaign)))
-                              :sort '(("time" :desc)) :amount 100))))
+                 :log (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
+                              (db:query (:= 'campaign (dm:id campaign)))
+                              :sort '(("send-time" :desc)) :amount 100))))
+
+(define-page subscriber-log "courier/^log/subscriber/([^/]+)" (:uri-groups (subscriber) :access (perm courier))
+  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (render-page "Mail Log"
+                 (@template "mail-log.ctml")
+                 :log (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
+                              (db:query (:= 'subscriber (dm:id subscriber)))
+                              :sort '(("send-time" :desc)) :amount 100))))
 
 ;; User sections
 (define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))

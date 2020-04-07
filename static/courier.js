@@ -24,8 +24,8 @@ class Courier{
         self.registerAll(".editor", self.registerEditor);
         self.registerAll(".chart", self.registerChart);
         self.registerAll("form", self.registerForm);
-        if(document.querySelector(".campaign.edit"))
-            self.registerCampaignForm(document.querySelector(".campaign.edit"));
+        self.registerAll(".dynamic-list", self.registerDynamicList);
+        self.registerAll(".tag-list", self.registerTags);
     }
 
     loadCSS(source){
@@ -238,7 +238,7 @@ class Courier{
         return copy;
     }
 
-    registerCampaignForm(element){
+    registerDynamicList(element){
         var self = this;
         var reg = (element)=>{
             element.querySelector(".remove-self").addEventListener("click",()=>{
@@ -246,11 +246,31 @@ class Courier{
             });
             return element;
         };
-        [].forEach.call(element.querySelector(".attribute"), (el)=>{
+        [].forEach.call(element.querySelectorAll("li"), (el)=>{
             if(!el.classList.contains("template")) reg(el);
         });
-        element.querySelector(".new-attribute").addEventListener("click",()=>{
-            element.querySelector(".attributes").appendChild(reg(self.instantiateTemplate(element)));
+        element.querySelector("a.new").addEventListener("click",()=>{
+            element.querySelector("ul").appendChild(reg(self.instantiateTemplate(element)));
+        });
+    }
+
+    registerTags(element){
+        var self = this;
+        var reg = (element, id, title)=>{
+            element.querySelector(".remove-self").addEventListener("click",()=>{
+                element.parentNode.removeChild(element);
+            });
+            if(id) element.querySelector("input").value = id;
+            if(title) element.querySelector(".title").innerText = title;
+            return element;
+        };
+        [].forEach.call(element.querySelectorAll("li"), (el)=>{
+            if(!el.classList.contains("template")) reg(el);
+        });
+        element.querySelector("a.new").addEventListener("click",()=>{
+            var option = element.querySelector("select option:checked");
+            if(!element.querySelector("input[value=\""+option.value+"\"]"))
+                element.querySelector("ul").appendChild(reg(self.instantiateTemplate(element), option.value, option.innerText));
         });
     }
 

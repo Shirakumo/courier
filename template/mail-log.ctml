@@ -1,4 +1,4 @@
-<article class="page mail log">
+<article class="page mail list log">
   <header>
     <span class="mail">Mail</span>
     <span class="subscriber">Subscriber</span>
@@ -6,9 +6,11 @@
   </header>
   <ul class="log" iterate="log">
     <li class="receipt">
-      <span class="mail" lquery="(text mail)">mail</span>
-      <span class="subscriber" lquery="(text subscriber)">Subscriber</span>
+      <a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a>
+      <a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a>
+      <i class="fas status" lquery="(add-class (case status (0 :fa-check-circle) (T :fa-exclamation-triangle)))"></i>
       <time class="time" lquery="(time time)">2020</time>
     </li>
   </ul>
 </article>
+
