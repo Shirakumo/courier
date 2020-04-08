@@ -100,6 +100,12 @@
   ((:and a :hover)
    :color #(c+2))
 
+  (.status.fa-check-circle :color (hex 00AA00))
+  (.status.fa-question-circle :color (hex AAAAAA))
+  (.status.fa-exclamation-triangle :color (hex 880000))
+  (.status.fa-envelope :color (hex AAAAAA))
+  (.status.fa-envelope-open :color (hex 00AA00))
+
   (time
    :font-variant-numeric tabular-nums)
 
@@ -208,10 +214,7 @@
      :align-items center
      (.title :min-width 10em)
      ((:or .address .description .subject) :flex-grow 1)
-     (.status :padding 0 1em)
-     (.status.fa-check-circle :color (hex 00AA00))
-     (.status.fa-question-circle :color (hex AAAAAA))
-     (.status.fa-exclamation-triangle :color (hex 880000)))))
+     (.status :padding 0 1em))))
   (.page.subscriber.list
    (time :margin 0 0.2em)
    (.tags :flex-grow 1))
@@ -267,24 +270,6 @@
       :padding 0.1em 0.2em
       :margin 0 0.1em
       :border-radius 0.3em))))
-  (.page.campaign.subscription
-   :background (hex E0E0E0)
-   :min-height 80vh
-   :min-height (calc (- 100vh 6em))
-   :padding 1em
-   (h1
-    :margin 0
-    :text-align center
-    :font-size 3em)
-   (form
-    :max-width 500px
-    :margin 1em auto
-    :background (hex FFFFFF)
-    :padding 1em
-    (label
-     :min-width 50%)
-    (.row
-     :margin 0.5em 0)))
 
   (.page.overview
    :display flex
@@ -335,4 +320,99 @@
     (canvas
      :width 100%
      :height 10em
-     :background (hex FFFFFF)))))
+     :background (hex FFFFFF))))
+
+  (.page.public
+   :background (hex F0F0F0)
+   :min-height (calc (- 100vh 6em))
+   :padding-bottom 1em
+   (>header
+    :display flex
+    :background (hex E0E0E0)
+    :align-items center
+    :justify-content space-between
+    (h1
+     :margin 0
+     :padding 0 0.5em)
+    (nav
+     :display flex
+     (a
+      :padding 0.5em 1em
+      :color black
+      :text-decoration none)
+     ((:and a :hover)
+      :background white))))
+
+  (.page.campaign.subscription
+   (h1
+    :margin 0
+    :text-align center
+    :font-size 3em)
+   (form
+    :max-width 500px
+    :margin 1em auto
+    :background (hex FFFFFF)
+    :padding 1em
+    (label
+     :min-width 50%)
+    (.row
+     :margin 0.5em 0)))
+
+  (.page.mail.archive
+   (>h1
+    :text-align center
+    :font-size 2em)
+   (ul.mails
+    :background (hex FAFAFA)
+    :color (hex 151515)
+    :max-width 700px
+    :margin 1em auto
+    :padding 1em
+    :list-style none
+    (li
+     :display flex
+     :margin 0.5em 0
+     (i
+      :margin 0 0.5em)
+     (.title
+      :flex-grow 1))))
+
+  (.page.mail.view
+   (>article
+    :background (hex FAFAFA)
+    :color (hex 151515)
+    :border-bottom 0.5em (hex A0A0A0)
+    :max-width 700px
+    :margin 1em auto
+    :padding 1em
+    (h1
+     :font-size 1.5em
+     :margin 0.5em)
+    (code
+     :font-size 0.8em
+     :padding 0.5em
+     :background (hex F0F0F0))
+    (blockquote
+     :border-left 0.2em solid (hex A0A0A0)
+     :margin 1em 0.5em
+     :padding 0 0.5em)
+    (cite
+     :display block
+     :text-align right)
+    (img :max-width 100%)
+    (a :color blue
+       :text-decoration underline)
+    (.button
+     :display block
+     :border-radius 0.25em
+     :margin 1em
+     :padding 0.5em
+     :font-size 1.25em
+     :text-align center
+     :font-weight bold
+     :color white
+     :background (hex FF8800)
+     :text-decoration none
+     :cursor pointer)
+    ((:and .button :hover)
+     :background (hex AA5500)))))

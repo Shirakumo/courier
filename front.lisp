@@ -18,6 +18,16 @@
            :registration-open (config :registration-open)
            args)))
 
+(defun render-public-page (page content &rest args)
+  (r-clip:with-clip-processing ("public-template.ctml")
+    (apply #'r-clip:process T
+           :title (config :title)
+           :page page
+           :content (plump:parse content)
+           :copyright (config :copyright)
+           :version (asdf:component-version (asdf:find-system :courier))
+           args)))
+
 (define-page frontpage "courier/^$" ()
   (if (user:check (auth:current "anonymous") (perm courier))
       (render-page "Dashboard"
@@ -212,10 +222,11 @@
                               (db:query (:= 'mail (dm:id mail)))
                               :sort '(("send-time" :desc)) :amount 100))))
 
-(define-page campaign-log "courier/^log/campaign/([^/]+)" (:uri-groups (campaign) :access (perm courier))
+(define-page campaign-log "courier/^log/" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page "Mail Log"
                  (@template "mail-log.ctml")
+                 ;; Does not work right, sigh.
                  :log (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
                               (db:query (:= 'campaign (dm:id campaign)))
                               :sort '(("send-time" :desc)) :amount 100))))
@@ -231,26 +242,26 @@
 ;; User sections
 (define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))
   (let ((campaign (ensure-campaign (db:ensure-id campaign))))
-    (r-clip:with-clip-processing ("campaign-subscription.ctml")
-      (r-clip:process T
-                      :title (format NIL "Subscribe to ~a" (dm:field campaign "title"))
-                      :description (dm:field campaign "description")
-                      :campaign campaign
-                      :fields (list-attributes campaign)
-                      :action (or (post/get "action") "subscribe")))))
+    (render-public-page (format NIL "Subscribe to ~a" (dm:field campaign "title"))
+                        (@template "campaign-subscription.ctml")
+                        :description (dm:field campaign "description")
+                        :campaign campaign
+                        :fields (list-attributes campaign)
+                        :action (or (post/get "action") "subscribe"))))
 
 (define-page mail-view "courier/^view/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber mail) (decode-id id)
-    (mark-mail-received mail subscriber)
     (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
            (subscriber (ensure-subscriber subscriber))
-           (campaign (ensure-campaign (dm:field mail "campaign"))))
-      (r-clip:with-clip-processing ("mail-view.ctml")
-        (apply #'r-clip:process T
-               :mail mail
-               :campaign campaign
-               :subscriber subscriber
-               :content (compile-email-content campaign mail subscriber))))))
+           (campaign (ensure-campaign (dm:field mail "campaign")))
+           (content (getf (mail-template-args campaign mail subscriber) :body)))
+      (mark-mail-received mail subscriber)
+      (render-public-page (dm:field mail "subject")
+                          (@template "mail-view.ctml")
+                          :mail mail
+                          :campaign campaign
+                          :subscriber subscriber
+                          :mail-content content))))
 
 (defun mail-url (mail subscriber)
   (uri-to-url (format NIL "courier/view/~a" (generate-id subscriber (ensure-id mail)))
@@ -258,14 +269,15 @@
 
 (define-page mail-archive "courier/^archive/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber) (decode-id id)
-    (let* ((mails (dm:get (rdb:join (mail _id) (mail-log mail)) (db:query (:= 'subscriber subscriber))))
+    (let* ((mails (dm:get (rdb:join (mail _id) (mail-log mail)) (db:query (:= 'subscriber subscriber))
+                          :sort '(("send-time" :desc)) :hull 'mail))
            (subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field subscriber "campaign"))))
-      (r-clip:with-clip-processing ("mail-archive.ctml")
-        (apply #'r-clip:process T
-               :mails mails
-               :campaign campaign
-               :subscriber subscriber)))))
+      (render-public-page (dm:field campaign "title")
+                          (@template "mail-archive.ctml")
+                          :mails mails
+                          :campaign campaign
+                          :subscriber subscriber))))
 
 (defun archive-url (subscriber)
   (uri-to-url (format NIL "courier/archive/~a" (generate-id subscriber))

@@ -1,0 +1,11 @@
+<article class="page public mail view">
+  <header>
+    <h1 lquery="(text (clip campaign :title))">Campaign</h1>
+    <nav>
+      <a @href="courier/archive/{0} (courier::generate-id (clip subscriber :_id))">
+        <i class="fas fa-archive"></i> Archive
+      </a> 
+    </nav>
+  </header>
+  <c:splice lquery="(html mail-content)"/>
+</article>

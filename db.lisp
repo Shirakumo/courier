@@ -79,7 +79,7 @@
              '((mail (:id mail))
                (subscriber (:id subscriber))
                (send-time (:integer 5))
-               (state (:integer 1)))
+               (status (:integer 1)))
              :indices '(mail subscriber))
 
   (db:create 'mail-queue
@@ -349,7 +349,6 @@
       (setf-dm-fields mail title subject body campaign)
       (setf (dm:field mail "time") (get-universal-time))
       (when save
-        (v:info :test "aaaa")
         (dm:insert mail))
       mail)))
 

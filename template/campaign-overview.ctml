@@ -33,6 +33,10 @@
         <i class="fas fa-tag"></i>
         Tags
       </a>
+      <a class="button" href="#" @href="courier/log/campaign/{0} _id">
+        <i class="fas fa-fw fa-clipboard"></i>
+        Log
+      </a>
       <a class="button" href="#" @href="courier/campaign/{0}/edit title">
         <i class="fas fa-edit"></i>
         Edit
@@ -53,5 +57,6 @@
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>
+    FIXME: Add recent mail list
   </c:using>
 </article>

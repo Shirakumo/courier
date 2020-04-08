@@ -349,6 +349,13 @@ class Courier{
                         },
                         legend: {
                             display: false
+                        },
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    suggestedMin: 0
+                                }
+                            }]
                         }
                     }
                 });

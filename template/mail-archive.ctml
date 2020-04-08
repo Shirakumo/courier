@@ -1,0 +1,18 @@
+<article class="page public mail archive">
+  <header>
+    <h1 lquery="(text (clip campaign :title))">Campaign</h1>
+    <nav>
+      <a @href="courier/archive/{0} (courier::generate-id (clip subscriber :_id))">
+        <i class="fas fa-archive"></i> Archive
+      </a> 
+    </nav>
+  </header>
+  <h1><c:splice lquery="(text (clip campaign :title))"/> Archive</h1>
+  <ul class="mails" iterate="mails">
+    <li class="mail">
+      <time lquery="(time time)">2020</time>
+      <i class="fas status" lquery="(add-class (if (courier::mail-received-p * (** :subscriber)) :fa-envelope-open :fa-envelope))"></i>
+      <a class="title" @href="courier/view/{0} (courier::generate-id (clip (** :subscriber) :_id) _id)" lquery="(text subject)">Mail</a>
+    </li>
+  </ul>
+</article>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title><c:splice lquery="(text page)"/> | <c:splice lquery="(text title)"/></title>
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="Mailing List" lquery="(attr :content description)" />
+    <meta name="robots" content="index, follow" />
+    <link rel="stylesheet" type="text/css" href="../static/courier.css" @href="/static/courier/courier.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous"/>
+  </head>
+  <body>
+    <header>
+    </header>
+    <main>
+      <div class="box info" lquery='(text (post/get "message"))'></div>
+      <div class="box error" lquery='(text (post/get "error"))'></div>
+      <c:splice lquery="(html content)"/>
+    </main>
+    <footer>
+      &copy; <time lquery="(time T)">2019</time> <c:splice lquery="(text copyright)">Shirakumo</c:splice><br/>
+      Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text version)">0.0.0</c:splice></a>
+    </footer>
+  </body>
+</html>

@@ -99,7 +99,7 @@
            (db:insert 'mail-log `(("mail" . ,(dm:id mail))
                                   ("subscriber" . ,(dm:id subscriber))
                                   ("send-time" . ,(get-universal-time))
-                                  ("state" . ,state)))))
+                                  ("status" . ,state)))))
     (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
            (host (ensure-host (dm:field campaign "host")))
            html)
