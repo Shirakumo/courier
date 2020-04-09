@@ -195,7 +195,7 @@
                  :tags (list-tags campaign)
                  :tag-values (list-tags subscriber))))
 
-(define-page subscriber-new "courier/^campaign/([^/]+)/subscriber/new" (:uri-groups (campaign) :access (perm courier))
+(define-page subscriber-new ("courier/^campaign/([^/]+)/subscriber/new" 1) (:uri-groups (campaign) :access (perm courier))
   (let* ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page "New Subscriber"
                  (@template "subscriber-edit.ctml")
@@ -214,6 +214,12 @@
                  :tags (list-tags subscriber)
                  :all-tags (list-tags campaign))))
 
+(define-page subscriber-import ("courier/^campaign/([^/]+)/subscriber/import" 1) (:uri-groups (campaign) :access (perm courier))
+  (let* ((campaign (check-accessible (ensure-campaign campaign))))
+    (render-page "Import Subscribers"
+                 (@template "subscriber-import.ctml")
+                 :campaign campaign)))
+
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))
     (render-page "Mail Log"
@@ -222,7 +228,7 @@
                               (db:query (:= 'mail (dm:id mail)))
                               :sort '(("send-time" :desc)) :amount 100))))
 
-(define-page campaign-log "courier/^log/" (:uri-groups (campaign) :access (perm courier))
+(define-page campaign-log "courier/^log/campaign/([^/]+)" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (render-page "Mail Log"
                  (@template "mail-log.ctml")

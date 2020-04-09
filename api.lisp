@@ -321,6 +321,11 @@
     (delete-subscriber subscriber)
     (output subscriber "Subscriber deleted." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
+(define-api courier/subscriber/import (campaign &optional content file) (:access (perm courier subscriber new))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
+         (subs (import-subscribers campaign (or file content))))
+    (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
+
 (define-api courier/subscriber/trend (campaign &optional (scale "week")) (:access (perm courier subscriber))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
         (labels ())

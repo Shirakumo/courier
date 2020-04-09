@@ -215,7 +215,7 @@ class Courier{
         
         type.addEventListener("change", ()=>{
             var typeName =
-                 (type.value == "0")? "mail"
+                 (type.value == "0"||type.value == "10")? "mail"
                 :(type.value == "1")? "link"
                 :(type.value == "2")? "tag"
                 :(type.value == "3")? "subscriber"
@@ -359,6 +359,10 @@ class Courier{
                         }
                     }
                 });
+                if(element.dataset.type == 'doughnut'){
+                    chart.data.datasets[0].backgroundColor = ["rgb(255, 205, 86)","rgb(255, 99, 132)","rgb(54, 162, 235)"];
+                    delete chart.data.datasets[0].borderColor;
+                }
                 refresh();
             });
         [].forEach.call(element.querySelectorAll("select"), (el)=>{

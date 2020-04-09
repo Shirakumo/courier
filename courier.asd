@@ -23,6 +23,7 @@
                (:file "db")
                (:file "trigger")
                (:file "send-queue")
+               (:file "import")
                (:file "front")
                (:file "api"))
   :depends-on ((:interface :relational-database)
@@ -37,4 +38,5 @@
                :softdrink
                :cl-markless-plump
                :cl-smtp
-               :cl-ppcre))
+               :cl-ppcre
+               :cl-csv))

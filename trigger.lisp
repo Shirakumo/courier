@@ -74,10 +74,12 @@
       (ecase (dm:collection target)
         (mail
          (unless (mail-sent-p target subscriber)
-           (enqueue-email target
-                          :target subscriber
-                          :time (+ (get-universal-time)
-                                   (dm:field trigger "time-offset")))))
+           (case (dm:field trigger "target-type")
+             (10 (mark-mail-sent target subscriber :unlocked))
+             (0 (enqueue-email target
+                               :target subscriber
+                               :time (+ (get-universal-time)
+                                        (dm:field trigger "time-offset")))))))
         (tag
          (tag subscriber target))))))
 

@@ -19,6 +19,14 @@
     </li>
   </ul>
   <c:using value="campaign">
+    <a class="button" href="#" @href="courier/campaign/{0}/subscriber/new _id">
+      <i class="fas fa-plus-circle"></i>
+      Add Subscriber
+    </a>
+    <a class="button" href="#" @href="courier/campaign/{0}/subscriber/import _id">
+      <i class="fas fa-plus-circle"></i>
+      Import Subscribers
+    </a>
     <a class="button" href="#" @href="courier/campaign/{0}/subscriber?page={1} title (** :next-page)">
       <i class="fas fa-arrow-right"></i>
       Next page

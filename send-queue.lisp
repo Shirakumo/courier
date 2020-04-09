@@ -23,12 +23,17 @@
         (dm:data-model
          (ecase (dm:collection target)
            (subscriber
-            (send (dm:id target)))
+            (if (dm:field target "confirmed")
+                (send (dm:id target))
+                (error "Subscriber ~a has not yet confirmed their subscription" (dm:field target "address"))))
            (tag
-            (mapcar #'send (db:iterate 'tab-table (db:query (:= 'tag (dm:id target)))
-                                       (lambda (r) (gethash "subscriber" r) :fields '("subscriber") :accumulate T))))
+            (mapcar #'send (db:iterate (rdb:join (tab-table subscriber) (subscriber _id))
+                             (db:query (:and (:= 'tag (dm:id target))
+                                             (:= 'confirmed T)))
+                             (lambda (r) (gethash "subscriber" r) :fields '("subscriber") :accumulate T))))
            (campaign
-            (mapcar #'send (db:iterate 'subscriber (db:query (:= 'campaign (dm:id target)))
+            (mapcar #'send (db:iterate 'subscriber (db:query (:and (:= 'campaign (dm:id target))
+                                                                   (:= 'confirmed T)))
                                        (lambda (r) (gethash "_id" r)) :fields '("_id") :accumulate T)))))
         (db:id
          (send target))))))
@@ -98,7 +103,7 @@
              (setf *mail-queue-thread* NIL))))
     (setf *mail-queue-thread* (bt:make-thread #'send-queue-thunk :name "courier send queue"))))
 
-(define-trigger server-start ()
+(define-trigger (server-start start-send-queue) ()
   (unless (and *mail-queue-thread*
                (bt:thread-alive-p *mail-queue-thread*))
     (start-send-queue)))

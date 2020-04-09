@@ -263,14 +263,14 @@
   (when (dm:id campaign)
     (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc)))))
 
-(defun make-subscriber (campaign name address &key attributes tags confirmed (save t))
+(defun make-subscriber (campaign name address &key attributes tags confirmed (signup-time (get-universal-time)) (save t))
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
       (error "You are already subscribed!"))
     (dm:with-model subscriber ('subscriber NIL)
       (setf-dm-fields subscriber campaign name address confirmed)
-      (setf (dm:field subscriber "signup-time") (get-universal-time))
+      (setf (dm:field subscriber "signup-time") signup-time)
       (when save
         (dm:insert subscriber)
         (loop for (attribute . value) in attributes
@@ -281,7 +281,8 @@
                    (dm:insert attribute-value)))
         (loop for tag in tags
               do (tag subscriber tag))
-        (process-triggers subscriber subscriber))
+        (when confirmed
+          (process-triggers subscriber campaign)))
       subscriber)))
 
 (defun edit-subscriber (subscriber &key name address attributes tags confirmed (save T))
@@ -303,7 +304,8 @@
         (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
         (loop for tag in tags
               do (tag subscriber tag))
-        (process-triggers subscriber subscriber))
+        (when confirmed
+          (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign")))))
       subscriber)))
 
 (defun ensure-subscriber (subscriber-ish)
@@ -508,8 +510,10 @@
         (< 0 (db:count 'mail-queue query)))))
 
 (defun mail-coverage (mail)
-  (/ (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))
-     (db:count 'mail-log (db:query (:= 'mail (dm:id mail))))))
+  (let ((sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
+        (read (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))))
+    (if (= 0 sent) 0
+        (/ read sent))))
 
 (defun mail-sent-count (thing)
   (ecase (dm:collection thing)
@@ -525,6 +529,12 @@
                                  ("subscriber" . ,(ensure-id subscriber))
                                  ("time" . ,(get-universal-time))))
       (process-triggers subscriber mail))))
+
+(defun mark-mail-sent (mail subscriber &optional (status :success))
+  (db:insert 'mail-log `(("mail" . ,(dm:id mail))
+                         ("subscriber" . ,(dm:id subscriber))
+                         ("send-time" . ,(get-universal-time))
+                         ("status" . ,(mail-status-id status)))))
 
 (defun tagged-p (subscriber tag)
   (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))
@@ -546,6 +556,23 @@
   (ecase (dm:collection thing)
     (campaign (db:count 'mail (db:query (:= 'campaign (dm:id thing)))))))
 
+(defun mail-status-id (status)
+  (ecase status
+    (:success 0)
+    (:unlocked 1)
+    (:failed 10)
+    (:send-failed 11)
+    (:compile-failed 12)
+    ((0 1 10 11 12) status)))
+
+(defun id-mail-status (id)
+  (ecase id
+    (0 :success)
+    (1 :unlocked)
+    (10 :failed)
+    (11 :send-failed)
+    (12 :compile-failed)))
+
 (defun collection-type (collection)
   (ecase (etypecase collection
            (symbol collection)
@@ -558,7 +585,7 @@
 
 (defun type-collection (type)
   (ecase type
-    ((0 mail) 'mail)
+    ((0 10 mail) 'mail)
     ((1 link) 'link)
     ((2 tag) 'tag)
     ((3 subscriber) 'subscriber)
