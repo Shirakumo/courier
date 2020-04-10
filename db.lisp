@@ -40,6 +40,11 @@
                (template :text))
              :indices '(author title))
 
+  (db:create 'campaign-access
+             '((campaign (:id campaign))
+               (user :id)
+               (access-level (:integer 1))))
+
   (db:create 'subscriber
              '((campaign (:id campaign))
                (name (:varchar 64))
@@ -256,7 +261,10 @@
 
 (defun list-campaigns (&optional user)
   (if user
-      (dm:get 'campaign (db:query (:= 'author (user:id user))) :sort '((title :asc)))
+      (dm:get (rdb:join (campaign _id) (campaign-access campaign))
+              (db:query (:or (:= 'author (user:id user))
+                             (:= 'user (user:id user))))
+              :sort '((title :asc)) :hull 'campaign)
       (dm:get 'campaign (db:query :all) :sort '((title :asc)))))
 
 (defun list-attributes (campaign)
@@ -607,7 +615,8 @@
            (check-campaign (campaign)
              (db:iterate 'campaign (db:query (:= '_id campaign))
                          (lambda (r) (check (gethash "author" r)))
-                         :fields '(author) :amount 1)))
+               :fields '(author) :amount 1)))
+    ;; FIXME: extended author checks
     (ecase (dm:collection dm)
       (host
        (check (dm:field dm "author")))

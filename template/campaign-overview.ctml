@@ -57,6 +57,5 @@
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>
-    FIXME: Add recent mail list
   </c:using>
 </article>

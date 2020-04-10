@@ -344,6 +344,7 @@ class Courier{
                         labels: []
                     },
                     options: {
+                        maintainAspectRatio: false,
                         layout: {
                             padding: 5
                         },
