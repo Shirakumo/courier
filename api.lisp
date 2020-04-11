@@ -226,6 +226,13 @@
     (api-output (mktable "labels" '("Tagged" "Untagged")
                          "points" (list tagged (- total tagged))))))
 
+(define-api courier/tag/distribution (campaign) (:access (perm courier tag))
+  (let ((tags (list-tags (check-accessible (ensure-campaign campaign)))))
+    (api-output (mktable "labels" (loop for tag in tags
+                                        collect (dm:field tag "title"))
+                         "points" (loop for tag in tags
+                                        collect (db:count 'tag-table (db:query (:= 'tag (dm:id tag)))))))))
+
 (define-api courier/tag/new (campaign title &optional description) (:access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
     (let ((tag (make-tag campaign :title title :description description)))
@@ -360,7 +367,7 @@
 
 (define-api courier/subscriber/open-rate (subscriber) (:access (perm courier subscriber))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
-         (opened (db:count 'tag-receipt (db:query (:= 'subscriber (dm:id subscriber)))))
+         (opened (db:count 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber)))))
          (sent (db:count 'mail-log (db:query (:= 'subscriber (dm:id subscriber))))))
     (api-output (mktable "labels" '("Opened" "Unopened")
                          "points" (list opened (- sent opened))))))

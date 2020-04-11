@@ -52,8 +52,13 @@
       </select>
       <canvas></canvas>
     </form>
-    <form class="panel chart open-rate wide" data-type="bar" action="mail/trend">
+    <form class="panel single chart open-rate" data-type="bar" action="mail/trend">
       <h2>Open Rate</h2>
+      <input type="hidden" name="campaign" lquery="(val _id)"/>
+      <canvas></canvas>
+    </form>
+    <form class="panel single chart open-rate" data-type="bar" action="tag/distribution">
+      <h2>Tag Distribution</h2>
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>
