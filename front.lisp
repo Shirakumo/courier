@@ -195,8 +195,7 @@
                  :subscriber subscriber
                  :fields (list-attributes campaign)
                  :field-values (subscriber-attributes subscriber)
-                 :tags (list-tags campaign)
-                 :tag-values (list-tags subscriber))))
+                 :tags (list-tags subscriber))))
 
 (define-page subscriber-new ("courier/^campaign/([^/]+)/subscriber/new" 1) (:uri-groups (campaign) :access (perm courier))
   (let* ((campaign (check-accessible (ensure-campaign campaign))))

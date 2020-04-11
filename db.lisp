@@ -271,6 +271,23 @@
   (when (dm:id campaign)
     (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc)))))
 
+(defun grant-access (user campaign &key (access-level 0))
+  (let ((access (or (dm:get-one 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
+                                                                 (:= 'user (user:id user)))))
+                    (dm:hull 'campaign-access))))
+    (setf-dm-fields access user campaign access-level)
+    (if (dm:hull-p access)
+        (dm:insert access)
+        (dm:save access))))
+
+(defun revoke-access (user campaign)
+  (db:remove 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
+                                              (:= 'user (user:id user))))))
+
+(defun list-access (campaign)
+  (dm:get 'campaign-access (db:query (:= 'campaign (ensure-id campaign)))
+          :sort `((access-level :asc))))
+
 (defun make-subscriber (campaign name address &key attributes tags confirmed (signup-time (get-universal-time)) (save t))
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
@@ -419,7 +436,7 @@
     (campaign
      (dm:get 'tag (db:query (:= 'campaign (dm:id thing))) :sort '((title :asc))))
     (subscriber
-     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing))) :sort '((title :asc))))))
+     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing))) :sort '((title :asc)) :hull 'tag))))
 
 (defun make-trigger (campaign source target &key description (time-offset 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
@@ -613,15 +630,19 @@
                (error 'radiance:request-denied :message (format NIL "You do not own the ~a you were trying to access."
                                                                 (dm:collection dm)))))
            (check-campaign (campaign)
-             (db:iterate 'campaign (db:query (:= '_id campaign))
-                         (lambda (r) (check (gethash "author" r)))
-               :fields '(author) :amount 1)))
+             (when (< 0 (db:select (rdb:join (campaign _id) (campaign-access campaign))
+                                   (db:query (:and (:= '_id campaign)
+                                                   (:or (:= 'author (user:id user))
+                                                        (:= 'user (user:id user)))))
+                                   :amount 1 :fields '(access-level)))
+               (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as."
+                                                                (dm:collection dm))))))
     ;; FIXME: extended author checks
     (ecase (dm:collection dm)
       (host
        (check (dm:field dm "author")))
       (campaign
-       (check (dm:field dm "author")))
+       (check-campaign (dm:id dm)))
       (mail
        (check-campaign (dm:field dm "campaign")))
       (tag

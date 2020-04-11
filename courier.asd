@@ -23,6 +23,7 @@
                (:file "db")
                (:file "trigger")
                (:file "send-queue")
+               (:file "prune")
                (:file "import")
                (:file "front")
                (:file "api"))

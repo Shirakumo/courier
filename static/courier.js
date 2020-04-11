@@ -331,20 +331,18 @@ class Courier{
                 chart.update();
             });
         self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js")
+            .then(()=>self.loadJS("https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"))
             .then(()=>{
                 chart = new Chart(ctx, {
                     type: element.dataset.type,
                     data: {
                         datasets: [{
                             data: [],
-                            backgroundColor: 'rgba(245,166,49,0.2)',
-                            borderColor: 'rgba(245,166,49,1)',
                             pointRadius: 10
                         }],
                         labels: []
                     },
                     options: {
-                        maintainAspectRatio: false,
                         layout: {
                             padding: 5
                         },
@@ -357,13 +355,14 @@ class Courier{
                                     suggestedMin: 0
                                 }
                             }]
+                        },
+                        plugins: {
+                            colorschemes: {
+                                scheme: 'tableau.Classic20'
+                            }
                         }
                     }
                 });
-                if(element.dataset.type == 'doughnut'){
-                    chart.data.datasets[0].backgroundColor = ["rgb(255, 205, 86)","rgb(255, 99, 132)","rgb(54, 162, 235)"];
-                    delete chart.data.datasets[0].borderColor;
-                }
                 refresh();
             });
         [].forEach.call(element.querySelectorAll("select"), (el)=>{

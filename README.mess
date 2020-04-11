@@ -2,8 +2,9 @@
 
 ; FIXME: consistent naming mail/email
 ; FIXME: check values
-; FIXME: prune unconfirmed subscribers after a day
 ; TODO: sequence interface
-; TODO: permission sharing
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
+; TODO: permission sharing (kinda done)
+; TODO: image / file upload
+; TODO: mail/archive link syntax

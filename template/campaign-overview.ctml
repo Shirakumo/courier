@@ -57,7 +57,7 @@
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>
-    <form class="panel single chart open-rate" data-type="bar" action="tag/distribution">
+    <form class="panel single chart open-rate" data-type="doughnut" action="tag/distribution">
       <h2>Tag Distribution</h2>
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>

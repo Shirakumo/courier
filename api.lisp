@@ -228,10 +228,15 @@
 
 (define-api courier/tag/distribution (campaign) (:access (perm courier tag))
   (let ((tags (list-tags (check-accessible (ensure-campaign campaign)))))
-    (api-output (mktable "labels" (loop for tag in tags
-                                        collect (dm:field tag "title"))
-                         "points" (loop for tag in tags
-                                        collect (db:count 'tag-table (db:query (:= 'tag (dm:id tag)))))))))
+    (api-output (mktable "labels" (list*
+                                   "untagged"
+                                   (loop for tag in tags
+                                         collect (dm:field tag "title")))
+                         "points" (list*
+                                   (db:count (rdb:join (subscriber _id) (tag-table subscriber) :left)
+                                             (db:query (:null 'tag)))
+                                   (loop for tag in tags
+                                         collect (db:count 'tag-table (db:query (:= 'tag (dm:id tag))))))))))
 
 (define-api courier/tag/new (campaign title &optional description) (:access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))

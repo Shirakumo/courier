@@ -275,6 +275,8 @@
    :display flex
    :flex-wrap wrap
    :justify-content center
+   :margin 0 auto
+   :max-width 1000px
    (.panel
     :background (hex F0F0F0)
     :border-bottom 0.2em solid (hex E0E0E0)
