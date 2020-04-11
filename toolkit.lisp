@@ -32,12 +32,12 @@
     `(let ((,modelg ,model))
        ,@(loop for var in vars
                collect (destructuring-bind (var &optional (field (string-downcase var))) (radiance::enlist var)
-                         `(etypecase ,var
+                         `(typecase ,var
                             (null)
-                            ((or string integer)
-                             (setf (dm:field ,modelg ,field) ,var))
                             (dm:data-model
-                             (setf (dm:field ,modelg ,field) (dm:id ,var))))))
+                             (setf (dm:field ,modelg ,field) (dm:id ,var)))
+                            (T
+                             (setf (dm:field ,modelg ,field) ,var)))))
        ,modelg)))
 
 (defun check-title (title)

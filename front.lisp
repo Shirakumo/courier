@@ -64,7 +64,10 @@
                  :campaign campaign)))
 
 (define-page campaign-new ("courier/^campaign/new$" 1) (:uri-groups () :access (perm courier))
-  (let ((campaign (make-campaign (auth:current) NIL NIL :reply-to (user:field "email" (auth:current)) :save NIL)))
+  (let ((campaign (make-campaign (auth:current) NIL NIL
+                                 :reply-to (or (user:field "email" (auth:current))
+                                               (dm:field (first (list-hosts)) "address"))
+                                 :save NIL)))
     (setf (dm:field campaign "template") (alexandria:read-file-into-string (@template "email/default-template.ctml")))
     (render-page "New Campaign"
                  (@template "campaign-edit.ctml")

@@ -271,7 +271,7 @@
       :margin 0 0.1em
       :border-radius 0.3em))))
 
-  (.page.overview
+  ((:and .page (:or .overview .dashboard))
    :display flex
    :flex-wrap wrap
    :justify-content center

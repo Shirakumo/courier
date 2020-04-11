@@ -261,7 +261,7 @@
 
 (defun list-campaigns (&optional user)
   (if user
-      (dm:get (rdb:join (campaign _id) (campaign-access campaign))
+      (dm:get (rdb:join (campaign _id) (campaign-access campaign) :left)
               (db:query (:or (:= 'author (user:id user))
                              (:= 'user (user:id user))))
               :sort '((title :asc)) :hull 'campaign)
