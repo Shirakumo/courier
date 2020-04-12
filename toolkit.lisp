@@ -7,10 +7,16 @@
 (in-package #:courier)
 
 (defun encrypt (thing)
-  (cryptos:encrypt thing (config :private-key)))
+  (cryptos:encrypt thing (config :private-key)
+                   :normalize-key :hash
+                   :mode :cbc
+                   :iv (defaulted-config (cryptos:make-salt T) :private-key-iv)))
 
 (defun decrypt (thing)
-  (cryptos:decrypt thing (config :private-key)))
+  (cryptos:decrypt thing (config :private-key)
+                   :normalize-key :hash
+                   :mode :cbc
+                   :iv (defaulted-config (cryptos:make-salt T) :private-key-iv)))
 
 (defun hash (thing)
   (let ((thing (etypecase thing
