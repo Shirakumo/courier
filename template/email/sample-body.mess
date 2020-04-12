@@ -13,7 +13,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec ullamcorper euism
 Vivamus ut neque id elit fermentum fringilla. Suspendisse potenti. Phasellus quis leo nibh. Pellentesque dapibus tellus at pulvinar semper. Praesent rhoncus urna vitae risus porta, a porttitor libero eleifend. Pellentesque nibh mauris, hendrerit eget turpis sed, hendrerit fringilla arcu. Pellentesque vitae libero at tellus auctor commodo sit amet at lacus. Curabitur in fringilla lacus. Fusce in mi et leo blandit commodo ut quis arcu. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum pellentesque vehicula vehicula. Quisque vitae scelerisque magna. Cras hendrerit, odio efficitur eleifend bibendum, ex lectus rhoncus nunc, vitae rhoncus sapien velit nec lacus. Maecenas scelerisque ante et pulvinar bibendum. Aenean ut tristique ligula, non dapibus libero. Praesent at justo mauris.
 
 :::
-(defun compile-email-content (campaign mail subscriber)
-  (apply #'compile-email (dm:field campaign "template")
+(defun compile-mail-content (campaign mail subscriber)
+  (apply #'compile-mail (dm:field campaign "template")
          (mail-template-args campaign mail subscriber)))
 :::

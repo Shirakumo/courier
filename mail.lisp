@@ -6,7 +6,7 @@
 
 (in-package #:courier)
 
-(defun compile-email (template &rest args)
+(defun compile-mail (template &rest args)
   ;; FIXME: softdrink apply stylesheet
   (apply #'r-clip:process
          (etypecase template
@@ -26,7 +26,7 @@
 (defun extract-subject (html)
   (lquery:$1 html "head title" (text)))
 
-(defun format-email (text)
+(defun format-mail (text)
   (etypecase text
     (string
      (values text))
@@ -35,7 +35,7 @@
              (plump:serialize text NIL)))))
 
 (defun send (host to subject message &key reply-to campaign unsubscribe)
-  (multiple-value-bind (plaintext html) (format-email message)
+  (multiple-value-bind (plaintext html) (format-mail message)
     (l:trace :courier.mail "Sending to ~a via ~a/~a:~a"
              to
              (dm:field host "address")
@@ -66,7 +66,7 @@
      :display-name (dm:field host "title"))))
 
 (defun send-templated (host to template &rest args)
-  (let ((html (apply #'compile-email template args)))
+  (let ((html (apply #'compile-mail template args)))
     (send host to (extract-subject html) html)))
 
 (defun mail-template-args (campaign mail subscriber)
@@ -83,17 +83,17 @@
                      :tags (list-tags subscriber)
                      :time (get-universal-time)
                      (subscriber-attributes subscriber))))
-    (list* :body (compile-email-body (dm:field mail "body") args
-                                     :campaign campaign
-                                     :subscriber subscriber
-                                     :mail mail)
+    (list* :body (compile-mail-body (dm:field mail "body") args
+                                    :campaign campaign
+                                    :subscriber subscriber
+                                    :mail mail)
            args)))
 
-(defun compile-email-content (campaign mail subscriber)
-  (apply #'compile-email (dm:field campaign "template")
+(defun compile-mail-content (campaign mail subscriber)
+  (apply #'compile-mail (dm:field campaign "template")
          (mail-template-args campaign mail subscriber)))
 
-(defun send-email (mail subscriber)
+(defun send-mail (mail subscriber)
   (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
   (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
          (host (ensure-host (dm:field campaign "host")))
@@ -101,7 +101,7 @@
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
                             (mark-mail-sent mail subscriber :compile-falied))))
-      (setf html (compile-email-content campaign mail subscriber)))
+      (setf html (compile-mail-content campaign mail subscriber)))
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
                             (mark-mail-sent mail subscriber :send-failed)))))
@@ -113,9 +113,9 @@
           :unsubscribe (unsubscribe-url subscriber))
     (mark-mail-sent mail subscriber)))
 
-(defun send-system-email (body address host campaign &rest args)
-  (let ((html (apply #'compile-email #p"email/system-template.ctml"
-                     (list* :body (compile-email-body body args)
+(defun send-system-mail (body address host campaign &rest args)
+  (let ((html (apply #'compile-mail #p"email/system-template.ctml"
+                     (list* :body (compile-mail-body body args)
                             args))))
     (send host address
           (extract-subject html)

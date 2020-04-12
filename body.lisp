@@ -82,7 +82,7 @@
                     (vector-push-extend (make-instance 'var :name (subseq line cursor i)) children)
                     (return (1+ i))))))
 
-(defun compile-email-body (content vars &key campaign subscriber mail)
+(defun compile-mail-body (content vars &key campaign subscriber mail)
   (let ((dom (plump-dom:make-root)))
     (when (typep content 'string)
       (setf content (cl-ppcre:regex-replace-all "\\r\\n" content (string #\Linefeed))))

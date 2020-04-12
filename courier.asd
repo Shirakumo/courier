@@ -19,7 +19,7 @@
   :components ((:file "module")
                (:file "toolkit")
                (:file "body")
-               (:file "email")
+               (:file "mail")
                (:file "db")
                (:file "trigger")
                (:file "send-queue")

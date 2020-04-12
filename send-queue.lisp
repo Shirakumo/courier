@@ -8,7 +8,7 @@
 
 (defvar *mail-queue-thread* NIL)
 
-(defun enqueue-email (mail &key target time)
+(defun enqueue-mail (mail &key target time)
   (let* ((time (or time 0))
          (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field mail "campaign")))))
          (host (dm:field campaign "host")))
@@ -39,8 +39,8 @@
          (send target))))))
 
 (defun send-queue (queue)
-  (send-email (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))
-              (dm:get-one 'subscriber (db:query (:= '_id (dm:field queue "subscriber")))))
+  (send-mail (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))
+             (dm:get-one 'subscriber (db:query (:= '_id (dm:field queue "subscriber")))))
   (dm:delete queue))
 
 (defun process-send-queue-for-host (host)
