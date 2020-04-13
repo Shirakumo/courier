@@ -89,3 +89,10 @@
     (loop for (k v) on entries by #'cddr
           do (setf (gethash k table) v))
     table))
+
+(defun test-mail (campaign)
+  (make-mail campaign :title "Test Email"
+                      :subject "This is a test!"
+                      :body (alexandria:read-file-into-string
+                             (@template "email/sample-body.mess"))
+                      :save NIL))

@@ -1,9 +1,10 @@
 # DON'T LOOK, AAAAAAAAAAAAAAAAAAAAa
 
-; FIXME: check values
 ; TODO: sequence interface
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
 ; TODO: permission sharing (kinda done)
 ; TODO: mail/archive link syntax
-; TODO: purge subscribers with unreachable email addresses
+; TODO: purge subscribers with unreachable email addresses (how?)
+; TODO: maybe use monitors to immediately wake up the queue thread
+; TODO: help pages

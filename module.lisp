@@ -18,5 +18,6 @@
   (defaulted-config "Courier Mailing" :title)
   (defaulted-config "Shirakumo" :copyright)
   (defaulted-config (make-random-string 32) :private-key)
-  (defaulted-config 60 :send-queue-poll-interval)
-  (defaulted-config 10 :max-send-attempts))
+  (defaulted-config 3 :send-queue :retry-backoff-exponent)
+  (defaulted-config 10 :send-queue :retry-attempts)
+  (defaulted-config 60 :send-queue :poll-interval))

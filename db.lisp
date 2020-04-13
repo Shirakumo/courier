@@ -256,6 +256,10 @@
             (dm:delete attribute)))))
     campaign))
 
+(defun campaign-author (campaign)
+  (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                          (:= 'address (dm:field campaign "reply-to"))))))
+
 (defun ensure-campaign (campaign-ish &optional (user (auth:current)))
   (or
    (etypecase campaign-ish

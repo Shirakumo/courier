@@ -61,7 +61,7 @@
                                       (l:trace :courier.send-queue e)
                                       (cond (radiance:*debugger*
                                              (invoke-debugger e))
-                                            ((< (dm:field queue "attempts") (config :max-send-attempts))
+                                            ((< (dm:field queue "attempts") (config :send-queue :retry-attempts))
                                              (l:debug :courier.send-queue "Rescheduling to try again later.")
                                              (invoke-restart 'ignore))
                                             (T
@@ -70,7 +70,7 @@
                 (send-queue queue))
             (ignore ()
               :report "Ignore the send and retry later."
-              (setf (dm:field queued "time") (+ (get-universal-time) 60))
+              (setf (dm:field queued "time") (expt (dm:field queued "attempts") (config :send-queue :retry-backoff-exponent)))
               (incf (dm:field queued "attempts"))
               (dm:save queued))
             (forget ()
@@ -90,7 +90,7 @@
 (defun send-queue-loop ()
   (loop for next = (process-send-queue)
         for now = (get-universal-time)
-        for interval = (config :send-queue-poll-interval)
+        for interval = (config :send-queue :poll-interval)
         do (cond ((< next now)
                   (sleep interval))
                  ((< (- next now) interval)

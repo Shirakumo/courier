@@ -88,26 +88,32 @@
 
 (define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
-  ;; FIXME: Check template valid
-  (let* ((host (check-accessible (ensure-host host)))
-         (campaign (make-campaign (user:id (auth:current)) host title
-                                  :description description :reply-to reply-to :template template
-                                  :attributes (loop for title in attribute[]
-                                                    for type in attribute-type[]
-                                                    for required in attribute-required[]
-                                                    collect (list title type required)))))
-    (output campaign "Campaign created." "courier/campaign/")))
+  (ratify:with-parsed-forms ((:email reply-to))
+    (db:with-transaction ()
+      (let* ((host (check-accessible (ensure-host host)))
+             (campaign (make-campaign (user:id (auth:current)) host title
+                                      :description description :reply-to reply-to :template template
+                                      :attributes (loop for title in attribute[]
+                                                        for type in attribute-type[]
+                                                        for required in attribute-required[]
+                                                        collect (list title type required)))))
+        ;; Compile template once to check for validity
+        (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
+        (output campaign "Campaign created." "courier/campaign/")))))
 
 (define-api courier/campaign/edit (campaign &optional title host description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier campaign edit)
   (when title (check-title title))
-  ;; FIXME: Check template valid
-  (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
-    (edit-campaign campaign :host host :title title :description description :reply-to reply-to :template template
-                            :attributes (loop for title in attribute[]
-                                              for type in attribute-type[]
-                                              for required in attribute-required[]
-                                              collect (list title type required)))
-    (output campaign "Campaign edited." "courier/campaign/")))
+  (ratify:with-parsed-forms ((:email reply-to))
+    (db:with-transaction ()
+      (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
+        (edit-campaign campaign :host host :title title :description description :reply-to reply-to :template template
+                                :attributes (loop for title in attribute[]
+                                                  for type in attribute-type[]
+                                                  for required in attribute-required[]
+                                                  collect (list title type required)))
+        ;; Compile template once to check for validity
+        (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
+        (output campaign "Campaign edited." "courier/campaign/")))))
 
 (define-api courier/campaign/delete (campaign) (:access (perm courier campaign delete))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
@@ -116,13 +122,8 @@
 
 (define-api courier/campaign/preview (campaign &optional template title description reply-to) (:access (perm courier mail))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
-         (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
-                                                             (:= 'address (dm:field campaign "reply-to"))))))
-         (mail (make-mail campaign :title "Test Email"
-                                   :subject "This is a test!"
-                                   :body (alexandria:read-file-into-string
-                                          (@template "email/sample-body.mess"))
-                                   :save NIL)))
+         (subscriber (campaign-author campaign))
+         (mail (test-mail campaign)))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields campaign template title description reply-to)
     (handler-case
@@ -141,21 +142,26 @@
 
 (define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier mail new))
   (check-title title)
-  ;; FIXME: Check body valid
-  (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign))))
-         (mail (make-mail campaign
-                          :title title
-                          :subject subject
-                          :body body)))
-    (when send (enqueue-mail mail))
-    (output mail "Mail created." "courier/campaign/~a/mail/" (dm:field mail "campaign"))))
+  (db:with-transaction ()
+    (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign))))
+           (mail (make-mail campaign
+                            :title title
+                            :subject subject
+                            :body body)))
+      ;; Compile template once to check for validity
+      (compile-mail-content campaign mail (campaign-author campaign))
+      (when send (enqueue-mail mail))
+      (output mail "Mail created." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
 (define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier mail edit))
   (check-title title)
-  ;; FIXME: Check body valid
-  (let* ((mail (check-accessible (ensure-mail mail))))
-    (edit-mail mail :title title :subject subject :body body)
-    (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign"))))
+  (db:with-transaction ()
+    (let* ((mail (check-accessible (ensure-mail mail)))
+           (campaign (ensure-campaign (dm:field mail "campaign"))))
+      (edit-mail mail :title title :subject subject :body body)
+      ;; Compile template once to check for validity
+      (compile-mail-content campaign mail (campaign-author campaign))
+      (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
 (define-api courier/mail/delete (mail) (:access (perm courier mail delete))
   (let* ((mail (check-accessible (ensure-mail mail))))
@@ -181,8 +187,7 @@
                      (campaign (make-mail (ensure-campaign campaign) :save NIL))
                      (T (error "Need MAIL or CAMPAIGN."))))
          (campaign (ensure-campaign (dm:field mail "campaign")))
-         (subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
-                                                             (:= 'address (dm:field campaign "reply-to")))))))
+         (subscriber (campaign-author campaign)))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields mail title subject body)
     (handler-case
