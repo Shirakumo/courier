@@ -57,15 +57,15 @@
         (dolist (queue queued)
           (restart-case
               (handler-bind ((error (lambda (e)
-                                      (v:error :courier.send-queue "Failed to send queued mail.")
-                                      (v:trace :courier.send-queue e)
+                                      (l:error :courier.send-queue "Failed to send queued mail.")
+                                      (l:trace :courier.send-queue e)
                                       (cond (radiance:*debugger*
                                              (invoke-debugger e))
                                             ((< (dm:field queue "attempts") (config :max-send-attempts))
-                                             (v:debug :courier.send-queue "Rescheduling to try again later.")
+                                             (l:debug :courier.send-queue "Rescheduling to try again later.")
                                              (invoke-restart 'ignore))
                                             (T
-                                             (v:debug :courier.send-queue "Exceeded max send attempts, dropping mail.")
+                                             (l:debug :courier.send-queue "Exceeded max send attempts, dropping mail.")
                                              (invoke-restart 'forget))))))
                 (send-queue queue))
             (ignore ()

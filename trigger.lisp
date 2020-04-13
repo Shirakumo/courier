@@ -68,7 +68,7 @@
 (defun process-trigger (subscriber trigger &key force)
   (when (or force
             (tag-constraint-applicable-p (dm:field trigger "normalized-constraint") subscriber))
-    (v:info :courier.trigger "Running trigger ~a for ~a" trigger subscriber)
+    (l:info :courier.trigger "Running trigger ~a for ~a" trigger subscriber)
     (let ((target (resolve-typed (dm:field trigger "target-type")
                                  (dm:field trigger "target-id"))))
       (ecase (dm:collection target)
@@ -84,7 +84,7 @@
          (tag subscriber target))))))
 
 (defun process-triggers (subscriber triggers)
-  (v:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
+  (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
   (dolist (trigger (etypecase triggers
                      (list triggers)
                      (dm:data-model (triggers triggers))))
