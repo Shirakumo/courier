@@ -342,7 +342,7 @@ class Courier{
                 var el = self.showPopup(self.constructElement("form",{
                     classes: ["image","upload"],
                     elements: [
-                        {tag: "input", attributes: {type:"file"}},
+                        {tag: "input", attributes: {type:"file", accept:"image/png,image/jpeg,image/gif,.png,.jpg,.jpeg,.gif"}},
                         {tag: "canvas"},
                         {tag: "i", classes: ["fas", "fa-expand-alt"]},
                         {tag: "input", attributes: {type:"number", class:"width", min:"1"}},
