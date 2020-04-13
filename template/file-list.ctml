@@ -1,0 +1,19 @@
+<article class="page file list">
+  <ul class="file" iterate="files">
+    <li class="file">
+      <img class="image" lquery="(attr :src (courier::file-url *))"/>
+      <span class="author" lquery="(text (user:username author))">Author</span>
+      <span class="filename" lquery="(text filename)">Filename</span>
+      <nav class="actions">
+        <a class="button confirm" href="#" @href="courier/api/courier/file/delete?file={0}&browser=true _id">
+          <i class="fas fa-trash"></i>
+          Delete
+        </a>
+      </nav>
+    </li>
+  </ul>
+  <a class="button" href="#" @href="courier/campaign/{0}/file?page={1} (clip campaign :title) (1+ page-no)">
+    <i class="fas fa-arrow-right"></i>
+    Next page
+  </a>
+</article>

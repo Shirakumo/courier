@@ -151,6 +151,7 @@
 
   (db:create 'file
              '((campaign (:id campaign))
+               (author :id)
                (filename (:varchar 64))
                (mime-type (:varchar 32)))
              :indices '(campaign)))
@@ -597,10 +598,10 @@
                  :type (trivial-mimes:mime-file-type (dm:field file "mime-type"))
                  :defaults (campaign-file-directory (dm:field file "campaign"))))
 
-(defun make-file (campaign file mime-type &optional (filename (file-namestring file)))
+(defun make-file (campaign file mime-type &optional (filename (file-namestring file)) (author (auth:current)))
   (db:with-transaction ()
     (let ((model (dm:hull 'file)))
-      (setf-dm-fields model campaign mime-type filename)
+      (setf-dm-fields model campaign author mime-type filename)
       (dm:insert model)
       (ensure-directories-exist (file-pathname model))
       (alexandria:copy-file file (file-pathname model) :if-to-exists :error)

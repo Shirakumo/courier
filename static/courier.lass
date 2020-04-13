@@ -235,6 +235,13 @@
   (.page.subscriber.list
    (time :margin 0 0.2em)
    (.tags :flex-grow 1))
+  (.page.file.list
+   (.image
+    :width 10em
+    :height 5em
+    :object-fit contain)
+   (.author :min-width 5em)
+   (.filename :flex-grow 1))
   (.page.campaign.edit
    (textarea[name=template]
     :min-height 10em)

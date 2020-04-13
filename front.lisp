@@ -184,7 +184,7 @@
                  :campaign campaign
                  :subscribers (dm:get 'subscriber (db:query (:= 'campaign (dm:id campaign)))
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
-                 :next-page (1+ page))))
+                 :page-no page)))
 
 (define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/?$" (:uri-groups (campaign subscriber) :access (perm courier))
   (let* ((campaign (ensure-campaign campaign))
@@ -221,6 +221,16 @@
     (render-page "Import Subscribers"
                  (@template "subscriber-import.ctml")
                  :campaign campaign)))
+
+(define-page file-list "courier/^campaign/([^/]+)/file/?" (:uri-groups (campaign) :access (perm courier))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
+         (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
+    (render-page "File List"
+                 (@template "file-list.ctml")
+                 :campaign campaign
+                 :files (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))
+                                :amount 50 :skip (* 50 page))
+                 :page-no page)))
 
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))

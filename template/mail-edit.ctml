@@ -44,7 +44,7 @@
         <label for="body">Body:</label>
         <div class="editor" data-type="markless" data-preview-endpoint="mail/preview">
           <nav>
-            <a @href="courier/help/template" title="Templating help" target="_blank">
+            <a @href="courier/help/mail" title="Email help" target="_blank">
               <i class="fas fa-info-circle"></i>
             </a>
             <a href="#" title="Upload an Image" class="upload">

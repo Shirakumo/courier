@@ -385,7 +385,7 @@
 
 (define-api courier/file/new (campaign file) (:access (perm courier file new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
-         (file (make-file campaign (first file) (third file))))
+         (file (make-file campaign (first file) (third file) (second file))))
     (setf (dm:field file "url") (file-url file))
     (output file "File created." "courier/campaign/~a/file" (dm:id campaign))))
 
@@ -469,6 +469,7 @@
 (define-api courier/file/view (id) ()
   (let ((file (ensure-file (first (decode-id id)))))
     (setf (header "Cache-Control") "public, max-age=31536000, immutable")
+    (setf (header "Content-Disposition") (format NIL "inline; filename=~s" (dm:field file "filename")))
     (serve-file (file-pathname file) (dm:field file "mime-type"))))
 
 (defun file-url (file)

@@ -19,6 +19,16 @@ class Courier{
             self.log("Failed to retrieve API root. WTF?");
         }
 
+        var url = [location.protocol, '//', location.host, location.pathname].join('');
+        window.addEventListener("beforeunload", ()=>{
+            sessionStorage.setItem("formStorageUrl", url);
+            sessionStorage.setItem("formStorage", JSON.stringify(self.serializeForms()));
+        });
+
+        if(sessionStorage.getItem("formStorageUrl") == url){
+            self.reloadForms(JSON.parse(sessionStorage.getItem("formStorage")));
+        }
+        
         self.registerAll(".type-select", self.registerTypeSelect);
         self.registerAll(".button.confirm", self.registerConfirm);
         self.registerAll(".editor", self.registerEditor);
@@ -353,7 +363,12 @@ class Courier{
                 self.registerFileUpload(el, (formdata)=>{
                     formdata.append("campaign", element.closest("form").querySelector("input[name=campaign]").value);
                     self.apiCall("file/new", formdata).then((r)=>{
-                        editor.replaceRange("\n[ image "+r.data.url+" ]", CodeMirror.Pos(editor.lastLine()));
+                        if(mode == "markless")
+                            editor.replaceRange("\n[ image "+r.data.url+" ]\n", editor.getDoc().getCursor());
+                        else if(mode == "htmlmixed")
+                            editor.replaceRange("\n<img src=\""+r.data.url+"\" alt=\""+r.data.filename+"\">\n", editor.getDoc().getCursor());
+                        else
+                            editor.replaceRange("\n"+r.data.url+"\n", editor.getDoc().getCursor());
                         el.hide();
                     });
                 });
@@ -468,6 +483,61 @@ class Courier{
                 onSubmit(formdata);
             });
             return false;
+        });
+    }
+
+    elementValue(element){
+        switch(element.tagName){
+        case "input": return element.value;
+        case "textarea": return element.value;
+        case "select": return element.querySelector("option:checked").value;
+        default: return null;
+        }
+    }
+
+    setElementValue(element, value){
+        switch(element.tagName){
+        case "input": element.value = value; break;
+        case "textarea": element.innerText = value; break;
+        case "select": [].forEach.call(element.querySelectorAll("option"), (el)=>{
+            if(el.getAttribute("value") == value) el.setAttribute("checked", "checked");
+        }); break;
+        }
+    }
+
+    elementId(element){
+        if(element.getAttribute("id"))
+            return "#"+element.getAttribute("id");
+        var id = element.tagName+[].join.call(element.classList, ".");
+        var idParent = element.closest("[id]");
+        if(idParent) id = "#"+idParent.getAttribute("id")+" "+id;
+        if(element.getAttribute("name"))
+            id = id + "[name=\""+element.getAttribute("name")+"\"]";
+        return id;
+    }
+
+    serializeForms(){
+        var self = this;
+        var data = [];
+        [].forEach.call(document.querySelectorAll("input,textarea,select"), (el)=>{
+            data.push({
+                id: self.elementId(el),
+                value: self.elementValue(el)
+            });
+        });
+        return data;
+    }
+
+    reloadForms(data){
+        var self = this;
+        self.log("Restoring form data", data);
+        var seen = [];
+        data.forEach((entry)=>{
+            var element = document.querySelector(entry.id);
+            if(element && !seen.includes(element)){
+                self.setElementValue(element, entry.value);
+                seen.push(element);
+            }
         });
     }
 }
