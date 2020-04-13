@@ -192,7 +192,7 @@
 (defun delete-host (host)
   (db:with-transaction ()
     ;; Don't delete campaigns, just set the host to NULL
-    (db:update 'campaign (db:query (:= 'host (dm:id host))) `(("campaign" . NIL)))
+    (db:update 'campaign (db:query (:= 'host (dm:id host))) `(("host" . NIL)))
     (dm:delete host)
     host))
 
