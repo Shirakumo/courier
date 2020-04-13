@@ -6,7 +6,7 @@
 
 (in-package #:courier)
 
-(defclass mail-format (org.shirakumo.markless.plump:plump)
+(defclass mail-format (markless:output-format)
   ((vars :initarg :vars :reader vars)
    (campaign :initarg :campaign :reader campaign)
    (mail :initarg :mail :reader mail)
@@ -17,37 +17,54 @@
         do (when (string-equal key var)
              (return val))))
 
+(defclass html-format (mail-format org.shirakumo.markless.plump:plump) ())
+(defclass plain-format (mail-format org.shirakumo.markless:markless) ())
+
 (defclass parser (markless:parser)
   ()
   (:default-initargs :directives (list* 'template-var markless:*default-directives*)))
 
+(defun make-link* (f url)
+  (let ((link (make-link (campaign f) :url url)))
+    (link-receipt-url (subscriber f) link (mail f))))
+
 (defun transform-link (element f)
   (when (campaign f)
-    (let ((link (make-link (campaign f) :url (plump-dom:attribute element "href"))))
-      (setf (plump-dom:attribute element "href") (link-receipt-url (subscriber f) link (mail f))))))
+    (setf (plump-dom:attribute element "href") (make-link* f (plump-dom:attribute element "href")))))
 
-(defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f mail-format))
+(defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f html-format))
   (let ((element (call-next-method)))
     (when (string= "a" (plump-dom:tag-name element))
       (transform-link element f))))
 
-(defmethod markless:output-component ((c components:compound) (target plump-dom:nesting-node) (f mail-format))
+(defmethod markless:output-component ((c components:compound) (target plump-dom:nesting-node) (f html-format))
   (let ((element (call-next-method)))
     (when (string= "a" (plump-dom:tag-name element))
       (transform-link element f))))
+
+(defmethod markless:output-component ((c components:url) (target stream) (f plain-format))
+  (markless:output-component (make-link* f (components:target c)) target f))
+
+(defmethod markless:output-component ((c components:link-option) (target stream) (f plain-format))
+  (markless:output-component (format NIL "link ~a" (make-link* f (components:target c))) target f))
 
 (defclass var (components:inline-component)
   ((name :initarg :name :initform (error "NAME required") :accessor name)))
 
-(defmethod markless:output-component ((var var) (target plump-dom:nesting-node) (f mail-format))
+(defmethod markless:output-component ((var var) (target plump-dom:nesting-node) (f html-format))
   (let ((value (variable-value (name var) f)))
     (when value
       (plump-dom:make-text-node target (princ-to-string value)))))
 
+(defmethod markless:output-component ((var var) (target stream) (f plain-format))
+  (let ((value (variable-value (name var) f)))
+    (when value
+      (princ value target))))
+
 (defclass button (components:embed)
   ())
 
-(defmethod markless:output-component ((button button) (target plump-dom:nesting-node) (f mail-format))
+(defmethod markless:output-component ((button button) (target plump-dom:nesting-node) (f html-format))
   (let* ((element (plump-dom:make-element target "a"))
          (target (components:target button)))
     (when (and (< 2 (length target))
@@ -64,6 +81,9 @@
           do (when (typep option 'components:caption-option)
                (return (markless:output-component option element f)))
           finally (plump-dom:make-text-node element target))))
+
+(defmethod markless:output-component ((c button) (target stream) (f plain-format))
+  (markless:output-component (format NIL "~%[  ~a  ]~%" (make-link* f (components:target c))) target f))
 
 (defclass template-var (markless:inline-directive)
   ())
@@ -82,13 +102,15 @@
                     (vector-push-extend (make-instance 'var :name (subseq line cursor i)) children)
                     (return (1+ i))))))
 
-(defun compile-mail-body (content vars &key campaign subscriber mail)
-  (let ((dom (plump-dom:make-root)))
-    (when (typep content 'string)
-      (setf content (cl-ppcre:regex-replace-all "\\r\\n" content (string #\Linefeed))))
+(defun compile-mail-body (content vars &key campaign subscriber mail (format 'html-format))
+  (when (typep content 'string)
+    (setf content (cl-ppcre:regex-replace-all "\\r\\n" content (string #\Linefeed))))
+  (let ((target (ecase format
+                  (html-format (plump-dom:make-root))
+                  (plain-format NIL))))
     (markless:output (markless:parse content (make-instance 'parser))
-                     :target dom
-                     :format (make-instance 'mail-format
+                     :target target
+                     :format (make-instance format
                                             :vars vars
                                             :campaign campaign
                                             :subscriber subscriber

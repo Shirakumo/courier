@@ -41,7 +41,6 @@
              (dm:field host "address")
              (dm:field host "hostname")
              (dm:field host "port"))
-    ;; FIXME: better timeouts on unreachable host
     (let ((cl-smtp::*x-mailer* #.(format NIL "Courier Mailer ~a" (asdf:component-version (asdf:find-system :courier)))))
       (cl-smtp:send-email
        (copy-seq (dm:field host "hostname"))
