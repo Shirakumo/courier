@@ -377,6 +377,23 @@
     (api-output (mktable "labels" '("Opened" "Unopened")
                          "points" (list opened (- sent opened))))))
 
+(define-api courier/file (file) (:access (perm courier file))
+  (api-output (check-accessible (ensure-file file))))
+
+(define-api courier/file/list (campaign) (:access (perm courier file))
+  (api-output (list-files (check-accessible (ensure-campaign campaign)))))
+
+(define-api courier/file/new (campaign file) (:access (perm courier file new))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
+         (file (make-file campaign (first file) (third file))))
+    (setf (dm:field file "url") (file-url file))
+    (output file "File created." "courier/campaign/~a/file" (dm:id campaign))))
+
+(define-api courier/file/delete (file) (:access (perm courier file delete))
+  (let ((file (check-accessible (ensure-file file))))
+    (delete-file file)
+    (output NIL "File deleted." "courier/campaign/~a/file" (dm:field file "campaign"))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
@@ -448,3 +465,12 @@
 (defun link-receipt-url (subscriber link mail)
   (url> "courier/api/courier/link/resolve"
         :query `(("id" . ,(generate-id subscriber (ensure-id link) (ensure-id mail))))))
+
+(define-api courier/file/view (id) ()
+  (let ((file (ensure-file (first (decode-id id)))))
+    (setf (header "Cache-Control") "public, max-age=31536000, immutable")
+    (serve-file (file-pathname file) (dm:field file "mime-type"))))
+
+(defun file-url (file)
+  (url> "courier/api/courier/file/view"
+        :query `(("id" . ,(generate-id file)))))

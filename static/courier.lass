@@ -95,6 +95,23 @@
     :text-align center
     :font-size 0.8em))
 
+  (.popup
+   :position absolute
+   :left 0 :right 0 :top 0 :bottom 0
+   :z-index 10000
+   :background (rgba 0 0 0 0.5)
+   :overflow auto
+   (>*
+    :position relative
+    :max-width 100vw
+    :max-height 100vh
+    :width 50%
+    :margin 10% auto
+    :background white
+    :border 1px solid (hex 505050)
+    :padding 1em
+    (>* :max-width 100%)))
+
   (a :text-decoration none
      :color #(c=0))
   ((:and a :hover)
@@ -138,17 +155,17 @@
     :width 100%))
 
   (form
-   ((:or input select textarea)
+   ((:or input button select textarea)
     :border 1px solid (hex E0E0E0)
     :background (hex F0F0F0)
     :font-size inherit
     :width 10em
     :padding 0.1em
     :box-sizing border-box)
-   ((:and (:or input select textarea) :focus)
+   ((:and (:or input button select textarea) :focus)
     :outline none
     :border-bottom 1px solid #(c=0))
-   ((:and (:or input select textarea) [readonly])
+   ((:and (:or input button select textarea) [readonly])
     :background (hex D0D0D0)
     :border-color (hex C0C0C0)
     :color (hex 505050))
@@ -177,10 +194,10 @@
    (.template :display none !important)
    (input
     :position relative)
-   (input[type=submit]
+   ((:or input[type=submit] button)
     :width 100%
     :cursor pointer)
-   ((:and input[type=submit] :hover)
+   ((:and (:or input[type=submit] button) :hover)
     :background #(c=0)
     :border 1px solid #(c-1)
     :color white)
@@ -417,4 +434,19 @@
      :text-decoration none
      :cursor pointer)
     ((:and .button :hover)
-     :background (hex AA5500)))))
+     :background (hex AA5500))))
+
+  (form.image.upload
+   :text-align center
+   (canvas
+    :display block
+    :margin 0 auto
+    :max-height 50vh)
+   ((:or input[type=file] button)
+    :width 100%
+    :box-sizing border-box)
+   ((:or .width .height)
+    :width 50%
+    :box-sizing border-box)
+   ((:and .width :after)
+    :content "x")))

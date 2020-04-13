@@ -5,5 +5,6 @@
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
 ; TODO: permission sharing (kinda done)
-; TODO: image / file upload
+; TODO: file management
+; TODO: save formadata before reload and restore after reload... or prevent reload?
 ; TODO: mail/archive link syntax

@@ -7,7 +7,7 @@
 (in-package #:modularize-user)
 (define-module #:courier
   (:use #:cl #:radiance)
-  (:shadow #:trigger)
+  (:shadow #:trigger #:delete-file #:file)
   (:export)
   (:local-nicknames
    (#:markless #:org.shirakumo.markless)

@@ -42,28 +42,28 @@
              (dm:field host "hostname")
              (dm:field host "port"))
     ;; FIXME: better timeouts on unreachable host
-    (cl-smtp:send-email
-     (copy-seq (dm:field host "hostname"))
-     (dm:field host "address")
-     to subject plaintext
-     :html-message html
-     :extra-headers `(("X-Mailer" "Courier Mailer")
-                      ,@(when campaign
-                          `(("X-Campaign" ,(princ-to-string campaign))
-                            ("X-campaignid" ,(princ-to-string campaign))
-                            ("List-ID" ,(princ-to-string campaign))))
-                      ,@(when unsubscribe
-                          `(("List-Unsubscribe" ,unsubscribe)
-                            ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
-     :ssl (ecase (dm:field host "encryption")
-            (0 NIL) (1 :starttls) (2 :tls))
-     :port (dm:field host "port")
-     :reply-to reply-to
-     :authentication (when (dm:field host "username")
-                       (list :plain
-                             (dm:field host "username")
-                             (decrypt (dm:field host "password"))))
-     :display-name (dm:field host "title"))))
+    (let ((cl-smtp::*x-mailer* #.(format NIL "Courier Mailer ~a" (asdf:component-version (asdf:find-system :courier)))))
+      (cl-smtp:send-email
+       (copy-seq (dm:field host "hostname"))
+       (dm:field host "address")
+       to subject plaintext
+       :html-message html
+       :extra-headers `(,@(when campaign
+                            `(("X-Campaign" ,(princ-to-string campaign))
+                              ("X-campaignid" ,(princ-to-string campaign))
+                              ("List-ID" ,(princ-to-string campaign))))
+                        ,@(when unsubscribe
+                            `(("List-Unsubscribe" ,unsubscribe)
+                              ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
+       :ssl (ecase (dm:field host "encryption")
+              (0 NIL) (1 :starttls) (2 :tls))
+       :port (dm:field host "port")
+       :reply-to reply-to
+       :authentication (when (dm:field host "username")
+                         (list :plain
+                               (dm:field host "username")
+                               (decrypt (dm:field host "password"))))
+       :display-name (dm:field host "title")))))
 
 (defun send-templated (host to template &rest args)
   (let ((html (apply #'compile-mail template args)))

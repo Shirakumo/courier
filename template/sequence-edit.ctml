@@ -47,10 +47,7 @@
             <a @href="courier/help/template" title="Templating help" target="_blank">
               <i class="fas fa-info-circle"></i>
             </a>
-            <a href="#" title="Upload an Image" class="upload">
-              <i class="fas fa-file-upload"></i>
-            </a>
-            <a href="#" title="Preview" class="preview" style="float: right">
+            <a href="#" title="Preview" class="preview">
               <i class="fas fa-eye"></i>
             </a>
           </nav>

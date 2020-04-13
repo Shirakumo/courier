@@ -6,6 +6,14 @@
 
 (in-package #:courier)
 
+(defvar *file-directory*
+  (environment-module-pathname #.*package* :data "files/"))
+
+(defun campaign-file-directory (campaign)
+  (merge-pathnames
+   (make-pathname :directory `(:relative ,(princ-to-string (ensure-id campaign))))
+   *file-directory*))
+
 (defparameter *attribute-types*
   '((0 "text" "Free-Form Text")
     (1 "number" "Number")
@@ -138,7 +146,13 @@
   (db:create 'sequence-mail
              '((sequence (:id sequence))
                (trigger (:id trigger)))
-             :indices '(sequence)))
+             :indices '(sequence))
+
+  (db:create 'file
+             '((campaign (:id campaign))
+               (filename (:varchar 64))
+               (mime-type (:varchar 32)))
+             :indices '(campaign)))
 
 (defun ensure-id (id-ish)
   (etypecase id-ish
@@ -252,12 +266,15 @@
 
 (defun delete-campaign (campaign)
   (db:with-transaction ()
-    (mapcar #'delete-subscriber (list-subscribers campaign))
-    (mapcar #'delete-mail (list-mails campaign))
-    (mapcar #'delete-tag (list-tags campaign))
-    (mapcar #'delete-link (list-links campaign))
-    (db:remove 'attribute (db:query (:= 'campaign (dm:id campaign))))
-    (dm:delete campaign)))
+    (let ((directory (campaign-file-directory campaign)))
+      (mapcar #'delete-subscriber (list-subscribers campaign))
+      (mapcar #'delete-mail (list-mails campaign))
+      (mapcar #'delete-tag (list-tags campaign))
+      (mapcar #'delete-link (list-links campaign))
+      (db:remove 'file (db:query (:= 'campaign (dm:id campaign))))
+      (db:remove 'attribute (db:query (:= 'campaign (dm:id campaign))))
+      (dm:delete campaign)
+      (uiop:delete-directory-tree directory :validate (constantly T) :if-does-not-exist :ignore))))
 
 (defun list-campaigns (&optional user)
   (if user
@@ -572,6 +589,36 @@
                               ("subscriber" . ,(ensure-id subscriber))))
       (process-triggers subscriber tag))))
 
+(defun file-pathname (file)
+  (make-pathname :name (princ-to-string (dm:id file))
+                 :type (trivial-mimes:mime-file-type (dm:field file "mime-type"))
+                 :defaults (campaign-file-directory (dm:field file "campaign"))))
+
+(defun make-file (campaign file mime-type &optional (filename (file-namestring file)))
+  (db:with-transaction ()
+    (let ((model (dm:hull 'file)))
+      (setf-dm-fields model campaign mime-type filename)
+      (dm:insert model)
+      (ensure-directories-exist (file-pathname model))
+      (alexandria:copy-file file (file-pathname model) :if-to-exists :error)
+      model)))
+
+(defun ensure-file (file-ish)
+  (or
+   (etypecase file-ish
+     (dm:data-model file-ish)
+     (T (dm:get-one 'file (db:query (:= '_id (db:ensure-id file-ish))))))
+   (error 'request-not-found :message "No such file.")))
+
+(defun delete-file (file)
+  (db:with-transaction ()
+    (let* ((file (ensure-file file)))
+      (cl:delete-file (file-pathname file))
+      (dm:delete file))))
+
+(defun list-files (campaign)
+  (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))))
+
 (defun subscriber-count (thing)
   (ecase (dm:collection thing)
     (campaign (db:count 'subscriber (db:query (:= 'campaign (dm:id thing)))))
@@ -606,7 +653,8 @@
     (link 1)
     (tag 2)
     (subscriber 3)
-    (campaign 4)))
+    (campaign 4)
+    (file 5)))
 
 (defun type-collection (type)
   (ecase type
@@ -614,7 +662,8 @@
     ((1 link) 'link)
     ((2 tag) 'tag)
     ((3 subscriber) 'subscriber)
-    ((4 campaign) 'campaign)))
+    ((4 campaign) 'campaign)
+    ((5 file) 'file)))
 
 (defun resolve-typed (type id)
   (let ((id (db:ensure-id id)))
@@ -630,27 +679,20 @@
                (error 'radiance:request-denied :message (format NIL "You do not own the ~a you were trying to access."
                                                                 (dm:collection dm)))))
            (check-campaign (campaign)
-             (when (< 0 (db:select (rdb:join (campaign _id) (campaign-access campaign))
-                                   (db:query (:and (:= '_id campaign)
-                                                   (:or (:= 'author (user:id user))
-                                                        (:= 'user (user:id user)))))
-                                   :amount 1 :fields '(access-level)))
-               (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as."
-                                                                (dm:collection dm))))))
-    ;; FIXME: extended author checks
+             (let ((record (db:select (rdb:join (campaign _id) (campaign-access campaign) :left)
+                                      (db:query (:and (:= '_id campaign)
+                                                      (:or (:= 'author (user:id user))
+                                                           (:= 'user (user:id user)))))
+                                      :amount 1 :fields '(access-level))))
+               (when (and record (< 0 (gethash "access-level" (first record))))
+                 (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as."
+                                                                  (dm:collection dm)))))))
+    ;; FIXME: extended author intent checks
     (ecase (dm:collection dm)
       (host
        (check (dm:field dm "author")))
       (campaign
        (check-campaign (dm:id dm)))
-      (mail
-       (check-campaign (dm:field dm "campaign")))
-      (tag
-       (check-campaign (dm:field dm "campaign")))
-      (trigger
-       (check-campaign (dm:field dm "campaign")))
-      (link
-       (check-campaign (dm:field dm "campaign")))
-      (subscriber
+      ((mail tag trigger link subscriber file)
        (check-campaign (dm:field dm "campaign"))))
     dm))

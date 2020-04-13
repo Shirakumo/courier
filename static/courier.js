@@ -94,6 +94,8 @@ class Courier{
             if(args instanceof HTMLElement){
                 formData = new FormData(args);
                 formData.delete("browser");
+            }else if(args instanceof FormData){
+                formData = args;
             }else{
                 formData = new FormData();
                 for(var field in args){
@@ -152,6 +154,22 @@ class Courier{
             el.appendChild(self.constructElement(element.tag, element));
         });
         return el;
+    }
+
+    showPopup(content){
+        var self = this;
+        var popup = self.constructElement("div",{
+            classes: ["popup"],
+        });
+        popup.hide = ()=>{
+            popup.parentNode.removeChild(popup);
+        };
+        popup.appendChild(content);
+        popup.addEventListener("click", (ev)=>{
+            if(ev.target == popup)popup.hide();
+        });
+        document.querySelector("body").appendChild(popup);
+        return popup;
     }
 
     populateSelect(select, data, selectedValue){
@@ -220,6 +238,7 @@ class Courier{
                 :(type.value == "2")? "tag"
                 :(type.value == "3")? "subscriber"
                 :(type.value == "4")? "campaign"
+                :(type.value == "5")? "file"
                 : undefined;
             self.getListed(typeName, campaign).then((data)=>self.populateSelect(select, data, id.value));
         });
@@ -283,13 +302,14 @@ class Courier{
             :(element.dataset.type == "css") ? "css"
             :(element.dataset.type == "markless") ? "markless"
             : "";
+        var editor = null;
         self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.js")
             .then(()=>self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/xml/xml.min.js"))
             .then(()=>self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/htmlmixed/htmlmixed.min.js"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/theme/mdn-like.min.css"))
             .then(()=>{
-                let editor = CodeMirror.fromTextArea(textarea, {
+                editor = CodeMirror.fromTextArea(textarea, {
                     mode: mode,
                     theme: "mdn-like",
                     lineNumbers: true,
@@ -315,6 +335,28 @@ class Courier{
                     element.querySelector(".CodeMirror").classList.remove("hidden");
                     preview.classList.add("hidden");
                 }
+            });
+        }
+        if(nav.querySelector(".upload")){
+            nav.querySelector(".upload").addEventListener("click",()=>{
+                var el = self.showPopup(self.constructElement("form",{
+                    classes: ["image","upload"],
+                    elements: [
+                        {tag: "input", attributes: {type:"file"}},
+                        {tag: "canvas"},
+                        {tag: "i", classes: ["fas", "fa-expand-alt"]},
+                        {tag: "input", attributes: {type:"number", class:"width", min:"1"}},
+                        {tag: "input", attributes: {type:"number", class:"height", min:"1"}},
+                        {tag: "button", attributes: {type:"button", class:"upload"}, text: "Upload"}
+                    ]
+                }));
+                self.registerFileUpload(el, (formdata)=>{
+                    formdata.append("campaign", element.closest("form").querySelector("input[name=campaign]").value);
+                    self.apiCall("file/new", formdata).then((r)=>{
+                        editor.replaceRange("\n[ image "+r.data.url+" ]", CodeMirror.Pos(editor.lastLine()));
+                        el.hide();
+                    });
+                });
             });
         }
     }
@@ -367,6 +409,65 @@ class Courier{
             });
         [].forEach.call(element.querySelectorAll("select"), (el)=>{
             el.addEventListener("change", refresh);
+        });
+    }
+
+    registerFileUpload(element, onSubmit){
+        var self = this;
+        var input = element.querySelector("input[type=file]");
+        var canvas = element.querySelector("canvas");
+        var width = element.querySelector(".width");
+        var height = element.querySelector(".height");
+        var submit = element.querySelector("button.upload");
+        var ctx = canvas.getContext("2d");
+        var img = null;
+        
+        input.addEventListener("change", ()=>{
+            var file = input.files[0];
+            var fr = new FileReader();
+            fr.onload = ()=>{
+                img = new Image();
+                img.onload = ()=>{
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    width.value = img.width;
+                    height.value = img.height;
+                    ctx.drawImage(img,0,0);
+                };
+                img.src = fr.result;
+            };
+            fr.readAsDataURL(file);
+        });
+        var changeDimensions = ()=>{
+            canvas.width = parseInt(width.value);
+            canvas.height = parseInt(height.value);
+            ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        };
+        width.addEventListener("change", ()=>{
+            var aspect = img.height / img.width;
+            height.value = Math.floor(aspect * parseInt(width.value));
+            changeDimensions();
+        });
+        height.addEventListener("change", ()=>{
+            var aspect = img.width / img.height;
+            width.value = Math.floor(aspect * parseInt(height.value));
+            changeDimensions();
+        });
+        submit.addEventListener("click", (ev)=>{
+            ev.preventDefault();
+            // Create temp canvas at full res
+            var tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width = parseInt(width.value);
+            tmpCanvas.height = parseInt(height.value);
+            
+            var ctx = tmpCanvas.getContext('2d');
+            ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            tmpCanvas.toBlob((blob)=>{
+                var formdata = new FormData();
+                formdata.append("file", blob, input.files[0].name);
+                onSubmit(formdata);
+            });
+            return false;
         });
     }
 }
