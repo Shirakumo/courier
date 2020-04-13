@@ -1,16 +1,18 @@
 <article class="page mail list log">
   <header>
+    <span class="host">Host</span>
     <span class="mail">Mail</span>
     <span class="subscriber">Subscriber</span>
+    <span class="attempts">Send Attempts</span>
     <span class="time">Send Time</span>
   </header>
   <ul class="log" iterate="log">
     <li class="receipt">
+      <a class="host" lquery="(text title)" @href="courier/host/{1} host">host</a>
       <a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a>
       <a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a>
-      <i class="fas status" lquery="(add-class (case status (0 :fa-check-circle) (T :fa-exclamation-triangle)))"></i>
+      <span class="attempts" lquery="(text attempts)">0</span>
       <time class="time" lquery="(time send-time)">2020</time>
     </li>
   </ul>
 </article>
-

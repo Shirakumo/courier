@@ -247,6 +247,13 @@
                               (db:query (:= 'subscriber (dm:id subscriber)))
                               :sort '(("send-time" :desc)) :amount 100))))
 
+(define-page mail-queue "courier/^queue/" (:access (perm courier host))
+  (render-page "Mail Queue"
+               (@template "mail-queue.ctml")
+               :queue (dm:get (rdb:join (((mail-queue subscriber) (subscriber _id)) mail) (mail _id))
+                              (db:query :all)
+                              :sort '(("send-time" :desc)) :amount 100)))
+
 ;; User sections
 (define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))
   (let ((campaign (ensure-campaign (db:ensure-id campaign))))

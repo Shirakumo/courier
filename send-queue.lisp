@@ -16,7 +16,8 @@
              (db:insert 'mail-queue `(("host" . ,host)
                                       ("subscriber" . ,subscriber-id)
                                       ("mail" . ,(dm:id mail))
-                                      ("time" . ,time)))))
+                                      ("send-time" . ,time)
+                                      ("attempts" . 0)))))
       (unless target
         (setf target campaign))
       (etypecase target
@@ -51,20 +52,26 @@
                      (get-universal-time))))
     (when (< timeout 0)
       (let ((queued (dm:get 'mail-queue (db:query (:and (:= 'host (dm:id host))
-                                                        (:<= 'time (get-universal-time))))
-                            :amount (dm:field host "batch-size") :sort '((time :asc)))))
+                                                        (:<= 'send-time (get-universal-time))))
+                            :amount (dm:field host "batch-size") :sort '((send-time :asc)))))
         (dolist (queue queued)
           (restart-case
               (handler-bind ((error (lambda (e)
                                       (v:error :courier.send-queue "Failed to send queued mail.")
                                       (v:trace :courier.send-queue e)
-                                      (if radiance:*debugger*
-                                          (invoke-debugger e)
-                                          (invoke-restart 'ignore)))))
+                                      (cond (radiance:*debugger*
+                                             (invoke-debugger e))
+                                            ((< (dm:field queue "attempts") (config :max-send-attempts))
+                                             (v:debug :courier.send-queue "Rescheduling to try again later.")
+                                             (invoke-restart 'ignore))
+                                            (T
+                                             (v:debug :courier.send-queue "Exceeded max send attempts, dropping mail.")
+                                             (invoke-restart 'forget))))))
                 (send-queue queue))
             (ignore ()
               :report "Ignore the send and retry later."
               (setf (dm:field queued "time") (+ (get-universal-time) 60))
+              (incf (dm:field queued "attempts"))
               (dm:save queued))
             (forget ()
               :report "Give up trying to send the queued mail."

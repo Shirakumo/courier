@@ -17,6 +17,6 @@
 (define-trigger startup ()
   (defaulted-config "Courier Mailing" :title)
   (defaulted-config "Shirakumo" :copyright)
-  (defaulted-config NIL :registration-open)
   (defaulted-config (make-random-string 32) :private-key)
-  (defaulted-config 60 :send-queue-poll-interval))
+  (defaulted-config 60 :send-queue-poll-interval)
+  (defaulted-config 10 :max-send-attempts))

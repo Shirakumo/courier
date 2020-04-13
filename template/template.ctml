@@ -30,6 +30,10 @@
                 Hosts
                 <i class="fas fa-fw fa-server"></i>
               </a>
+              <a href="#" @href="courier/queue/">
+                Mail Queue
+                <i class="fas fa-fw fa-clipboard-list"></i>
+              </a>
             </nav>
           </div>
         </c:then>

@@ -262,6 +262,7 @@
    (.time :text-align right)
    (header
     :display flex
+    :align-items center
     :border 1px solid (hex AAAAAA)
     :border-radius 0.25em 0.25em 0 0)
    (ul.log

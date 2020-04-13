@@ -8,3 +8,4 @@
 ; TODO: file management
 ; TODO: save formadata before reload and restore after reload... or prevent reload?
 ; TODO: mail/archive link syntax
+; TODO: purge subscribers with unreachable email addresses

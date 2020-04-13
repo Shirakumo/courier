@@ -99,7 +99,8 @@
              '((host (:id host))
                (subscriber (:id subscriber))
                (mail (:id mail))
-               (time (:integer 5)))
+               (send-time (:integer 5))
+               (attempts (:integer 1)))
              :indices '(host subscriber))
 
   (db:create 'tag
