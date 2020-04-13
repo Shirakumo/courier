@@ -395,8 +395,6 @@
 
 (defun make-mail (campaign &key title subject body (save T))
   (let ((campaign (ensure-campaign campaign)))
-    ;; (check-title-exists 'mail title (db:query (:and (:= 'campaign (dm:id campaign))
-    ;;                                                 (:= 'title title))))
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body campaign)
       (setf (dm:field mail "time") (get-universal-time))
@@ -419,11 +417,12 @@
    (error 'request-not-found :message "No such mail.")))
 
 (defun delete-mail (mail)
-  (db:with-transaction ()
-    (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
-    (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
-    (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
-    (dm:delete mail)))
+  (let ((mail (ensure-mail mail)))
+    (db:with-transaction ()
+      (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
+      (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
+      (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
+      (dm:delete mail))))
 
 (defun list-mails (campaign)
   (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
@@ -687,12 +686,13 @@
                (error 'radiance:request-denied :message (format NIL "You do not own the ~a you were trying to access."
                                                                 (dm:collection dm)))))
            (check-campaign (campaign)
-             (let ((record (db:select (rdb:join (campaign _id) (campaign-access campaign) :left)
-                                      (db:query (:and (:= '_id campaign)
-                                                      (:or (:= 'author (user:id user))
-                                                           (:= 'user (user:id user)))))
-                                      :amount 1 :fields '(access-level))))
-               (when (and record (< 0 (gethash "access-level" (first record))))
+             (let* ((campaign (ensure-campaign campaign))
+                    (record (db:select 'campaign-access
+                                       (db:query (:and (:= 'campaign (dm:id campaign))
+                                                       (:= 'user (user:id user))))
+                                       :amount 1 :fields '(access-level))))
+               (when (and (not (equal (user:id user) (dm:field campaign "author")))
+                          (or (null record) (< 0 (gethash "access-level" (first record)))))
                  (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as."
                                                                   (dm:collection dm)))))))
     ;; FIXME: extended author intent checks
@@ -700,7 +700,7 @@
       (host
        (check (dm:field dm "author")))
       (campaign
-       (check-campaign (dm:id dm)))
+       (check-campaign dm))
       ((mail tag trigger link subscriber file)
        (check-campaign (dm:field dm "campaign"))))
     dm))
