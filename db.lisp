@@ -279,10 +279,12 @@
 
 (defun list-campaigns (&optional user)
   (if user
-      (dm:get (rdb:join (campaign _id) (campaign-access campaign) :left)
-              (db:query (:or (:= 'author (user:id user))
-                             (:= 'user (user:id user))))
-              :sort '((title :asc)) :hull 'campaign)
+      (append ;; KLUDGE: workaround for JOIN thrashing _id when not inner join
+       (dm:get 'campaign (db:query (:= 'author (user:id user)))
+               :sort '((title :asc)))
+       (dm:get (rdb:join (campaign _id) (campaign-access campaign))
+               (db:query (:= 'user (user:id user)))
+               :sort '((title :asc)) :hull 'campaign))
       (dm:get 'campaign (db:query :all) :sort '((title :asc)))))
 
 (defun list-attributes (campaign)
