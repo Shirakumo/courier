@@ -59,6 +59,10 @@
           <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> New Attribute</a>
         </div>
       </div>
+      <div class="row">
+        <label for="address">Company Address:</label>
+        <textarea id="address" name="address" lquery="(text address)" required />
+      </div>
       <div class="row big">
         <label for="template">Email Template:</label>
         <div class="editor" data-type="html" data-preview-endpoint="campaign/preview">

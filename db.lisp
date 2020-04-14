@@ -45,7 +45,8 @@
                (description :text)
                (time (:integer 5))
                (reply-to (:varchar 64))
-               (template :text))
+               (template :text)
+               (address :text))
              :indices '(author title))
 
   (db:create 'campaign-access
@@ -200,11 +201,11 @@
       (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc)))
       (dm:get 'host (db:query :all) :sort '((title :asc)))))
 
-(defun make-campaign (author host title &key description reply-to template attributes (save T))
+(defun make-campaign (author host title &key description reply-to template attributes address (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
                                                       (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
-    (setf-dm-fields campaign title host description reply-to template)
+    (setf-dm-fields campaign title host description reply-to template address)
     (setf (dm:field campaign "author") (user:id author))
     (when save
       (db:with-transaction ()
@@ -225,9 +226,9 @@
                          :confirmed T)))
     campaign))
 
-(defun edit-campaign (campaign &key host author title description reply-to template attributes (save T))
+(defun edit-campaign (campaign &key host author title description reply-to template attributes address (save T))
   (let ((campaign (ensure-campaign campaign)))
-    (setf-dm-fields campaign host author title description reply-to template)
+    (setf-dm-fields campaign host author title description reply-to template address)
     (when save
       (db:with-transaction ()
         (dm:save campaign)
