@@ -34,8 +34,8 @@
      (values (extract-plaintext text)
              (plump:serialize text NIL)))))
 
-(defun send (host to subject message &key reply-to campaign unsubscribe)
-  (multiple-value-bind (plaintext html) (format-mail message)
+(defun send (host to subject message &key plain reply-to campaign unsubscribe)
+  (multiple-value-bind (extracted html) (format-mail message)
     (l:trace :courier.mail "Sending to ~a via ~a/~a:~a"
              to
              (dm:field host "address")
@@ -45,7 +45,7 @@
       (cl-smtp:send-email
        (copy-seq (dm:field host "hostname"))
        (dm:field host "address")
-       to subject plaintext
+       to subject (or plain extracted)
        :html-message html
        :extra-headers `(,@(when campaign
                             `(("X-Campaign" ,(princ-to-string campaign))
@@ -64,52 +64,52 @@
                                (decrypt (dm:field host "password"))))
        :display-name (dm:field host "title")))))
 
-(defun send-templated (host to template &rest args)
-  (let ((html (apply #'compile-mail template args)))
-    (send host to (extract-subject html) html)))
-
 (defun mail-template-args (campaign mail subscriber)
-  (let ((args (list* :mail-receipt-image (mail-receipt-url mail subscriber)
-                     :mail-url (mail-url mail subscriber)
-                     :archive-url (archive-url subscriber)
-                     :unsubscribe (unsubscribe-url subscriber)
-                     :title (dm:field mail "title")
-                     :subject (dm:field mail "subject")
-                     :campaign (dm:field campaign "title")
-                     :description (dm:field campaign "description")
-                     :reply-to (dm:field campaign "reply-to")
-                     :to (dm:field subscriber "address")
-                     :tags (list-tags subscriber)
-                     :time (get-universal-time)
-                     (subscriber-attributes subscriber))))
-    (list* :body (compile-mail-body (dm:field mail "body") args
-                                    :campaign campaign
-                                    :subscriber subscriber
-                                    :mail mail)
-           args)))
+  (list* :mail-receipt-image (mail-receipt-url mail subscriber)
+         :mail-url (mail-url mail subscriber)
+         :archive-url (archive-url subscriber)
+         :unsubscribe (unsubscribe-url subscriber)
+         :title (dm:field mail "title")
+         :subject (dm:field mail "subject")
+         :campaign (dm:field campaign "title")
+         :description (dm:field campaign "description")
+         :reply-to (dm:field campaign "reply-to")
+         :to (dm:field subscriber "address")
+         :tags (list-tags subscriber)
+         :time (get-universal-time)
+         :address (dm:field campaign "address")
+         (subscriber-attributes subscriber)))
 
-(defun compile-mail-content (campaign mail subscriber)
-  (apply #'compile-mail (dm:field campaign "template")
-         (mail-template-args campaign mail subscriber)))
+(defun compile-mail-content (campaign mail subscriber &key (template (dm:field campaign "template")) (format 'html-format))
+  (let ((args (mail-template-args campaign mail subscriber)))
+    (apply #'compile-mail template
+           (list* :body (compile-mail-body (dm:field mail "body") args
+                                           :campaign campaign
+                                           :subscriber subscriber
+                                           :mail mail
+                                           :format format)
+                  args))))
 
 (defun send-mail (mail subscriber)
   (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
   (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
          (host (ensure-host (dm:field campaign "host")))
-         html)
+         html plain)
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
                             (mark-mail-sent mail subscriber :compile-falied))))
-      (setf html (compile-mail-content campaign mail subscriber)))
+      (setf html (compile-mail-content campaign mail subscriber))
+      (setf plain (compile-mail-content campaign mail subscriber :template #p"email/text-template.ctml" :format 'plain-format)))
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
-                            (mark-mail-sent mail subscriber :send-failed)))))
-    (send host (dm:field subscriber "address")
-          (extract-subject html)
-          html
-          :reply-to (dm:field campaign "reply-to")
-          :campaign (dm:field mail "campaign")
-          :unsubscribe (unsubscribe-url subscriber))
+                            (mark-mail-sent mail subscriber :send-failed))))
+      (send host (dm:field subscriber "address")
+            (extract-subject html)
+            html
+            :plain plain
+            :reply-to (dm:field campaign "reply-to")
+            :campaign (dm:field mail "campaign")
+            :unsubscribe (unsubscribe-url subscriber)))
     (mark-mail-sent mail subscriber)))
 
 (defun send-system-mail (body address host campaign &rest args)

@@ -1,0 +1,21 @@
+View this email in your browser:
+  <c:splice lquery="(text mail-url)"/>
+
+------------------------------------------------------------------------------
+
+<c:splice lquery="(text body)"/>
+
+------------------------------------------------------------------------------
+Copyright <c:splice lquery="(time T :year)"/> <c:splice lquery="(text copyright)"/>
+
+Our mailing address is:
+<c:splice lquery="(text address)"/>
+
+You are receiving this email because you opted in via our website.
+If you no longer want to receive these emails, you can unsubscribe at
+the following link:
+
+  <c:splice lquery="(text unsubscribe)"/>
+
+------------------------------------------------------------------------------
+Running on Courier <c:splice lquery="(text software-version)"/>
