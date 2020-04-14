@@ -1,3 +1,9 @@
 <article class="page frontpage">
-  Courier is a mailing list service.
+  <img class="logo" @src="courier/static/courier/logo.svg" />
+  <p>
+    Courier is a privately hosted mailing list service. It manages subscriptions and delivers email to subscribers.
+  </p>
+  <p>
+    If you are a manager of this instance, please <a @href="<auth page login #>">log in</a>.
+  </p>
 </article>
