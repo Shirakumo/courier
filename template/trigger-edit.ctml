@@ -36,8 +36,8 @@
       </div>
       <div class="row">
         <label for="delay">With delay:</label>
-        <select id="delay" name="time-offset" lquery="(select time-offset)">
-          <c:splice lquery='(html (plump:parse (template-file "time-offset.ctml" :courier)))' />
+        <select id="delay" name="delay" lquery="(select delay)">
+          <c:splice lquery='(html (plump:parse (template-file "delay.ctml" :courier)))' />
         </select>
       </div>
       <div class="row">

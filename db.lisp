@@ -133,8 +133,7 @@
                (source-id :id)
                (target-type (:integer 1))
                (target-id :id)
-               ;; FIXME: rename to delay
-               (time-offset (:integer 5))
+               (delay (:integer 5))
                (tag-constraint (:varchar 64))
                (normalized-constraint :text))
              :indices '(campaign source-type source-id))
@@ -462,9 +461,9 @@
     (subscriber
      (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing))) :sort '((title :asc)) :hull 'tag))))
 
-(defun make-trigger (campaign source target &key description (time-offset 0) tag-constraint (save T))
+(defun make-trigger (campaign source target &key description (delay 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
-    (setf-dm-fields trigger campaign description time-offset tag-constraint)
+    (setf-dm-fields trigger campaign description delay tag-constraint)
     (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign tag-constraint))
     (setf (dm:field trigger "source-id") (dm:id source))
     (setf (dm:field trigger "source-type") (collection-type source))
@@ -473,8 +472,8 @@
     (when save (dm:insert trigger))
     trigger))
 
-(defun edit-trigger (trigger &key description source target time-offset tag-constraint (save T))
-  (setf-dm-fields trigger description time-offset tag-constraint)
+(defun edit-trigger (trigger &key description source target delay tag-constraint (save T))
+  (setf-dm-fields trigger description delay tag-constraint)
   (when tag-constraint
     (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
   (when source

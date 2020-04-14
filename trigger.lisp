@@ -79,7 +79,7 @@
              (0 (enqueue-mail target
                               :target subscriber
                               :time (+ (get-universal-time)
-                                       (dm:field trigger "time-offset")))))))
+                                       (dm:field trigger "delay")))))))
         (tag
          (tag subscriber target))))))
 

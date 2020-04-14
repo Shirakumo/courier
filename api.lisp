@@ -265,20 +265,20 @@
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (api-output (list-triggers campaign))))
 
-(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description time-offset tag-constraint) (:access (perm courier trigger new))
+(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description delay tag-constraint) (:access (perm courier trigger new))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
     (let ((trigger (make-trigger campaign source target
-                                 :description description :time-offset time-offset
+                                 :description description :delay delay
                                  :tag-constraint tag-constraint)))
       (output trigger "Trigger created." "courier/campaign/~a/trigger" (dm:field trigger "campaign")))))
 
-(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description time-offset tag-constraint) (:access (perm courier trigger edit))
+(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description delay tag-constraint) (:access (perm courier trigger edit))
   (let ((trigger (check-accessible (ensure-trigger trigger)))
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
-    (edit-trigger trigger :description description :time-offset time-offset :tag-constraint tag-constraint
+    (edit-trigger trigger :description description :delay delay :tag-constraint tag-constraint
                           :source source :target target)
     (output trigger "Trigger edited." "courier/campaign/~a/trigger" (dm:field trigger "campaign"))))
 
