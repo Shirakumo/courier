@@ -28,7 +28,7 @@
       <i class="fas fa-plus-circle"></i>
       Import Subscribers
     </a>
-    <a class="button" href="#" @href="courier/campaign/{0}/subscriber?page={1} title (1+ (** :page-no))">
+    <a class="button" href="#" lquery="(attr :href (** :next-page))">
       <i class="fas fa-arrow-right"></i>
       Next page
     </a>

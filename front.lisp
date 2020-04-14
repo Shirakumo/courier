@@ -136,16 +136,17 @@
                  (@template "tag-edit.ctml")
                  :tag tag)))
 
-(define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members(?:/([^/]+))?$" (:uri-groups (campaign tag page) :access (perm courier))
+(define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members$" (:uri-groups (campaign tag) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
         (tag (ensure-tag tag))
-        (page (or (ignore-errors (parse-integer page)) 0)))
+        (page (or (ignore-errors (parse-integer (post/get "page"))) 0)))
     (render-page (format NIL "~a Members" (dm:field tag "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id tag)))
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)) :hull 'subscriber)
-                 :next-page (1+ page))))
+                 :next-page (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
+                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
 
 (define-page trigger-list "courier/^campaign/([^/]+)/trigger/?$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
@@ -184,7 +185,8 @@
                  :campaign campaign
                  :subscribers (dm:get 'subscriber (db:query (:= 'campaign (dm:id campaign)))
                                       :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
-                 :page-no page)))
+                 :next-page (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
+                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
 
 (define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/?$" (:uri-groups (campaign subscriber) :access (perm courier))
   (let* ((campaign (ensure-campaign campaign))

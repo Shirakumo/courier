@@ -466,7 +466,7 @@
 (defun make-trigger (campaign source target &key description (delay 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
     (setf-dm-fields trigger campaign description delay tag-constraint)
-    (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign tag-constraint))
+    (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign (or tag-constraint "")))
     (setf (dm:field trigger "source-id") (dm:id source))
     (setf (dm:field trigger "source-type") (collection-type source))
     (setf (dm:field trigger "target-id") (dm:id target))
