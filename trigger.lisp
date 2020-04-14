@@ -81,7 +81,9 @@
                               :time (+ (get-universal-time)
                                        (dm:field trigger "delay")))))))
         (tag
-         (tag subscriber target))))))
+         (tag subscriber target))
+        (campaign
+         (delete-subscriber subscriber))))))
 
 (defun process-triggers (subscriber triggers)
   (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
