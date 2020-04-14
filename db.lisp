@@ -162,7 +162,7 @@
     (dm:data-model (dm:id id-ish))
     (T (db:ensure-id id-ish))))
 
-(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 100) (batch-cooldown 60) (save T))
+(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 10) (batch-cooldown 60) (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
                                                   (:= 'title title))))
   (dm:with-model host ('host NIL)
