@@ -93,7 +93,7 @@
       <hr>
       <div class="note">
         You are receiving this email because you opted in via our website.<br>
-        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe)">unsubscribe here</a>
+        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe-url)">unsubscribe here</a>
       </div>
       <div class="address">
         <div class="line">Our mailing address is:</div>
