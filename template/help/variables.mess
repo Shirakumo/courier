@@ -1,0 +1,50 @@
+## Variables
+Courier offers a number of variables that are available during template processing and email body processing. The variables and their purpose are outlined here.
+
+### address
+Expands into the address field specified on the campaign. This should be a physical address for your contact. You //must// include this in your email somewhere in order to stay legal.
+
+### archive-url
+An URL for the subscriber's mail archive. Subscribers can view all the emails they have received or unlocked through their subscription on the archive page.
+
+### body
+The email content. This variable contains HTML and should be inserted with the ``html`` lQuery function. It is not available within the email body.
+
+### campaign
+The title of the campaign.
+
+### description
+The description of the campaign.
+
+### mail-receipt-image
+An URL for a tiny 1x1 pixel image that is used for tracking. When this image is requested from the server, the email is marked as read in Courier. You should always include this URL as an image in your template somewhere.
+
+### mail-url
+An URL to view the email content in the browser. This URL is specific to each subscriber and email, and will also cause the email to be marked as read when visited.
+
+### name
+The name of the subscriber. This is a free-form field that the subscriber enters on subscription, so its contents are not reliable. Typically it will contain a first or full name, however.
+
+### reply-to
+The email address set for the ``reply to`` field in the campaign.
+
+### subject
+The subject line of the email.
+
+### tags
+This is a list of ``tag`` instances that the subscriber has been assigned to.
+
+### time
+The current time as universal-time when the template is assembled. You may used this with the ``time`` lQuery function to display the send time of the email.
+
+### title
+The title of the email.
+
+### to
+The email address of the subscriber that the email is being sent to.
+
+### unsubscribe-url
+An URL pointing to a page that will unsubscribe the user when clicked. Note that there is no confirmation, the user will be unsubscribed immediately upon visit.
+
+### Attributes
+A campaign may define several additional attributes for the user to fill out during signup. Each of these attributes is available as a variable as well, with the variable name being the title of the attribute.

@@ -1,0 +1,89 @@
+## Templates
+Templates are defined in a templating language called "Clip"(https://shinmera.github.io/clip). Clip is based on the idea that even templated documents should still be valid HTML. Thus all of the template functions are expressed as tags and attributes, and you will mostly be writing HTML directly. Using these attributes you can execute arbitrary Lisp code, allowing for a great deal of flexibility. For the most part, though, you only need a small subset of functions available to you.
+
+In order to explain how Clip works in the context of Courier, let's take a look at the default template Courier offers:
+
+::
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title lquery="(text subject)">Subject</title>
+    <style type="text/css">
+      ...
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
+      <a href="#" lquery="(attr :href mail-url)" class="in-browser">View this email in your browser</a>
+    </div>
+    <div class="main" id="main" lquery="(html body)">
+      Body
+    </div>
+    <div class="footer">
+      <hr>
+      <div class="note">
+        You are receiving this email because you opted in via our website.<br>
+        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe)">unsubscribe here</a>
+      </div>
+      <div class="address">
+        <div class="line">Our mailing address is:</div>
+        <c:splice lquery="(text address)">
+          Example<br>
+          Somestreet 33<br>
+          Anytown<br>
+          Country
+        </c:splice>
+      </div>
+      <div class="copy">
+        Copyright © <span lquery="(time T :year)">20XX</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>
+      </div>
+      <div class="software">
+        Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>
+      </div>
+    </div>
+  </body>
+</html>
+::
+
+The CSS styling has been removed for brevity. The first use of Clip is on the 5th line:
+
+::
+    <title lquery="(text subject)">Subject</title>
+::
+
+The ``lquery`` attribute defines a use of the "lQuery"(https://shinmera.github.io/lquery) system that applies transforms to the current element. In this case, we simply set the textual contents of the ``title`` element to the value of the "``subject``"(link variables#subject) variable. Another use of the ``lquery`` attribute is on line 12:
+
+::
+      <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
+::
+
+Here we set the ``src`` attribute of the ``img`` element to the value of the "``mail-receipt-image``"(link variables#mail-receipt-image) variable. Most of the things that happen will be either setting text or attributes with lQuery like this. One important part is to actually include the content body in the email. This happens on line 15:
+
+::
+    <div class="main" id="main" lquery="(html body)">
+::
+
+Here we simply use the ``html`` function of lQuery to splice the raw "``body``"(link variables#body) HTML into the contents of the ``div``. Finally, a slightly more advanced use of Clip is on line 26:
+
+::
+        <c:splice lquery="(text address)">
+::
+
+Here we use the ``c:splice`` tag from Clip, which will remove itself, but leave its contents in its place. What this means is that we can insert the "``address``"(link variables#address) text into the surrounding ``div`` without having to create an extra element for it.
+
+However, typically not a lot more than these few constructs are needed to create an email template. Still, "Clip"(https://shinmera.github.io/clip) and "lQuery"(https://shinmera.github.io/lquery) have a lot more to offer, like conditionals, iteration, and so forth. Please consult their respective documentation for further help. Also see the "variables"(link variables) section of the help file for variables you can use in a template.
+
+### Required Template Sections
+While Courier does not enforce any restrictions on your template at all, in order for your mailing list activities to stay legal, you must include the following somewhere in every email:
+
+- Your physical contact address. Use the "``address``"(link variables#address) variable for this and make sure you set a valid address in your campaign.
+- A clearly labelled link to unsubscribe from the list. You can use the "``unsubscribe-url``"(link variables#unsubscribe-url) to do this.
+- The tracking image. Without this image, most email opens will not be tracked properly, leading to bad statistics. Use the "``mail-receipt-image``"(link variables#mail-receipt-image) variable to refer to it.
+
+The following sections are not strictly required but are heavily recommended:
+
+- A link to view the email in the browser. This allows people with email clients that format HTML badly or insufficiently to view the content in a better way. The "``mail-url``"(link variables#mail-url) variable will always expand to a link to see the email.
+- A copyright footer.
+- A link to Courier. It would be nice to spread the word about Courier a little bit if you end up using it.
