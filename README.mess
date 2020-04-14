@@ -1,10 +1,52 @@
-# DON'T LOOK, AAAAAAAAAAAAAAAAAAAAa
+# About Courier
+Courier is a mailing list service. It allows you to create campaigns to which people can subscribe via email. You can then manage subscribers of a campaign and send out emails to them, as well as manage them automatically through triggers and tags. The system will also track engagement by tracking link and email opens.
+
+Courier is //not// an email server or MTA. It uses a separate SMTP server to fulfil this purpose, so you may use the email address and server of your choosing to deliver emails. Courier is also not a public service. If you set up a Courier instance, do //not// give unknown third-parties permission to create campaigns or manage any part of the backend.
+
+That said, if you need a software to manage small to medium-sized mailing lists for your project or company and do not want to pay for premium services like Mailchimp, Courier should be a perfect fit.
+
+Courier is a "Radiance"(https://shirakumo.github.io/radiance-homepage) application and can be set up using any Radiance instance with a relational database implementation.
+
+## Configuration
+After loading Courier, you should consider configuring the following properties:
+
+- ``:title``
+  The title of your mailing list service.
+- ``:copyright``
+  The general copyright holder for mails being sent.
+- ``:private-key``
+  The private key being used for encryption. You should not need to set this, it will be set to a random string automatically when you start Courier for the first time.
+- ``:send-queue``
+  - ``:retry-backoff-exponent``
+    The exponent to use to determine the waiting interval between retry attempts. The wait-time is ``i^e`` minutes, where ``i`` is the current attempt number and ``e`` the exponent you configured. You should not need to set this.
+  - ``:retry-attempts``
+    The maximum number of retries before an email is dropped as being unable to send. You should not need to set this.
+  - ``:poll-interval``
+     The number of seconds to wait before polling for new emails to send out.
+
+## Mail Hosts
+Courier provides double authentication for subscription, meaning that users need to confirm their subscription with a clickable link from an email before they are added to a campaign. This is vital to avoid sending mails to spam traps, or sending unsolicited subscription email.
+
+Courier also sends mails with the required headers to ensure validity and help prevent them being marked as spam. However, most of the factors that determine whether mail will marked as spam are on the side of your mail host. You should ensure that your host has SPF and DKIM signing on, has a RDNS entry, and has a DMARC DNS entry. There are plenty of resources out there to find out more about this stuff and to verify that it is working.
+
+By default Courier is configured to send out mails in batches of at most 10 every minute. If this is still too much and you get flagged for spam because of that, or if it's not enough and your mails aren't all getting out on time, consider changing the configuration in Courier. You may also want to configure queueing on your your mail host directly, if you have the capability to do so.
+
+## Campaign Templating
+In Courier you define a template for each campaign, into which the content of every mail you send out will be filled into. This template is defined in a templating language called "Clip"(https://shinmera.github.io/clip). Clip, for the most part, looks like standard HTML, with some extra tags and attributes that allow you to iterate over data, and fill it into elements dynamically. A brief tutorial on Clip as well as Courier specific extensions and requirements is included in Courier's UI.
+
+## Mail Markup
+Every email contains a body of text that is filled into the campaign template in order to assemble the full email. In order to make writing the actual emails easier, Courier uses an intuitive markup language called "Markless"(https://shirakumo.github.io/markless) with some mailing list specific extensions. Markless is easy to learn, and Courier includes a tutorial in its UI. Mails and campaign templates can also be previewed directly on the edit page to make it easy to see what the end product will look like.
+
+## REST API
+Courier includes a full REST API that allows you to query and manipulate all of the objects managed by Courier. Using this API, new extensions can be easily written and integrated into other applications.
 
 ; TODO: sequence interface
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
 ; TODO: permission sharing (kinda done)
 ; TODO: mail/archive link syntax
-; TODO: purge subscribers with unreachable email addresses (how?)
 ; TODO: maybe use monitors to immediately wake up the queue thread
 ; TODO: help pages
+; TODO: more rigorous testing
+; TODO: CodeMirror Markless mode
+; TODO: documentation
