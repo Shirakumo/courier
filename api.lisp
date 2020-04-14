@@ -421,7 +421,6 @@
                       :link (url> "courier/api/courier/subscription/confirm"
                                   :query `(("id" . ,(generate-id subscriber))
                                            ("browser" . "true"))))
-    (send-confirm-subscription campaign subscriber)
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/subscription/~a" (dm:id campaign))
                         :query '(("action" . "subscribed"))))
