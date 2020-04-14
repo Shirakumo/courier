@@ -266,6 +266,15 @@
                               (db:query :all)
                               :sort '(("send-time" :desc)) :amount 100)))
 
+(define-page help "courier/^help(:?/([^/]+))?" (:uri-groups (page) :access (perm courier))
+  (let ((content (plump:make-root)))
+    (markless:output (markless:parse (@template (format NIL "help/~:[index~;~:*~a~].mess" page)) T)
+                     :target content
+                     :format 'org.shirakumo.markless.plump:plump)
+    (render-page "Help"
+                 (@template "help.ctml")
+                 :text content)))
+
 ;; User sections
 (define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))
   (let ((campaign (ensure-campaign (db:ensure-id campaign))))

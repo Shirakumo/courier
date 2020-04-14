@@ -87,3 +87,12 @@ The following sections are not strictly required but are heavily recommended:
 - A link to view the email in the browser. This allows people with email clients that format HTML badly or insufficiently to view the content in a better way. The "``mail-url``"(link variables#mail-url) variable will always expand to a link to see the email.
 - A copyright footer.
 - A link to Courier. It would be nice to spread the word about Courier a little bit if you end up using it.
+
+### Styling
+Styling of the template should happen through CSS. For the most part you are free to implement the styling and layout as you like, but consider:
+
+- Many email clients only support a limited subset of HTML and CSS. You should keep your template minimal accordingly and refrain from using newer features without fallbacks.
+- You should limit the width and height of ``img`` elements to ensure your email will not cause horizontal scrolling or excessive vertical scrolling.
+- Consider limiting the width of your main content section to avoid paragraphs becoming too wide.
+- You should include styling for ``code``, ``blockquote``, ``cite``, and ``hr``. Changing the various header elements (``h1``, etc) can also be worth it.
+- You should define a style for the ``button`` class that makes the element appear as a big, centred button. This class is used for button embeds in the email content.

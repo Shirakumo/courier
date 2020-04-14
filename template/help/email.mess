@@ -1,2 +1,77 @@
 ## Email Content
+Emails are written in a markup language called "Markless"(https://shirakumo.github.io/markless). Markless is intended to be an intuitive and simple language to learn. It requires only plaintext and can thus be easily written by hand without the need for a complicated editor. Markless supports a variety of text markup and content embedding options, making it a good fit for email.
 
+The "Markless website"(https://shirakumo.github.io/markless) includes a tutorial that covers all of the features it offers out of the box. We will briefly mention the most used ones here, and explain the Courier specific extensions as well. For more advanced and rigorous understanding of Markless, please consider its "specification"(https://github.com/Shirakumo/markless/blob/master/markless.pdf).
+
+### Text Styling
+The most important text styling you'll need is making things ``**bold**``, ``//italic//``, and ``__underlined__``, though you can also make text ``"colored"(in blue)``.
+
+Another important part will be headings:
+
+::markless
+# Top header
+## Section
+### Subsection
+#### Subsubsection
+##### Etc.
+::
+
+You can also define listings, though those will probably be less frequent in emails:
+
+::markless
+- One
+- Two
+- Three
+  Still three!
+
+1. One
+2. Two
+3. Three
+   Still three!
+::
+
+### Embeds
+Embeds allow you to integrate content like images or videos into your text. A very simple example would be just:
+
+::markless
+[ image https://example.com/image.jpg ]
+::
+
+Embeds accept a number of options, the most useful being ``width`` to constrain the width of the embed, and ``caption`` to define a caption for the embed. You can also use ``label`` to refer to an embed with links.
+While Markless does support audio and video embeds as well, it's likely that many email clients will not support these features, and you should use external links instead.
+
+### Links
+In order to use links, you can either simply put the entire link verbatim into the text, or use the compound directive to turn some text into a link:
+
+::markless
+https://example.com
+"example"(https://example.com)
+::
+
+All links that do not already refer to a Courier page will automatically be transformed into a link that is specific to the given email and subscriber. Thus, when the user clicks on any link in an email, it will first resolve through Courier, allowing Courier to record that the link has been visited and the email been read, before redirecting the user to the intended target.
+
+### Variables
+You can include the content of a variable in your text using the following syntax: ``{variable}``
+For example, creating a simple greeting of the subscriber would work as follows:
+
+::markless
+# Hello, {name}
+Hope you're doing great!
+::
+
+See the section on "variables"(link variables) for available variables.
+
+### Buttons
+Often you'd want to include a call to action button, or some other central link. You can use this with the button embed type.
+
+::markless
+[ button https://example.com, caption Exciting Stuff! ]
+::
+
+The target of the button can also be a variable expression:
+
+::markless
+[ button {archive-url}, caption Take me to the archive ]
+::
+
+The styling of the button is dependent on your template.

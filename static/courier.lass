@@ -444,6 +444,37 @@
     ((:and .button :hover)
      :background (hex AA5500))))
 
+  (.page.help
+   (>nav
+    :position fixed
+    :top 3em
+    :right 0
+    :width (calc (- 50vw 350px 1em))
+    :max-width 15em
+    :background (hex F0F0F0)
+    :display flex
+    :flex-direction column
+    :border-bottom 3px solid (hex E0E0E0)
+    (label
+     :padding 0.5em 1em
+     :font-weight bold)
+    (a
+     :padding 1em)
+    ((:and a :hover)
+     :color (hex 000000)
+     :background (hex E8E8E8)))
+   (>section
+    :max-width 700px
+    :margin 0 auto 50vh auto
+    ((:or h1 h2 h3 h4 h5)
+     :text-indent 1em)
+    (code
+     :font-size 0.8em
+     :background (hex F0F0F0))
+    (.code-block
+     :padding 0.5em 1em
+     :overflow-x auto)))
+
   (form.image.upload
    :text-align center
    (canvas
@@ -458,3 +489,8 @@
     :box-sizing border-box)
    ((:and .width :after)
     :content "x")))
+
+(:media "(max-width: 800px)"
+        (.page.help
+         :position relative
+         :top auto :right auto))
