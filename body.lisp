@@ -25,8 +25,11 @@
   (:default-initargs :directives (list* 'template-var markless:*default-directives*)))
 
 (defun make-link* (f url)
-  (let ((link (make-link (campaign f) :url url)))
-    (link-receipt-url (subscriber f) link (mail f))))
+  ;; Do not encode links that are already pointing to Courier.
+  (if (search #.(url> "courier/") url)
+      url
+      (let ((link (make-link (campaign f) :url url)))
+        (link-receipt-url (subscriber f) link (mail f)))))
 
 (defun transform-link (element f)
   (when (campaign f)
