@@ -22,7 +22,7 @@
   (let ((thing (etypecase thing
                  (string thing)
                  (integer (princ-to-string thing)))))
-    (cryptos:pbkdf2-hash thing (config :private-key))))
+    (cryptos:pbkdf2-hash thing (config :private-key) :digest :sha256)))
 
 (defun check-hash (hash thing &optional (argument 'token))
   (unless (equal hash (hash thing))
