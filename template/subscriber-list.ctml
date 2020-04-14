@@ -5,6 +5,7 @@
       <ul class="tags" iterate="(courier::list-tags *)">
         <li class="tag" lquery="(text title)"></li>
       </ul>
+      <i class="fas status" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
       <time lquery="(time signup-time)"></time>
       <nav class="actions">
         <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0} _id">
