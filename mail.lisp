@@ -34,7 +34,7 @@
      (values (extract-plaintext text)
              (plump:serialize text NIL)))))
 
-(defun send (host to subject message &key plain reply-to campaign unsubscribe)
+(defun send (host to subject message &key plain reply-to message-id campaign unsubscribe)
   (multiple-value-bind (extracted html) (format-mail message)
     (l:trace :courier.mail "Sending to ~a via ~a/~a:~a"
              to
@@ -50,7 +50,10 @@
        :extra-headers `(,@(when campaign
                             `(("X-Campaign" ,(princ-to-string campaign))
                               ("X-campaignid" ,(princ-to-string campaign))
-                              ("List-ID" ,(princ-to-string campaign))))
+                              ("List-ID" ,(princ-to-string campaign))
+                              ("Message-ID" ,(format NIL "<~a@courier.~a>"
+                                                     (hash (format NIL "~a-~a" message-id campaign))
+                                                     (dm:field host "hostname")))))
                         ,@(when unsubscribe
                             `(("List-Unsubscribe" ,unsubscribe)
                               ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
@@ -106,8 +109,9 @@
       (send host (dm:field subscriber "address")
             (extract-subject html)
             html
-            :plain plain
+            :plain (plump:text plain)
             :reply-to (dm:field campaign "reply-to")
+            :message-id (dm:id mail)
             :campaign (dm:field mail "campaign")
             :unsubscribe (unsubscribe-url subscriber)))
     (mark-mail-sent mail subscriber)))
