@@ -65,7 +65,7 @@
                          (list :plain
                                (dm:field host "username")
                                (decrypt (dm:field host "password"))))
-       :display-name (dm:field host "title")))))
+       :display-name (dm:field host "display-name")))))
 
 (defun mail-template-args (campaign mail subscriber)
   (list* :mail-receipt-image (mail-receipt-url mail subscriber)

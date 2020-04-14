@@ -7,6 +7,11 @@
                id="title" name="title" lquery="(val title)" />
       </div>
       <div class="row">
+        <label for="display-name">Display Name:</label>
+        <input type="text" minlength="1" maxlength="32" required autocomplete="off"
+               id="display-name" name="display-name" lquery="(val display-name)" />
+      </div>
+      <div class="row">
         <label for="address">Email Address:</label>
         <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" required autocomplete="email"
                id="address" name="address" lquery="(val address)" />

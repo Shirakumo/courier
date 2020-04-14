@@ -19,7 +19,7 @@
 (define-api courier/host/list () (:access (perm courier host list))
   (api-output (list-hosts (auth:current))))
 
-(define-api courier/host/new (title address hostname &optional port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
+(define-api courier/host/new (title address hostname &optional display-name port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
   (check-title title)
   (ratify:with-parsed-forms ((:email address)
                              (:host hostname)
@@ -27,6 +27,7 @@
                              (:integer encryption batch-size batch-cooldown))
     (let ((host (make-host :author (user:id (auth:current))
                            :title title
+                           :display-name display-name
                            :address address
                            :hostname hostname
                            :port port
@@ -44,14 +45,14 @@
                                              ("browser" . "true"))))
       (output host "Host created. Please check your emails to confirm." "courier/host/"))))
 
-(define-api courier/host/edit (host &optional title address hostname port username password encryption batch-size batch-cooldown) :access (perm courier host new)
+(define-api courier/host/edit (host &optional title display-name address hostname port username password encryption batch-size batch-cooldown) :access (perm courier host new)
   (when title (check-title title))
   (let ((host (check-accessible (ensure-host host))))
     (ratify:with-parsed-forms ((:email address)
                                (:host hostname)
                                (:port port)
                                (:integer encryption batch-size batch-cooldown))
-      (setf-dm-fields host title address hostname port username encryption batch-size batch-cooldown)
+      (setf-dm-fields host title display-name address hostname port username encryption batch-size batch-cooldown)
       (when (or* password) (setf (dm:field host "password") (encrypt password)))
       (dm:save host)
       (output host "Host edited." "courier/host"))))

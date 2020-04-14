@@ -26,6 +26,7 @@
   (db:create 'host
              '((author :id)
                (title (:varchar 32))
+               (display-name (:varchar 32))
                (address (:varchar 64))
                (hostname (:varchar 64))
                (port :integer)
@@ -162,20 +163,20 @@
     (dm:data-model (dm:id id-ish))
     (T (db:ensure-id id-ish))))
 
-(defun make-host (&key author title address hostname port username password (encryption 1) (batch-size 10) (batch-cooldown 60) (save T))
+(defun make-host (&key author title display-name address hostname port username password (encryption 1) (batch-size 10) (batch-cooldown 60) (save T))
   (check-title-exists 'host title (db:query (:and (:= 'author author)
                                                   (:= 'title title))))
   (dm:with-model host ('host NIL)
-    (setf-dm-fields host author title address hostname port username encryption batch-size batch-cooldown)
+    (setf-dm-fields host author title display-name address hostname port username encryption batch-size batch-cooldown)
     (when password (setf (dm:field host "password") (encrypt password)))
     (setf (dm:field host "confirmed") NIL)
     (setf (dm:field host "last-send-time") 0)
     (when save (dm:insert host))
     host))
 
-(defun edit-host (host &key author title address hostname port username password encryption batch-size batch-cooldown confirmed save)
+(defun edit-host (host &key author title display-name address hostname port username password encryption batch-size batch-cooldown confirmed save)
   (let ((host (ensure-host host)))
-    (setf-dm-fields host author title address hostname port username password encryption batch-size batch-cooldown confirmed)
+    (setf-dm-fields host author title display-name address hostname port username password encryption batch-size batch-cooldown confirmed)
     (when save (dm:save host))
     host))
 
