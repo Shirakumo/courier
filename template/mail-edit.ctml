@@ -22,12 +22,25 @@
           <div class="row">
             <label>Is sent on:</label>
             <div>
-              <ul class="triggers" iterate="(courier::triggers *)">
+              <ul class="triggers" iterate="(courier::list-triggers *)">
                 <li class="trigger">
-                  <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
+                  <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)" target="_blank">Trigger</a>
                 </li>
               </ul>
-              <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id">
+              <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id" target="_blank">
+                <i class="fas fa-plus-circle"></i> Add a trigger
+              </a>
+            </div>
+          </div>
+          <div class="row">
+            <label>On open:</label>
+            <div>
+              <ul class="triggers" iterate="(courier::list-source-triggers *)">
+                <li class="trigger">
+                  <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)" target="_blank">Trigger</a>
+                </li>
+              </ul>
+              <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id" target="_blank">
                 <i class="fas fa-plus-circle"></i> Add a trigger
               </a>
             </div>

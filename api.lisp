@@ -167,7 +167,7 @@
 (define-api courier/mail/delete (mail) (:access (perm courier mail delete))
   (let* ((mail (check-accessible (ensure-mail mail))))
     (delete-mail mail)
-    (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign"))))
+    (output mail "Mail deleted." "courier/campaign/~a/mail/" (dm:field mail "campaign"))))
 
 (define-api courier/mail/test (mail) (:access (perm courier mail))
   (let ((mail (check-accessible (ensure-mail mail))))
@@ -271,7 +271,7 @@
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
     (let ((trigger (make-trigger campaign source target
-                                 :description description :delay delay
+                                 :description description :delay (parse-integer delay)
                                  :tag-constraint tag-constraint)))
       (output trigger "Trigger created." "courier/campaign/~a/trigger" (dm:field trigger "campaign")))))
 
@@ -279,7 +279,7 @@
   (let ((trigger (check-accessible (ensure-trigger trigger)))
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
-    (edit-trigger trigger :description description :delay delay :tag-constraint tag-constraint
+    (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
                           :source source :target target)
     (output trigger "Trigger edited." "courier/campaign/~a/trigger" (dm:field trigger "campaign"))))
 
@@ -384,14 +384,16 @@
                          "points" (list opened (- sent opened))))))
 
 (define-api courier/file (file) (:access (perm courier file))
-  (api-output (check-accessible (ensure-file file))))
+  (let ((file (check-accessible (ensure-file file))))
+    (setf (dm:field file "url") (file-url file))
+    (api-output file)))
 
 (define-api courier/file/list (campaign) (:access (perm courier file))
   (api-output (list-files (check-accessible (ensure-campaign campaign)))))
 
 (define-api courier/file/new (campaign file) (:access (perm courier file new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
-         (file (make-file campaign (first file) (third file) (second file))))
+         (file (make-file campaign (first file) (third file) :filename (second file))))
     (setf (dm:field file "url") (file-url file))
     (output file "File created." "courier/campaign/~a/file" (dm:id campaign))))
 
@@ -399,6 +401,38 @@
   (let ((file (check-accessible (ensure-file file))))
     (delete-file file)
     (output NIL "File deleted." "courier/campaign/~a/file" (dm:field file "campaign"))))
+
+(define-api courier/sequence (sequence) (:access (perm courier sequence))
+  (let ((sequence (check-accessible (ensure-sequence sequence))))
+    (setf (dm:field sequence "triggers") (list-triggers sequence))
+    (api-output sequence)))
+
+(define-api courier/sequence/list (campaign) (:access (perm courier sequence))
+  (api-output (list-sequences (check-accessible (ensure-campaign campaign)))))
+
+(define-api courier/sequence/new (campaign title &optional delay[] subject[]) (:access (perm courier sequence new))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
+         (sequence (make-sequence campaign title :triggers (loop for delay in delay[]
+                                                                 for subject in subject[]
+                                                                 collect (list (parse-integer delay) subject)))))
+    (output sequence "Sequence created." "courier/campaign/~a/sequence/~a/edit"
+            (dm:id campaign) (dm:id sequence))))
+
+(define-api courier/sequence/edit (sequence &optional title trigger[] delay[] subject[]) (:access (perm courier sequence edit))
+  (let ((sequence (check-accessible (ensure-sequence sequence))))
+    (edit-sequence sequence :title title :triggers (loop for trigger in trigger[]
+                                                         for delay in delay[]
+                                                         for subject in subject[]
+                                                         if (string-equal trigger "new")
+                                                         collect (list NIL (parse-integer delay) subject)
+                                                         else
+                                                         collect (list (db:ensure-id trigger) (parse-integer delay) subject)))
+    (output sequence "Sequence edited." "courier/campaign/~a/sequence/~a/edit" (dm:field sequence "campaign") (dm:id sequence))))
+
+(define-api courier/sequence/delete (sequence) (:access (perm courier sequence delete))
+  (let ((sequence (check-accessible (ensure-sequence sequence))))
+    (delete-sequence sequence)
+    (output NIL "Sequence deleted." "courier/campaign/~a/sequence" (dm:field sequence "campaign"))))
 
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))

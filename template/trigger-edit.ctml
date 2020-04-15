@@ -37,9 +37,7 @@
       </div>
       <div class="row">
         <label for="delay">With delay:</label>
-        <select id="delay" name="delay" lquery="(select delay)">
-          <c:splice lquery='(html (plump:parse (template-file "delay.ctml" :courier)))' />
-        </select>
+        <select id="delay" name="delay" lquery='(html (plump:parse (template-file "delay.ctml" :courier))) (select delay)'/>
       </div>
       <div class="row">
         <label for="tag-constraint">Constrain to tagged:</label>

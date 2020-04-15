@@ -1,7 +1,7 @@
 <article class="page help">
   <nav class="help">
     <label>Help Index</label>
-    <a @href="courier/help/email">Email Writing</a>
+    <a @href="courier/help/mail">Email Writing</a>
     <a @href="courier/help/template">Email Templating</a>
     <a @href="courier/help/variables">Template Variables</a>
   </nav>

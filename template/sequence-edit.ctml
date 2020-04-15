@@ -1,5 +1,5 @@
-<article class="page mail edit">
-  <c:using value="mail">
+<article class="page sequence edit">
+  <c:using value="sequence">
     <form method="post">
       <div class="row">
         <label for="host">Campaign:</label>
@@ -12,58 +12,47 @@
         <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
                id="title" name="title" lquery="(val title)" />
       </div>
-      <div class="row">
-        <label for="subject">Subject:</label>
-        <input type="text" minlength="3" maxlength="128" autocomplete="none"
-               id="subject" name="subject" lquery="(val subject)" />
-      </div>
-      <c:if test="_id">
-        <c:then>
-          <div class="row">
-            <label>Is sent on:</label>
-            <div>
-              <ul class="triggers" iterate="(courier::triggers *)">
-                <li class="trigger">
-                  <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
-                </li>
-              </ul>
-              <a class="button" @href="courier/campaign/{0}/trigger/new?target-type=mail&target-id={1} campaign _id">
-                <i class="fas fa-plus-circle"></i> Add a trigger
+      <div class="row big dynamic-list">
+        <label for="triggers">Emails:</label>
+        <ul id="triggers">
+          <li class="trigger template">
+            <a class="button remove-self">
+              <i class="fas fa-trash"></i>
+            </a>
+            <input type="hidden" data-name="trigger[]" value="new" />
+            <select id="delay" data-name="delay[]" lquery='(html (plump:parse (template-file "delay.ctml" :courier))) (select delay)'/>
+            <input type="text" minlength="3" maxlength="128" autocomplete="none" placeholder="Subject"
+                   id="subject" data-name="subject[]" />
+          </li>
+          <c:splice iterate="(** :triggers)">
+            <li class="trigger">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
               </a>
-            </div>
-          </div>
-        </c:then>
-        <c:else>
-          <div class="row">
-            <label for="send">Send now:</label>
-            <input type="checkbox" name="send" value="true" />
-          </div>
-        </c:else>
-      </c:if>
-      <div class="row big">
-        <label for="body">Body:</label>
-        <div class="editor" data-type="markless" data-preview-endpoint="mail/preview">
-          <nav>
-            <a @href="courier/help/template" title="Templating help" target="_blank">
-              <i class="fas fa-info-circle"></i>
-            </a>
-            <a href="#" title="Preview" class="preview">
-              <i class="fas fa-eye"></i>
-            </a>
-          </nav>
-          <textarea id="body" name="body" lquery="(text body)" />
-        </div>
+              <input type="hidden" name="trigger[]" lquery="(val trigger)" />
+              <select id="delay" name="delay[]" lquery='(html (plump:parse (template-file "delay.ctml" :courier))) (select delay)'/>
+              <c:using value="(courier::ensure-mail target-id)">
+                <input type="text" minlength="3" maxlength="128" autocomplete="none" placeholder="Subject"
+                       id="subject" name="subject[]" lquery="(val subject)" />
+                <a class="button" @href="courier/campaign/{0}/mail/{1}/edit campaign _id">
+                  <i class="fas fa-edit"></i> Edit Email
+                </a>
+              </c:using>
+            </li>
+          </c:splice>
+        </ul>
+        <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> New Email</a>
       </div>
       <input type="hidden" name="browser" value="true" />
       <div class="row">
         <c:if test="_id">
           <c:then>
-            <input type="hidden" name="mail" lquery="(val _id)" />
-            <input type="submit" value="Save Changes" @formaction="courier/api/courier/mail/edit" />
-            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/mail/delete" />
+            <input type="hidden" name="sequence" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/sequence/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/sequence/delete" />
           </c:then>
           <c:else>
-            <input type="submit" value="Create Mail" @formaction="courier/api/courier/mail/new" />
+            <input type="submit" value="Create Sequence" @formaction="courier/api/courier/sequence/new" />
           </c:else>
         </c:if>
       </div>

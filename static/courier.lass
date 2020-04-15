@@ -189,8 +189,15 @@
       :width 100%))
     (".CodeMirror"
      :font-size 0.8em))
-   ((:and .row .big)
+   (.row.big
     :flex-direction column)
+   (.row.dynamic-list
+    (>ul
+     :list-style none
+     :margin 0
+     :padding 0
+     (>li
+      :margin 0.2em 0)))
    (.template :display none !important)
    (input
     :position relative)
@@ -242,6 +249,8 @@
     :object-fit contain)
    (.author :min-width 5em)
    (.filename :flex-grow 1))
+  (.page.sequence.list
+   (.title :flex-grow 1))
   (.page.campaign.edit
    (textarea[name=template]
     :min-height 10em)
@@ -295,6 +304,10 @@
       :padding 0.1em 0.2em
       :margin 0 0.1em
       :border-radius 0.3em))))
+  (.page.sequence.edit
+   (.trigger
+    :display flex
+    (input#subject :flex-grow 1)))
 
   ((:and .page (:or .overview .dashboard))
    :display flex

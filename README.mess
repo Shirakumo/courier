@@ -40,7 +40,6 @@ Every email contains a body of text that is filled into the campaign template in
 ## REST API
 Courier includes a full REST API that allows you to query and manipulate all of the objects managed by Courier. Using this API, new extensions can be easily written and integrated into other applications.
 
-; TODO: sequence interface
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
 ; TODO: permission sharing (kinda done)

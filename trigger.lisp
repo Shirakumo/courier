@@ -89,5 +89,5 @@
   (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
   (dolist (trigger (etypecase triggers
                      (list triggers)
-                     (dm:data-model (triggers triggers))))
+                     (dm:data-model (list-triggers triggers))))
     (process-trigger subscriber trigger)))

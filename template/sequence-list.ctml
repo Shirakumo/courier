@@ -1,0 +1,21 @@
+<article class="page sequence list">
+  <ul class="sequences" iterate="sequences">
+    <li class="sequence">
+      <a class="title" @href="courier/campaign/{0}/sequence/{1}/edit campaign _id" lquery="(text title)">Sequence</a>
+      <nav class="actions">
+        <a class="button" href="#" @href="courier/campaign/{0}/sequence/{1}/edit campaign _id">
+          <i class="fas fa-edit"></i>
+          Edit
+        </a>
+        <a class="button confirm" href="#" @href="courier/api/courier/sequence/delete?sequence={0}&browser=true _id">
+          <i class="fas fa-trash"></i>
+          Delete
+        </a>
+      </nav>
+    </li>
+  </ul>
+  <a class="button" href="#" @href="courier/campaign/{0}/sequence/new (clip campaign :title)">
+    <i class="fas fa-plus-circle"></i>
+    New Sequence
+  </a>
+</article>

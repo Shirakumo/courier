@@ -8,15 +8,15 @@
       <i class="fas status" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
       <time lquery="(time signup-time)"></time>
       <nav class="actions">
-        <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0} _id">
+        <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/edit campaign _id">
+          <i class="fas fa-edit"></i>
+          Edit
+        </a>
+        <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0}&browser=true _id">
           <i class="fas fa-trash"></i>
           Unsubscribe
         </a>
       </nav>
-      <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/edit campaign _id">
-        <i class="fas fa-edit"></i>
-        Edit
-      </a>
     </li>
   </ul>
   <c:using value="campaign">

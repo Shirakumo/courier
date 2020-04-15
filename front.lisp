@@ -82,11 +82,14 @@
                  :campaign campaign)))
 
 (define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))
-  (let ((campaign (check-accessible (ensure-campaign campaign))))
+  (let ((campaign (check-accessible (ensure-campaign campaign)))
+        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
     (render-page "Mails"
                  (@template "mail-list.ctml")
-                 :mails (list-mails campaign)
-                 :campaign campaign)))
+                 :mails (list-mails campaign :amount 100 :skip (* 100 page))
+                 :campaign campaign
+                 :next-page (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
+                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))
@@ -143,8 +146,7 @@
     (render-page (format NIL "~a Members" (dm:field tag "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
-                 :subscribers (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id tag)))
-                                      :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)) :hull 'subscriber)
+                 :subscribers (list-subscribers tag :amount 100 :skip (* 100 page))
                  :next-page (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
                                   :query `(("page" . ,(princ-to-string (1+ page))))))))
 
@@ -183,8 +185,7 @@
     (render-page (format NIL "~a Subscribers" (dm:field campaign "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
-                 :subscribers (dm:get 'subscriber (db:query (:= 'campaign (dm:id campaign)))
-                                      :skip (* 100 page) :amount 100 :sort '(("signup-time" :desc)))
+                 :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page))
                  :next-page (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
                                   :query `(("page" . ,(princ-to-string (1+ page))))))))
 
@@ -224,14 +225,33 @@
                  (@template "subscriber-import.ctml")
                  :campaign campaign)))
 
+(define-page sequence-list "courier/^campaign/([^/]+)/sequence/?" (:uri-groups (campaign) :access (perm courier))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (render-page "Sequences"
+                 (@template "sequence-list.ctml")
+                 :campaign campaign
+                 :sequences (list-sequences campaign))))
+
+(define-page sequence-new "courier/^campaign/([^/]+)/sequence/new" (:uri-groups (campaign) :access (perm courier))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (render-page "Create Sequence"
+                 (@template "sequence-edit.ctml")
+                 :sequence (make-sequence campaign "" :save NIL))))
+
+(define-page sequence-edit "courier/^campaign/([^/]+)/sequence/([^/]+)/edit" (:uri-groups (campaign sequence) :access (perm courier))
+  (let ((sequence (check-accessible (ensure-sequence sequence))))
+    (render-page "Create Sequence"
+                 (@template "sequence-edit.ctml")
+                 :sequence sequence
+                 :triggers (list-triggers sequence))))
+
 (define-page file-list "courier/^campaign/([^/]+)/file/?" (:uri-groups (campaign) :access (perm courier))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
          (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
     (render-page "File List"
                  (@template "file-list.ctml")
                  :campaign campaign
-                 :files (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))
-                                :amount 50 :skip (* 50 page))
+                 :files (list-files campaign :amount 100 :skip (* 100 page))
                  :page-no page)))
 
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))

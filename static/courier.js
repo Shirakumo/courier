@@ -520,10 +520,12 @@ class Courier{
         var self = this;
         var data = [];
         [].forEach.call(document.querySelectorAll("input,textarea,select"), (el)=>{
-            data.push({
-                id: self.elementId(el),
-                value: self.elementValue(el)
-            });
+            if(el.getAttribute("type") != "hidden"){
+                data.push({
+                    id: self.elementId(el),
+                    value: self.elementValue(el)
+                });
+            }
         });
         return data;
     }

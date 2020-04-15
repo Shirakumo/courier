@@ -33,6 +33,10 @@
         <i class="fas fa-tag"></i>
         Tags
       </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/sequence title">
+        <i class="fas fa-list-ol"></i>
+        Seqs
+      </a>
       <a class="button" href="#" @href="courier/log/campaign/{0} _id">
         <i class="fas fa-fw fa-clipboard"></i>
         Log

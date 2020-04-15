@@ -145,7 +145,7 @@
                (title :text))
              :indices '(campaign))
   
-  (db:create 'sequence-mail
+  (db:create 'sequence-trigger
              '((sequence (:id sequence))
                (trigger (:id trigger)))
              :indices '(sequence))
@@ -197,10 +197,12 @@
     (dm:delete host)
     host))
 
-(defun list-hosts (&optional user)
+(defun list-hosts (&optional user &key amount (skip 0))
   (if user
-      (dm:get 'host (db:query (:= 'author (user:id user))) :sort '((title :asc)))
-      (dm:get 'host (db:query :all) :sort '((title :asc)))))
+      (dm:get 'host (db:query (:= 'author (user:id user)))
+              :sort '((title :asc)) :amount amount :skip skip)
+      (dm:get 'host (db:query :all)
+              :sort '((title :asc)) :amount amount :skip skip)))
 
 (defun make-campaign (author host title &key description reply-to template attributes address (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
@@ -274,7 +276,9 @@
 (defun delete-campaign (campaign)
   (db:with-transaction ()
     (let ((directory (campaign-file-directory campaign)))
+      (mapcar #'delete-sequence (list-sequences campaign))
       (mapcar #'delete-subscriber (list-subscribers campaign))
+      (mapcar #'delete-trigger (list-triggers campaign))
       (mapcar #'delete-mail (list-mails campaign))
       (mapcar #'delete-tag (list-tags campaign))
       (mapcar #'delete-link (list-links campaign))
@@ -283,19 +287,21 @@
       (dm:delete campaign)
       (uiop:delete-directory-tree directory :validate (constantly T) :if-does-not-exist :ignore))))
 
-(defun list-campaigns (&optional user)
+(defun list-campaigns (&optional user &key amount (skip 0))
   (if user
       (append ;; KLUDGE: workaround for JOIN thrashing _id when not inner join
        (dm:get 'campaign (db:query (:= 'author (user:id user)))
-               :sort '((title :asc)))
+               :sort '((title :asc)) :amount amount :skip skip)
        (dm:get (rdb:join (campaign _id) (campaign-access campaign))
                (db:query (:= 'user (user:id user)))
-               :sort '((title :asc)) :hull 'campaign))
-      (dm:get 'campaign (db:query :all) :sort '((title :asc)))))
+               :sort '((title :asc)) :amount amount :skip skip :hull 'campaign))
+      (dm:get 'campaign (db:query :all)
+              :sort '((title :asc)) :amount amount :skip skip)))
 
-(defun list-attributes (campaign)
+(defun list-attributes (campaign &key amount (skip 0))
   (when (dm:id campaign)
-    (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign))) :sort '((title :asc)))))
+    (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign)))
+            :sort '((title :asc)) :amount amount :skip skip)))
 
 (defun grant-access (user campaign &key (access-level 0))
   (let ((access (or (dm:get-one 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
@@ -310,9 +316,9 @@
   (db:remove 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
                                               (:= 'user (user:id user))))))
 
-(defun list-access (campaign)
+(defun list-access (campaign &key amount (skip 0))
   (dm:get 'campaign-access (db:query (:= 'campaign (ensure-id campaign)))
-          :sort `((access-level :asc))))
+          :sort `((access-level :asc)) :amount amount :skip skip))
 
 (defun make-subscriber (campaign name address &key attributes tags confirmed (signup-time (get-universal-time)) (save t))
   (db:with-transaction ()
@@ -376,17 +382,17 @@
     (db:remove 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))
     (dm:delete subscriber)))
 
-(defun list-subscribers (thing)
+(defun list-subscribers (thing &key amount (skip 0))
   (ecase (dm:collection thing)
     (campaign
      (dm:get 'subscriber (db:query (:= 'campaign (dm:id thing)))
-             :sort '((signup-timea :DESC))))
+             :sort '((signup-timea :DESC)) :amount amount :skip skip))
     (tag
      (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id thing)))
-             :sort '((signup-time :DESC))))
+             :sort '((signup-time :DESC)) :amount amount :skip skip))
     (link
      (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (db:query (:= 'link (dm:id thing)))
-             :sort '((signup-time :DESC))))))
+             :sort '((signup-time :DESC)) :amount amount :skip skip))))
 
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
@@ -423,10 +429,11 @@
       (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
       (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
       (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
+      (delete-triggers-for mail)
       (dm:delete mail))))
 
-(defun list-mails (campaign)
-  (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
+(defun list-mails (campaign &key amount (skip 0))
+  (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((time :desc)) :amount amount :skip skip))
 
 (defun make-tag (campaign &key title description (save T))
   (let ((campaign (ensure-campaign campaign)))
@@ -454,14 +461,17 @@
 (defun delete-tag (tag)
   (db:with-transaction ()
     (db:remove 'tag-table (db:query (:= 'tag (dm:id tag))))
+    (delete-triggers-for tag)
     (dm:delete tag)))
 
-(defun list-tags (thing)
+(defun list-tags (thing &key amount (skip 0))
   (ecase (dm:collection thing)
     (campaign
-     (dm:get 'tag (db:query (:= 'campaign (dm:id thing))) :sort '((title :asc))))
+     (dm:get 'tag (db:query (:= 'campaign (dm:id thing)))
+             :sort '((title :asc)) :amount amount :skip skip))
     (subscriber
-     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing))) :sort '((title :asc)) :hull 'tag))))
+     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
+             :sort '((title :asc)) :amount amount :skip skip :hull 'tag))))
 
 (defun make-trigger (campaign source target &key description (delay 0) tag-constraint (save T))
   (dm:with-model trigger ('trigger NIL)
@@ -488,8 +498,17 @@
   trigger)
 
 (defun delete-trigger (trigger)
+  (let ((trigger (ensure-trigger trigger)))
+    (db:with-transaction ()
+      (db:remove 'sequence-trigger (db:query (:= 'trigger (dm:id trigger))))
+      (dm:delete trigger))))
+
+(defun delete-triggers-for (thing)
   (db:with-transaction ()
-    (dm:delete trigger)))
+    (mapcar #'delete-trigger (dm:get 'trigger (db:query (:or (:and (:= 'target-id (dm:id thing))
+                                                                   (:= 'target-type (collection-type thing)))
+                                                             (:and (:= 'source-id (dm:id thing))
+                                                                   (:= 'source-type (collection-type thing)))))))))
 
 (defun ensure-trigger (trigger-ish)
   (or
@@ -499,13 +518,24 @@
      (T (ensure-trigger (db:ensure-id trigger-ish))))
    (error 'request-not-found :message "No such trigger.")))
 
-(defun list-triggers (campaign)
-  (dm:get 'trigger (db:query (:= 'campaign (dm:id campaign)))))
+(defun list-triggers (thing &key amount (skip 0))
+  (ecase (dm:collection thing)
+    (campaign
+     (dm:get 'trigger (db:query (:= 'campaign (dm:id thing)))
+             :amount amount :skip skip))
+    (sequence
+     (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
+             (db:query (:= 'sequence (dm:id thing)))
+             :amount amount :skip skip :hull 'trigger))
+    ((link mail tag)
+     (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
+                                      (:= 'target-type (collection-type thing))))
+             :amount amount :skip skip))))
 
-(defun triggers (thing)
-  (when (dm:id thing)
-    (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))
-                                     (:= 'source-type (collection-type thing)))))))
+(defun list-source-triggers (thing &key amount (skip 0))
+  (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))
+                                   (:= 'source-type (collection-type thing))))
+          :amount amount :skip skip))
 
 (defun make-link (campaign &key url (save T))
   (let ((hash (cryptos:sha256 url :to :base64)))
@@ -528,10 +558,12 @@
   (db:with-transaction ()
     (let ((link (ensure-link link-ish)))
       (db:remove 'link-receipt (db:query (:= link (dm:id link))))
+      (delete-triggers-for link)
       (dm:delete link))))
 
-(defun list-links (campaign)
-  (dm:get 'link (db:query (:= 'campaign (dm:id campaign))) :sort '((title :asc))))
+(defun list-links (campaign &key amount (skip 0))
+  (dm:get 'link (db:query (:= 'campaign (dm:id campaign)))
+          :sort '((title :asc)) :amount amount :skip skip))
 
 (defun link-received-p (link subscriber)
   (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (ensure-id link))
@@ -602,7 +634,7 @@
                  :type (trivial-mimes:mime-file-type (dm:field file "mime-type"))
                  :defaults (campaign-file-directory (dm:field file "campaign"))))
 
-(defun make-file (campaign file mime-type &optional (filename (file-namestring file)) (author (auth:current)))
+(defun make-file (campaign file mime-type &key (filename (file-namestring file)) (author (auth:current)))
   (db:with-transaction ()
     (let ((model (dm:hull 'file)))
       (setf-dm-fields model campaign author mime-type filename)
@@ -624,8 +656,70 @@
       (cl:delete-file (file-pathname file))
       (dm:delete file))))
 
-(defun list-files (campaign)
-  (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))))
+(defun list-files (campaign &key amount (skip 0))
+  (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))
+          :amount amount :skip skip))
+
+(defun ensure-sequence (sequence-ish)
+  (or
+   (etypecase sequence-ish
+     (dm:data-model sequence-ish)
+     (T (dm:get-one 'sequence (db:query (:= '_id (db:ensure-id sequence-ish))))))
+   (error 'request-not-found :message "No such sequence.")))
+
+(defun list-sequences (campaign &key amount (skip 0))
+  (dm:get 'sequence (db:query (:= 'campaign (ensure-id campaign)))
+          :amount amount :skip skip))
+
+(defun make-sequence (campaign title &key triggers (save T))
+  (let ((sequence (dm:hull 'sequence)))
+    (setf-dm-fields sequence campaign title)
+    (when save
+      (db:with-transaction ()
+        (dm:insert sequence)
+        (loop for trigger in triggers
+              for i from 1
+              do (etypecase trigger
+                   (dm:data-model
+                    (db:insert 'sequence-trigger `(("sequence" . ,(dm:id sequence))
+                                                   ("trigger" . ,(dm:id trigger)))))
+                   (cons
+                    (destructuring-bind (delay subject) trigger
+                      (let* ((title (format NIL "~a - ~a" title i))
+                             (mail (make-mail campaign :title title :subject subject))
+                             (trigger (make-trigger campaign campaign mail :description title :delay delay)))
+                        (db:insert 'sequence-trigger `(("sequence" . ,(dm:id sequence))
+                                                       ("trigger" . ,(dm:id trigger)))))))))))
+    sequence))
+
+(defun edit-sequence (sequence-ish &key title triggers (save T))
+  (let ((sequence (ensure-sequence sequence-ish)))
+    (setf-dm-fields sequence title)
+    (when save
+      (db:with-transaction ()
+        (dm:save sequence)
+        (db:remove 'sequence-trigger (db:query (:= 'sequence (dm:id sequence))))
+        (loop with campaign = (ensure-campaign (dm:field sequence "campaign"))
+              for (id delay subject) in triggers
+              for i from 0
+              for trigger = (cond (id
+                                   (let ((trigger (ensure-trigger id)))
+                                     (edit-trigger trigger :delay delay)
+                                     (edit-mail (dm:field trigger "target-id") :subject subject)
+                                     trigger))
+                                  (T
+                                   (let* ((title (format NIL "~a - ~a" title i))
+                                          (mail (make-mail campaign :title title :subject subject)))
+                                     (make-trigger campaign campaign mail :description title :delay delay))))
+              do (db:insert 'sequence-trigger `(("sequence" . ,(dm:id sequence))
+                                                ("trigger" . ,(dm:id trigger)))))))
+    sequence))
+
+(defun delete-sequence (sequence-ish)
+  (let ((sequence (ensure-sequence sequence-ish)))
+    (db:with-transaction ()
+      (mapcar #'delete-trigger (list-triggers sequence))
+      (dm:delete sequence))))
 
 (defun subscriber-count (thing)
   (ecase (dm:collection thing)
@@ -662,7 +756,8 @@
     (tag 2)
     (subscriber 3)
     (campaign 4)
-    (file 5)))
+    (file 5)
+    (sequence 6)))
 
 (defun type-collection (type)
   (ecase type
@@ -671,7 +766,8 @@
     ((2 tag) 'tag)
     ((3 subscriber) 'subscriber)
     ((4 campaign) 'campaign)
-    ((5 file) 'file)))
+    ((5 file) 'file)
+    ((6 sequence) 'sequence)))
 
 (defun resolve-typed (type id)
   (let ((id (db:ensure-id id)))
@@ -702,6 +798,6 @@
        (check (dm:field dm "author")))
       (campaign
        (check-campaign dm))
-      ((mail tag trigger link subscriber file)
+      ((mail tag trigger link subscriber file sequence)
        (check-campaign (dm:field dm "campaign"))))
     dm))
