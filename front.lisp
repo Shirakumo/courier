@@ -252,7 +252,8 @@
                  (@template "file-list.ctml")
                  :campaign campaign
                  :files (list-files campaign :amount 100 :skip (* 100 page))
-                 :page-no page)))
+                 :next-page (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
+                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
 
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))

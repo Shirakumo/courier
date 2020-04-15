@@ -12,7 +12,7 @@
       </nav>
     </li>
   </ul>
-  <a class="button" href="#" @href="courier/campaign/{0}/file?page={1} (clip campaign :title) (1+ page-no)">
+  <a class="button" href="#" lquery="(attr :href next-page)">
     <i class="fas fa-arrow-right"></i>
     Next page
   </a>

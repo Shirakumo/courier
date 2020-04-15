@@ -43,7 +43,7 @@ Courier includes a full REST API that allows you to query and manipulate all of 
 ; TODO: triggers for percentage of opened mail
 ; TODO: triggers for count of opened mail
 ; TODO: permission sharing (kinda done)
-; TODO: mail/archive link syntax
+; TODO: mail link syntax
 ; TODO: maybe use monitors to immediately wake up the queue thread
 ; TODO: more rigorous testing
 ; TODO: CodeMirror Markless mode
