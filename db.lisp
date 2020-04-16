@@ -53,7 +53,7 @@
   (db:create 'campaign-access
              '((campaign (:id campaign))
                (user :id)
-               (access-level (:integer 1))))
+               (access-level (:integer 2))))
 
   (db:create 'subscriber
              '((campaign (:id campaign))
@@ -792,7 +792,7 @@
                    (string (parse-integer type))))
                 (db:query (:= '_id id)))))
 
-(defun check-accessible (dm &optional (user (auth:current)))
+(defun check-accessible (dm &key (target (dm:collection dm)) (user (auth:current)))
   (labels ((check (author)
              (unless (equal (user:id user) author)
                (error 'radiance:request-denied :message (format NIL "You do not own the ~a you were trying to access."
@@ -804,9 +804,8 @@
                                                        (:= 'user (user:id user))))
                                        :amount 1 :fields '(access-level))))
                (when (and (not (equal (user:id user) (dm:field campaign "author")))
-                          (or (null record) (< 0 (gethash "access-level" (first record)))))
-                 (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as."
-                                                                  (dm:collection dm)))))))
+                          (or (null record) (logbitp (collection-type target) (gethash "access-level" (first record)))))
+                 (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as." target))))))
     ;; FIXME: extended author intent checks
     (ecase (dm:collection dm)
       (host
