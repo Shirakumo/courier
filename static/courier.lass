@@ -238,7 +238,8 @@
      :align-items center
      (.title :min-width 10em)
      ((:or .address .description .subject) :flex-grow 1)
-     (.status :padding 0 1em))))
+     (.status :padding 0 1em)
+     (.actions :white-space nowrap))))
   (.page.subscriber.list
    (time :margin 0 0.2em)
    (.tags :flex-grow 1))
