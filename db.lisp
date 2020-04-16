@@ -387,7 +387,7 @@
 (defun list-subscribers (thing &key amount (skip 0) query)
   (macrolet ((query (clause)
                `(if query
-                    (let ((query (format NIL ".*~a.*" query)))
+                    (let ((query (prepare-query query)))
                       (db:query (:and ,clause
                                       (:or (:matches 'name query)
                                            (:matches 'address query)))))
@@ -444,7 +444,7 @@
 (defun list-mails (thing &key amount (skip 0) query)
   (macrolet ((query (clause)
                `(if query
-                    (let ((query (format NIL ".*~a.*" query)))
+                    (let ((query (prepare-query query)))
                       (db:query (:and ,clause
                                       (:or (:matches 'title query)
                                            (:matches 'subject query)

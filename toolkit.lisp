@@ -101,3 +101,12 @@
   (if (and thing (string/= thing ""))
       (parse-integer thing)
       default))
+
+(defun prepare-query (query)
+  (with-output-to-string (out)
+    (write-string ".*" out)
+    (loop for c across query
+          do (when (find c ".[]^*+?(){}\\^$|")
+               (write-char #\\ out))
+             (write-char (char-downcase c) out))
+    (write-string ".*" out)))
