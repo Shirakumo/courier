@@ -33,6 +33,7 @@
 
 (defun transform-link (element f)
   (when (campaign f)
+    (setf (plump-dom:attribute element "target") "_blank")
     (setf (plump-dom:attribute element "href") (make-link* f (plump-dom:attribute element "href")))))
 
 (defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f html-format))
