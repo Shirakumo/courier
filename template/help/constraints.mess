@@ -1,0 +1,18 @@
+## Tag Constraints
+Triggers can be constrained to fire only if a certain tag constraint matches the subscriber that matched the trigger condition.
+
+These constraints follow a rather simple format where each tag is denoted by its title, and multiple tags are separated by spaces. If your tag title contains spaces itself, surround the tag with quotation marks (``"``) or precede each space with a backslash (``\\``).
+
+Each tag can be preceded by a plus (``+``) or minus (``-``) to denote whether the tag should be inclusive or exclusive. If neither plus or minus are present before a tag, a plus is assumed.
+
+A sequence of tags is grouped together until a vertical bar (``|``), which starts another group.
+
+In order for a subscriber to match a tag group, it must be assigned to all of the inclusive tags and must not be subscribed to any of the exclusive tags.
+
+In order for a subscriber to match a constraint, it must match any one of the tag groups.
+
+::
+a +b -c "d e" | f
+::
+
+In the above constraint, a subscriber must either be assigned to the tags ``a``, ``b``, and ``d e``, and must not be assigned to the tag ``c``, or it must be assigned to the tag ``f``, in order for the constraint to match.
