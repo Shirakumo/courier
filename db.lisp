@@ -382,17 +382,24 @@
     (db:remove 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))
     (dm:delete subscriber)))
 
-(defun list-subscribers (thing &key amount (skip 0))
-  (ecase (dm:collection thing)
-    (campaign
-     (dm:get 'subscriber (db:query (:= 'campaign (dm:id thing)))
-             :sort '((signup-time :DESC)) :amount amount :skip skip))
-    (tag
-     (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id thing)))
-             :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))
-    (link
-     (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (db:query (:= 'link (dm:id thing)))
-             :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))))
+(defun list-subscribers (thing &key amount (skip 0) query)
+  (macrolet ((query (clause)
+               `(if query
+                    (let ((query (format NIL ".*~a.*" query)))
+                      (db:query (:and ,clause
+                                      (:or (:matches 'name query)
+                                           (:matches 'address query)))))
+                    (db:query ,clause))))
+    (ecase (dm:collection thing)
+      (campaign
+       (dm:get 'subscriber (query (:= 'campaign (dm:id thing)))
+               :sort '((signup-time :DESC)) :amount amount :skip skip))
+      (tag
+       (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (query (:= 'tag (dm:id thing)))
+               :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))
+      (link
+       (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (query (:= 'link (dm:id thing)))
+               :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber)))))
 
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
@@ -432,8 +439,16 @@
       (delete-triggers-for mail)
       (dm:delete mail))))
 
-(defun list-mails (campaign &key amount (skip 0))
-  (dm:get 'mail (db:query (:= 'campaign (dm:id campaign))) :sort '((time :desc)) :amount amount :skip skip))
+(defun list-mails (campaign &key amount (skip 0) query)
+  (macrolet ((query (clause)
+               `(if query
+                    (let ((query (format NIL ".*~a.*" query)))
+                      (db:query (:and ,clause
+                                      (:or (:matches 'title query)
+                                           (:matches 'subject query)
+                                           (:matches 'body query)))))
+                    (db:query ,clause))))
+    (dm:get 'mail (query (:= 'campaign (dm:id campaign))) :sort '((time :desc)) :amount amount :skip skip)))
 
 (defun make-tag (campaign &key title description (save T))
   (let ((campaign (ensure-campaign campaign)))

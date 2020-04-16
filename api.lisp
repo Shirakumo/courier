@@ -137,9 +137,9 @@
 (define-api courier/mail (mail) (:access (perm courier mail))
   (api-output (check-accessible (ensure-mail mail))))
 
-(define-api courier/mail/list (campaign &optional amount skip) (:access (perm courier mail list))
+(define-api courier/mail/list (campaign &optional amount skip query) (:access (perm courier mail list))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-mails campaign :amount (int* amount) :skip (int* skip 0)))))
+    (api-output (list-mails campaign :amount (int* amount) :skip (int* skip 0) :query (or* query)))))
 
 (define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier mail new))
   (check-title title)
@@ -303,9 +303,9 @@
 (define-api courier/subscriber (subscriber) (:access (perm courier subscriber))
   (api-output (check-accessible (ensure-subscriber subscriber))))
 
-(define-api courier/subscriber/list (campaign &optional amount skip) (:access (perm courier subscriber))
+(define-api courier/subscriber/list (campaign &optional amount skip query) (:access (perm courier subscriber))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-subscribers campaign :amount (int* amount) :skip (int* skip 0)))))
+    (api-output (list-subscribers campaign :amount (int* amount) :skip (int* skip 0) :query (or* query)))))
 
 (define-api courier/subscriber/tags (subscriber &optional amount skip) (:access (perm courier subscriber))
   (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
