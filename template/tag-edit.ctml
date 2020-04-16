@@ -20,7 +20,7 @@
         <div class="row">
           <label>Is added on:</label>
           <div>
-            <ul class="triggers" iterate="(courier::triggers *)">
+            <ul class="triggers" iterate="(courier::list-triggers *)">
               <li class="trigger">
                 <a class="title button" @href="courier/campaign/{0}/trigger/{1}/edit (** :campaign) _id" lquery="(text description)">Trigger</a>
               </li>

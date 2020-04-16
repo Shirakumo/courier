@@ -87,13 +87,13 @@
 (define-api courier/campaign/list () (:access (perm courier campaign))
   (api-output (list-campaigns (auth:current))))
 
-(define-api courier/campaign/new (host title &optional description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
+(define-api courier/campaign/new (host title &optional address description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
       (let* ((host (check-accessible (ensure-host host)))
              (campaign (make-campaign (user:id (auth:current)) host title
-                                      :description description :reply-to reply-to :template template
+                                      :description description :address address :reply-to reply-to :template template
                                       :attributes (loop for title in attribute[]
                                                         for type in attribute-type[]
                                                         for required in attribute-required[]
@@ -102,12 +102,12 @@
         (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign created." "courier/campaign/")))))
 
-(define-api courier/campaign/edit (campaign &optional title host description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier campaign edit)
+(define-api courier/campaign/edit (campaign &optional title host address description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier campaign edit)
   (when title (check-title title))
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
       (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
-        (edit-campaign campaign :host host :title title :description description :reply-to reply-to :template template
+        (edit-campaign campaign :host host :title title :address address :description description :reply-to reply-to :template template
                                 :attributes (loop for title in attribute[]
                                                   for type in attribute-type[]
                                                   for required in attribute-required[]
@@ -233,14 +233,15 @@
                          "points" (list tagged (- total tagged))))))
 
 (define-api courier/tag/distribution (campaign) (:access (perm courier tag))
-  (let ((tags (list-tags (check-accessible (ensure-campaign campaign)))))
+  (let* ((campaign (check-accessible (ensure-campaign campaign)))
+         (tags (list-tags campaign)))
     (api-output (mktable "labels" (list*
                                    "untagged"
                                    (loop for tag in tags
                                          collect (dm:field tag "title")))
                          "points" (list*
                                    (db:count (rdb:join (subscriber _id) (tag-table subscriber) :left)
-                                             (db:query (:null 'tag)))
+                                             (db:query (:and (:null 'tag) (:= 'campaign (dm:id campaign)))))
                                    (loop for tag in tags
                                          collect (db:count 'tag-table (db:query (:= 'tag (dm:id tag))))))))))
 
@@ -336,6 +337,9 @@
 
 (define-api courier/subscriber/delete (subscriber) (:access (perm courier subscriber delete))
   (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (when (string= (dm:field subscriber "address")
+                   (dm:field (ensure-campaign (dm:field subscriber "campaign")) "reply-to"))
+      (error 'api-argument-invalid :argument "subscriber" :message "Cannot unsubscribe yourself."))
     (delete-subscriber subscriber)
     (output subscriber "Subscriber deleted." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 

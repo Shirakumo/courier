@@ -386,13 +386,13 @@
   (ecase (dm:collection thing)
     (campaign
      (dm:get 'subscriber (db:query (:= 'campaign (dm:id thing)))
-             :sort '((signup-timea :DESC)) :amount amount :skip skip))
+             :sort '((signup-time :DESC)) :amount amount :skip skip))
     (tag
      (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id thing)))
-             :sort '((signup-time :DESC)) :amount amount :skip skip))
+             :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))
     (link
      (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (db:query (:= 'link (dm:id thing)))
-             :sort '((signup-time :DESC)) :amount amount :skip skip))))
+             :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))))
 
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))
