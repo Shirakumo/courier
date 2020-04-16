@@ -13,6 +13,16 @@
         (redirect target)
         (api-output object :message message :target target))))
 
+(defun try-compile-content (campaign mail subscriber)
+  (handler-case
+      (let ((data (compile-mail-content campaign mail subscriber))
+            (plump:*tag-dispatchers* plump:*html-tags*))
+        (plump:serialize data NIL))
+    (markless:parser-warning (e)
+      (error 'api-error :message (princ-to-string e)))
+    (error (e)
+      (error 'api-error :message (princ-to-string e)))))
+
 (define-api courier/host (host) (:access (perm courier user))
   (api-output (check-accessible (ensure-host host))))
 
@@ -113,7 +123,7 @@
                                                   for required in attribute-required[]
                                                   collect (list title type required)))
         ;; Compile template once to check for validity
-        (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
+        (try-compile-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign edited." "courier/campaign/")))))
 
 (define-api courier/campaign/set-access (campaign &optional user[] access-level[]) (:access (perm courier user))
@@ -132,17 +142,10 @@
     (output campaign "Campaign deleted." "courier/campaign/")))
 
 (define-api courier/campaign/preview (campaign &optional template title description reply-to) (:access (perm courier user))
-  (let* ((campaign (check-accessible (ensure-campaign campaign)))
-         (subscriber (campaign-author campaign))
-         (mail (test-mail campaign)))
+  (let* ((campaign (check-accessible (ensure-campaign campaign))))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields campaign template title description reply-to)
-    (handler-case
-        (let ((data (compile-mail-content campaign mail subscriber))
-              (plump:*tag-dispatchers* plump:*html-tags*))
-          (plump:serialize data NIL))
-      (error (e)
-        (api-output NIL :status 500 :message (princ-to-string e))))))
+    (try-compile-content campaign (test-mail campaign) (campaign-author campaign))))
 
 (define-api courier/mail (mail) (:access (perm courier user))
   (api-output (check-accessible (ensure-mail mail))))
@@ -171,7 +174,7 @@
            (campaign (ensure-campaign (dm:field mail "campaign"))))
       (edit-mail mail :title title :subject subject :body body)
       ;; Compile template once to check for validity
-      (compile-mail-content campaign mail (campaign-author campaign))
+      (try-compile-content campaign mail (campaign-author campaign))
       (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
 (define-api courier/mail/delete (mail) (:access (perm courier user))
@@ -197,16 +200,10 @@
   (let* ((mail (cond (mail (check-accessible (ensure-mail mail)))
                      (campaign (make-mail (ensure-campaign campaign) :save NIL))
                      (T (error "Need MAIL or CAMPAIGN."))))
-         (campaign (ensure-campaign (dm:field mail "campaign")))
-         (subscriber (campaign-author campaign)))
+         (campaign (ensure-campaign (dm:field mail "campaign"))))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields mail title subject body)
-    (handler-case
-        (let ((data (compile-mail-content campaign mail subscriber))
-              (plump:*tag-dispatchers* plump:*html-tags*))
-          (plump:serialize data NIL))
-      (error (e)
-        (api-output NIL :status 500 :message (princ-to-string e))))))
+    (try-compile-content campaign mail (campaign-author campaign))))
 
 (define-api courier/mail/trend (campaign) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail))
