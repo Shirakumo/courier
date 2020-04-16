@@ -31,7 +31,7 @@
     <c:when test='(equalp "subscribed" (** :action))'>
       <form>
         <p>
-          We have sent a confirmation mail to your address. Please click the link in the email to confirm your subscription.
+          We have sent a confirmation mail to <span class="address" lquery='(text (post/get "address"))'/> . Please click the link in the email to confirm your subscription.
         </p>
         <p>
           If you do not see an email in your inbox within a few minutes, please make sure to check your spam folder as well.

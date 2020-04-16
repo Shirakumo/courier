@@ -469,8 +469,8 @@
                                   :query `(("id" . ,(generate-id subscriber))
                                            ("browser" . "true"))))
     (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/subscription/~a" (dm:id campaign))
-                        :query '(("action" . "subscribed"))))
+        (redirect (url> (format NIL "courier/subscription/~a/subscribed" (dm:id campaign))
+                        :query `(("address" . ,address))))
         (api-output subscriber))))
 
 (define-api courier/subscription/confirm (id) ()
@@ -478,8 +478,7 @@
     (setf (dm:field subscriber "confirmed") T)
     (dm:save subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/subscription/~a" (dm:field subscriber "campaign"))
-                        :query '(("action" . "confirmed"))))
+        (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:field subscriber "campaign"))))
         (api-output NIL))))
 
 (define-api courier/subscription/delete (id) ()
@@ -490,8 +489,7 @@
       (error 'api-argument-invalid :argument "subscriber" :message "Cannot unsubscribe the campaign's primary user."))
     (delete-subscriber subscriber)
     (if (string= "true" (post/get "browser"))
-        (redirect (url> (format NIL "courier/subscription/~a" (dm:id campaign))
-                        :query '(("action" . "unsubscribed"))))
+        (redirect (url> (format NIL "courier/subscription/~a/unsubscribed" (dm:id campaign))))
         (api-output NIL))))
 
 (defun unsubscribe-url (subscriber)

@@ -310,14 +310,14 @@
                  :text content)))
 
 ;; User sections
-(define-page campaign-subscription "courier/^subscription/([^/]+)" (:uri-groups (campaign))
+(define-page campaign-subscription "courier/^subscription/([^/]+)(?:/(.+))?" (:uri-groups (campaign action))
   (let ((campaign (ensure-campaign (db:ensure-id campaign))))
     (render-public-page (format NIL "Subscribe to ~a" (dm:field campaign "title"))
                         (@template "campaign-subscription.ctml")
                         :description (dm:field campaign "description")
                         :campaign campaign
                         :fields (list-attributes campaign)
-                        :action (or (post/get "action") "subscribe"))))
+                        :action (or action "subscribe"))))
 
 (define-page mail-view "courier/^view/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber mail) (decode-id id)

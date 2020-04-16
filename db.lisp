@@ -326,7 +326,7 @@
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
-      (error "You are already subscribed!"))
+      (error 'api-argument-invalid :argument 'address :message "This email address is already subscribed."))
     (dm:with-model subscriber ('subscriber NIL)
       (setf-dm-fields subscriber campaign name address confirmed)
       (setf (dm:field subscriber "signup-time") signup-time)

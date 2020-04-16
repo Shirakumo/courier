@@ -73,7 +73,7 @@
          (buffer (make-string-output-stream))
          (results ()))
     (unless (and (eql 8 slashpos))
-      (error "Malformed ID"))
+      (error 'api-argument-invalid :argument 'id :message "Malformed ID"))
     (flet ((collect ()
              (push (db:ensure-id (get-output-stream-string buffer)) results)))
       (loop for i from (1+ slashpos) below (length string)

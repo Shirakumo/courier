@@ -423,7 +423,8 @@
     (label
      :min-width 50%)
     (.row
-     :margin 0.5em 0)))
+     :margin 0.5em 0))
+   (.address :font-weight bold))
 
   (.page.mail.archive
    (>h1
@@ -531,6 +532,28 @@
     :content "x")))
 
 (:media "(max-width: 800px)"
-        (.page.help
-         :position relative
-         :top auto :right auto))
+        (body
+         :font-size 12pt
+         (>header
+          (h1 :display none))
+         (>main
+          (.box
+           :left 0
+           :transform none)
+          ((:and .page (:or .overview .dashboard))
+           (.panel
+            :margin 0.5em 0.5em 0 0.5em)
+           (.panel.single
+            :width 8em)
+           (.panel.wide
+            :width 19em)
+           (nav.panel
+            (.button :margin 0.2em)))
+          (.page.help
+           :position relative
+           :top auto :right auto)
+          (.page.campaign.subscription
+           (h1 :padding-top 1em)
+           (form
+            (label
+             :min-width 8em))))))
