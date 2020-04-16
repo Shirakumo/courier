@@ -7,11 +7,11 @@
         <input type="text" readonly
                id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
       </div>
-      <div class="row">
+      <div class="row" title="A description of what the trigger is supposed to do">
         <label for="description">Description:</label>
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
-      <div class="row">
+      <div class="row" title="The condition that will cause the trigger to fire">
         <label for="source">Trigger when:</label>
         <div class="type-select" lquery="(data :campaign campaign)">
           <select name="source-type" id="source" lquery="(select source-type)">
@@ -23,7 +23,7 @@
           <input type="courier-id" name="source-id" required lquery="(val source-id)" placeholder="id" />
         </div>
       </div>
-      <div class="row">
+      <div class="row" title="The action that the trigger will perform when fired">
         <label for="target">Do:</label>
         <div class="type-select" lquery="(data :campaign campaign)">
           <select name="target-type" id="target" lquery="(select target-type)">
@@ -35,13 +35,15 @@
           <input type="courier-id" name="target-id" required lquery="(val target-id)" placeholder="id" />
         </div>
       </div>
-      <div class="row">
+      <div class="row" title="How long to wait after the trigger condition is met before the action will be carried out">
         <label for="delay">With delay:</label>
         <select id="delay" name="delay" lquery='(html (plump:parse (template-file "delay.ctml" :courier))) (select delay)'/>
       </div>
-      <div class="row">
-        <label for="tag-constraint">Constrain to tagged:</label>
-        <input type="constraint" name="tag-constraint" id="tag-constraint" placeholder="a b -c" maxlength="64"
+      <div class="row" title="Only fire the trigger for subscribers that match the given constraint of tags.">
+        <label for="tag-constraint">Constrain to:
+          <a @href="courier/help/constraints"><i class="fas fa-question-circle"/></a>
+        </label>
+        <input type="constraint" name="tag-constraint" id="tag-constraint" placeholder="a b -c" maxlength="64" pattern="([+-]?[^ +-]+ *|? *)*"
                lquery="(val tag-constraint)" />
       </div>
       <div class="row">

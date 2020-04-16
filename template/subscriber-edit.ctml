@@ -8,7 +8,7 @@
       </div>
     </c:using>
     <c:using value="subscriber">
-      <div class="row">
+      <div class="row" title="The real name of the subscriber.">
         <label for="name">Name:</label>
         <input type="text" name="name" id="name" lquery="(val name)" />
       </div>
@@ -25,7 +25,7 @@
                          (val (clip (*** :field-values ) title))" />
         </div>
       </c:splice>
-      <div class="row">
+      <div class="row" title="The tags the subscriber has been assigned. Typically this is not visible to the subscriber.">
         <label>Tags</label>
         <div class="tag-list">
           <ul class="tags">

@@ -1,42 +1,55 @@
 <c:using value="host">
   <article class="page host edit">
     <form method="post">
-      <div class="row">
+      <div class="row" title="The title of this host. Used only internally.">
         <label for="title">Title:</label>
         <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
                id="title" name="title" lquery="(val title)" />
       </div>
-      <div class="row">
+      <div class="row" title="The name that will appear for the sender in emails.">
         <label for="display-name">Display Name:</label>
         <input type="text" minlength="1" maxlength="32" required autocomplete="off"
                id="display-name" name="display-name" lquery="(val display-name)" />
       </div>
-      <div class="row">
+      <div class="row" title="The actual email address to send from.">
         <label for="address">Email Address:</label>
         <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" required autocomplete="email"
                id="address" name="address" lquery="(val address)" />
       </div>
-      <div class="row">
+      <div class="row" title="The SMTP hostname of the mail server.">
         <label for="address">Hostname:</label>
         <input type="text" minlength="3" maxlength="64" placeholder="mail.example.com" required
                id="hostname" name="hostname" lquery="(val hostname)" />
       </div>
-      <div class="row">
+      <div class="row" title="The port to connect to the mail server over.">
         <label for="port">Port:</label>
-        <input type="number" min="1" max="65535" placeholder="25" required
+        <datalist id="ports">
+          <option value="25"/>
+          <option value="465"/>
+          <option value="587"/>
+          <option value="2525"/>
+          <option value="2526"/>
+        </datalist>
+        <input type="number" min="1" max="65535" placeholder="25" list="ports" required
                id="port" name="port" lquery="(val port)" />
       </div>
-      <div class="row">
+      <div class="row" title="The username to use for authentication against the SMTP host.">
         <label for="username">Username:</label>
         <input type="username" maxlength="32" autocomplete="username"
                id="username" name="username" lquery="(val username)" />
       </div>
-      <div class="row">
+      <div class="row" title="The password to use for authentication against the SMTP host. Will not be updated if left empty.">
         <label for="password">Password:</label>
         <input type="password" maxlength="32" autocomplete="current-password"
                id="password" name="password" lquery="" />
       </div>
-      <div class="row">
+      <div class="row" title="The authentication method used to log in. Currently only PLAIN is supported.">
+        <label for="method">Authentication:</label>
+        <select id="method" name="method">
+          <option value="plain">Plain</option>
+        </select>
+      </div>
+      <div class="row" title="The encryption method to use when connecting to the SMTP server.">
         <label for="encryption">Encryption:</label>
         <select id="encryption" name="encryption">
           <option value="0" lquery="(attr :selected (= encryption 0))">None</option>
@@ -44,14 +57,27 @@
           <option value="2" lquery="(attr :selected (= encryption 2))">SSL</option>
         </select>
       </div>
-      <div class="row">
+      <div class="row" title="How many emails to send out in one batch before cooling down.">
         <label for="batch-size">Batch Size:</label>
-        <input type="number" min="0" max="1000" required
+        <datalist id="batches">
+          <option value="5"/>
+          <option value="10"/>
+          <option value="20"/>
+          <option value="50"/>
+          <option value="100"/>
+        </datalist>
+        <input type="number" min="0" max="1000" list="batches" required
                id="batch-size" name="batch-size" lquery="(val batch-size)" />
       </div>
-      <div class="row">
+      <div class="row" title="How long to wait before sending the next batch of emails, in seconds.">
         <label for="batch-cooldown">Batch Cooldown:</label>
-        <input type="number" min="1" max="86400" required
+        <datalist id="cooldowns">
+          <option value="10"/>
+          <option value="30"/>
+          <option value="60"/>
+          <option value="120"/>
+        </datalist>
+        <input type="number" min="1" max="86400" list="cooldowns" required
                id="batch-cooldown" name="batch-cooldown" lquery="(val batch-cooldown)" />
       </div>
       <input type="hidden" name="browser" value="true" />

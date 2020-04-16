@@ -7,17 +7,17 @@
         <input type="text" readonly
                id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
       </div>
-      <div class="row">
+      <div class="row" title="The internal title of the tag.">
         <label for="title">Title:</label>
         <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
                id="title" name="title" lquery="(val title)" />
       </div>
-      <div class="row">
+      <div class="row" title="A longer description to outline the purpose of the tag.">
         <label for="description">Description:</label>
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
       <c:when test="_id">
-        <div class="row">
+        <div class="row" title="Which triggers will cause this tag to be added to a subscriber">
           <label>Is added on:</label>
           <div>
             <ul class="triggers" iterate="(courier::list-triggers *)">
