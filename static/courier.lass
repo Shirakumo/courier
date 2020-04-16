@@ -222,6 +222,11 @@
     :list-style none
     :padding 0
     :margin 0))
+
+  (form.search
+   :display block
+   (input[type=submit]
+    :width auto))
   
   ((:and .page (:or .edit .list .send .import .frontpage))
    :max-width 800px

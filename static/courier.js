@@ -204,6 +204,7 @@ class Courier{
         var self = this;
         var save = element.querySelector("input[type=submit]");
         if(!save) return;
+        if(element.classList.contains("search")) return;
         save.addEventListener("click", (ev)=>{
             ev.preventDefault();
             if(element.checkValidity()){

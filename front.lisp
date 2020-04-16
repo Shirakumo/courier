@@ -83,13 +83,15 @@
 
 (define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
-        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
+        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
+        (query (or* (post/get "query"))))
     (render-page "Mails"
                  (@template "mail-list.ctml")
-                 :mails (list-mails campaign :amount 100 :skip (* 100 page))
+                 :mails (list-mails campaign :amount 100 :skip (* 100 page) :query query)
                  :campaign campaign
                  :next-page (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
-                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
+                                  :query `(("page" . ,(princ-to-string (1+ page)))
+                                           ("query" . ,query))))))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier))
   (let ((mail (check-accessible (ensure-mail mail))))
@@ -179,15 +181,17 @@
                  (@template "trigger-edit.ctml")
                  :trigger trigger)))
 
-(define-page subscriber-list "courier/^campaign/([^/]+)/subscriber$" (:uri-groups (campaign) :access (perm courier))
+(define-page subscriber-list "courier/^campaign/([^/]+)/subscriber/?$" (:uri-groups (campaign) :access (perm courier))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
-        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
+        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
+        (query (or* (post/get "query"))))
     (render-page (format NIL "~a Subscribers" (dm:field campaign "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
-                 :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page))
+                 :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page) :query query)
                  :next-page (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
-                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
+                                  :query `(("page" . ,(princ-to-string (1+ page)))
+                                           ("query" . ,query))))))
 
 (define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/?$" (:uri-groups (campaign subscriber) :access (perm courier))
   (let* ((campaign (ensure-campaign campaign))
