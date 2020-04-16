@@ -116,6 +116,16 @@
         (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign edited." "courier/campaign/")))))
 
+(define-api courier/campaign/set-access (campaign &optional user[] access-level[]) (:access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign))))
+    (db:with-transaction ()
+      (loop for username in user[]
+            for access-level in access-level[]
+            for user = (or (user:get username :if-does-not-exist NIL)
+                           (error 'api-argument-invalid :argument 'user[] :message (format NIL "No such user ~a" username)))
+            do (set-access user campaign :access-level (parse-integer access-level))))
+    (output NIL "Access updated." "courier/campaign/~a/access" (dm:field campaign "title"))))
+
 (define-api courier/campaign/delete (campaign) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (delete-campaign campaign)

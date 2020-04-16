@@ -53,7 +53,7 @@
   (db:create 'campaign-access
              '((campaign (:id campaign))
                (user :id)
-               (access-level (:integer 2))))
+               (access-field (:integer 2))))
 
   (db:create 'subscriber
              '((campaign (:id campaign))
@@ -303,22 +303,24 @@
     (dm:get 'attribute (db:query (:= 'campaign (ensure-id campaign)))
             :sort '((title :asc)) :amount amount :skip skip)))
 
-(defun grant-access (user campaign &key (access-level 0))
+(defun set-access (user campaign &key access-field (access-level 0))
   (let ((access (or (dm:get-one 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
                                                                  (:= 'user (user:id user)))))
-                    (dm:hull 'campaign-access))))
-    (setf-dm-fields access user campaign access-level)
-    (if (dm:hull-p access)
-        (dm:insert access)
-        (dm:save access))))
-
-(defun revoke-access (user campaign)
-  (db:remove 'campaign-access (db:query (:and (:= 'campaign (ensure-id campaign))
-                                              (:= 'user (user:id user))))))
+                    (dm:hull 'campaign-access)))
+        (access-field (or access-field (access-field access-level))))
+    (cond ((<= access-field 0)
+           (unless (dm:hull-p access)
+             (dm:delete access)))
+          (T
+           (setf-dm-fields access campaign access-field)
+           (setf (dm:field access "user") (user:id user))
+           (if (dm:hull-p access)
+               (dm:insert access)
+               (dm:save access))))))
 
 (defun list-access (campaign &key amount (skip 0))
   (dm:get 'campaign-access (db:query (:= 'campaign (ensure-id campaign)))
-          :sort `((access-level :asc)) :amount amount :skip skip))
+          :sort `((user :asc)) :amount amount :skip skip))
 
 (defun make-subscriber (campaign name address &key attributes tags confirmed (signup-time (get-universal-time)) (save t))
   (db:with-transaction ()
@@ -772,7 +774,9 @@
     (subscriber 3)
     (campaign 4)
     (file 5)
-    (sequence 6)))
+    (sequence 6)
+    (trigger 7)
+    (host 8)))
 
 (defun type-collection (type)
   (ecase type
@@ -782,7 +786,9 @@
     ((3 subscriber) 'subscriber)
     ((4 campaign) 'campaign)
     ((5 file) 'file)
-    ((6 sequence) 'sequence)))
+    ((6 sequence) 'sequence)
+    ((7 trigger) 'trigger)
+    ((8 host) 'host)))
 
 (defun resolve-typed (type id)
   (let ((id (db:ensure-id id)))
@@ -802,9 +808,14 @@
                     (record (db:select 'campaign-access
                                        (db:query (:and (:= 'campaign (dm:id campaign))
                                                        (:= 'user (user:id user))))
-                                       :amount 1 :fields '(access-level))))
-               (when (and (not (equal (user:id user) (dm:field campaign "author")))
-                          (or (null record) (logbitp (collection-type target) (gethash "access-level" (first record)))))
+                                       :amount 1 :fields '(access-field)))
+                    (access-field (if record
+                                      (gethash "access-field" (first record))
+                                      0)))
+               (unless (or (equal (user:id user) (dm:field campaign "author"))
+                           (etypecase target
+                             (symbol (logbitp (collection-type target) access-field))
+                             (integer (< target (access-level access-field)))))
                  (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as." target))))))
     ;; FIXME: extended author intent checks
     (ecase (dm:collection dm)
@@ -815,3 +826,28 @@
       ((mail tag trigger link subscriber file sequence)
        (check-campaign (dm:field dm "campaign"))))
     dm))
+
+(defun access-level (access-field)
+  (cond ((logbitp (collection-type 'campaign) access-field) 4)
+        ((logbitp (collection-type 'subscriber) access-field) 3)
+        ((logbitp (collection-type 'trigger) access-field) 2)
+        ((logbitp (collection-type 'mail) access-field) 1)
+        (T 0)))
+
+(defun access-field (access-level)
+  (let ((field 0))
+    (macrolet ((set-bit (i)
+                 `(setf field (logior field (ash 1 ,i)))))
+      (when (< 0 access-level)
+        (set-bit (collection-type 'mail))
+        (set-bit (collection-type 'link))
+        (set-bit (collection-type 'file)))
+      (when (< 1 access-level)
+        (set-bit (collection-type 'tag))
+        (set-bit (collection-type 'trigger))
+        (set-bit (collection-type 'sequence)))
+      (when (< 2 access-level)
+        (set-bit (collection-type 'subscriber)))
+      (when (< 3 access-level)
+        (set-bit (collection-type 'campaign)))
+      field)))

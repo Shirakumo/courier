@@ -20,22 +20,30 @@ class Courier{
         }
 
         var url = [location.protocol, '//', location.host, location.pathname].join('');
-        window.addEventListener("beforeunload", ()=>{
-            sessionStorage.setItem("formStorageUrl", url);
-            sessionStorage.setItem("formStorage", JSON.stringify(self.serializeForms()));
-        });
 
         if(sessionStorage.getItem("formStorageUrl") == url){
             self.reloadForms(JSON.parse(sessionStorage.getItem("formStorage")));
         }
         
-        self.registerAll(".type-select", self.registerTypeSelect);
-        self.registerAll(".button.confirm", self.registerConfirm);
-        self.registerAll(".editor", self.registerEditor);
-        self.registerAll(".chart", self.registerChart);
-        self.registerAll("form", self.registerForm);
-        self.registerAll(".dynamic-list", self.registerDynamicList);
-        self.registerAll(".tag-list", self.registerTags);
+        window.addEventListener("beforeunload", ()=>{
+            sessionStorage.setItem("formStorage", JSON.stringify(self.serializeForms()));
+            sessionStorage.setItem("formStorageUrl", url);
+        });
+
+        self.registerElements();
+    }
+
+    registerElements(element){
+        element = element || document;
+        var self = this;
+        self.registerAll(element, ".type-select", self.registerTypeSelect);
+        self.registerAll(element, ".button.confirm", self.registerConfirm);
+        self.registerAll(element, ".editor", self.registerEditor);
+        self.registerAll(element, ".chart", self.registerChart);
+        self.registerAll(element, "form", self.registerForm);
+        self.registerAll(element, ".dynamic-list", self.registerDynamicList);
+        self.registerAll(element, ".tag-list", self.registerTags);
+        self.registerAll(element, ".access-level", self.registerAccess);
     }
 
     loadCSS(source){
@@ -182,6 +190,13 @@ class Courier{
         return popup;
     }
 
+    showError(content){
+        var box = document.querySelector(".box.error");
+        var updated = box.cloneNode(true);
+        updated.innerText = content;
+        box.parentNode.replaceChild(updated, box);
+    }
+
     populateSelect(select, data, selectedValue){
         var self = this;
         select.innerHTML = "";
@@ -193,9 +208,9 @@ class Courier{
         }
     }
 
-    registerAll(query, regger){
+    registerAll(element, query, regger){
         var self = this;
-        var elements = document.querySelectorAll(query);
+        var elements = element.querySelectorAll(query);
         for(var i=0; i<elements.length; ++i)
             regger.apply(self, [elements[i]]);
     }
@@ -210,7 +225,8 @@ class Courier{
             if(element.checkValidity()){
                 self.apiCall(save.getAttribute("formaction") || element.getAttribute("action"), element)
                     .then((r)=>{window.location.replace(r.target);},
-                          (r)=>{document.querySelector(".box.error").innerText = r.message;});
+                          (r)=>{self.showError(r.message ||
+                                               new DOMParser().parseFromString(r, "text/html").querySelector("title").innerText);});
             }else{
                 element.reportValidity();
             }
@@ -250,8 +266,12 @@ class Courier{
                 :(type.value == "3")? "subscriber"
                 :(type.value == "4")? "campaign"
                 :(type.value == "5")? "file"
-                : undefined;
-            self.getListed(typeName, campaign).then((data)=>self.populateSelect(select, data, id.value));
+                :(type.value == "6")? "sequence"
+                :(type.value == "7")? "trigger"
+                :(type.value == "8")? "host"
+                : null;
+            if(typeName)
+                self.getListed(typeName, campaign).then((data)=>self.populateSelect(select, data, id.value));
         });
         var evt = document.createEvent("HTMLEvents");
         evt.initEvent("change", false, true);
@@ -271,9 +291,12 @@ class Courier{
     registerDynamicList(element){
         var self = this;
         var reg = (element)=>{
-            element.querySelector(".remove-self").addEventListener("click",()=>{
-                element.parentNode.removeChild(element);
-            });
+            self.registerElements(element);
+            var remove = element.querySelector(".remove-self");
+            if(remove)
+                remove.addEventListener("click",()=>{
+                    element.parentNode.removeChild(element);
+                });
             return element;
         };
         [].forEach.call(element.querySelectorAll("li"), (el)=>{
@@ -338,10 +361,11 @@ class Courier{
             nav.querySelector(".preview").addEventListener("click",()=>{
                 if(preview.classList.contains("hidden")){
                     self.apiCall(previewEndpoint, element.closest("form"), {format:"html"})
-                        .then((r)=>preview.srcdoc = r,
-                              (r)=>preview.srcdoc = "Preview failed: "+r.message);
-                    preview.classList.remove("hidden");
-                    element.querySelector(".CodeMirror").classList.add("hidden");
+                        .then((r)=>{
+                            preview.srcdoc = r;
+                            preview.classList.remove("hidden");
+                            element.querySelector(".CodeMirror").classList.add("hidden");
+                        },(r)=>self.showError(r.message));
                 }else{
                     element.querySelector(".CodeMirror").classList.remove("hidden");
                     preview.classList.add("hidden");
@@ -487,6 +511,21 @@ class Courier{
         });
     }
 
+    registerAccess(element){
+        var display = element.parentNode.querySelector(".access-level-desc");
+        var updateAccess = ()=>{
+            display.innerText = 
+                 (element.value=="0")? "None"
+                :(element.value=="1")? "Mails, links, files"
+                :(element.value=="2")? "Tags, triggers, sequences"
+                :(element.value=="3")? "Subscribers"
+                :(element.value=="4")? "Full access"
+                :"Value out of range.";
+        };
+        element.addEventListener("change", updateAccess);
+        updateAccess();
+    }
+
     elementValue(element){
         switch(element.tagName){
         case "input": return element.value;
@@ -521,7 +560,7 @@ class Courier{
         var self = this;
         var data = [];
         [].forEach.call(document.querySelectorAll("input,textarea,select"), (el)=>{
-            if(el.getAttribute("type") != "hidden"){
+            if(!["hidden","submit","button"].includes(el.getAttribute("type"))){
                 data.push({
                     id: self.elementId(el),
                     value: self.elementValue(el)
