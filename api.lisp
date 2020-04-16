@@ -330,7 +330,7 @@
          (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :confirmed T)))
     (output subscriber "Subscriber added." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
-(define-api courier/subscriber/edit (subscriber &optional name tag[] fields[] values[]) (perm courier user)
+(define-api courier/subscriber/edit (subscriber &optional name tag[] fields[] values[]) (:access (perm courier user))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
          (attributes (loop for field in fields[]
                            for value in values[]
