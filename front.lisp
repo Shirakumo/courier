@@ -324,7 +324,10 @@
     (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
            (subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field mail "campaign")))
-           (content (getf (mail-template-args campaign mail subscriber) :body)))
+           (content (compile-mail-body (dm:field mail "body") (mail-template-args campaign mail subscriber)
+                                       :campaign campaign
+                                       :subscriber subscriber
+                                       :mail mail)))
       (mark-mail-received mail subscriber)
       (render-public-page (dm:field mail "subject")
                           (@template "mail-view.ctml")
@@ -339,13 +342,13 @@
 
 (define-page mail-archive "courier/^archive/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber) (decode-id id)
-    (let* ((mails (dm:get (rdb:join (mail _id) (mail-log mail)) (db:query (:= 'subscriber subscriber))
-                          :sort '(("send-time" :desc)) :hull 'mail))
-           (subscriber (ensure-subscriber subscriber))
-           (campaign (ensure-campaign (dm:field subscriber "campaign"))))
+    (let* ((subscriber (ensure-subscriber subscriber))
+           (campaign (ensure-campaign (dm:field subscriber "campaign")))
+           (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
+           (query (or* (post/get "query"))))
       (render-public-page (dm:field campaign "title")
                           (@template "mail-archive.ctml")
-                          :mails mails
+                          :mails (list-mails subscriber :amount 100 :skip (* 100 page) :query query)
                           :campaign campaign
                           :subscriber subscriber))))
 

@@ -12,7 +12,7 @@
     <li class="mail">
       <time lquery="(time time)">2020</time>
       <i class="fas status" lquery="(add-class (if (courier::mail-received-p * (** :subscriber)) :fa-envelope-open :fa-envelope))"></i>
-      <a class="title" @href="courier/view/{0} (courier::generate-id (clip (** :subscriber) :_id) _id)" lquery="(text subject)">Mail</a>
+      <a class="title" @href="courier/view/{0} (courier::generate-id (clip (** :subscriber) :_id) mail)" lquery="(text subject)">Mail</a>
     </li>
   </ul>
 </article>

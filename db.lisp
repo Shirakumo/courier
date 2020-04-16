@@ -441,7 +441,7 @@
       (delete-triggers-for mail)
       (dm:delete mail))))
 
-(defun list-mails (campaign &key amount (skip 0) query)
+(defun list-mails (thing &key amount (skip 0) query)
   (macrolet ((query (clause)
                `(if query
                     (let ((query (format NIL ".*~a.*" query)))
@@ -450,7 +450,13 @@
                                            (:matches 'subject query)
                                            (:matches 'body query)))))
                     (db:query ,clause))))
-    (dm:get 'mail (query (:= 'campaign (dm:id campaign))) :sort '((time :desc)) :amount amount :skip skip)))
+    (ecase (dm:collection thing)
+      (campaign
+       (dm:get 'mail (query (:= 'campaign (dm:id thing)))
+               :sort '((time :desc)) :amount amount :skip skip))
+      (subscriber
+       (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
+               :sort '(("send-time" :desc)) :hull 'mail)))))
 
 (defun make-tag (campaign &key title description (save T))
   (let ((campaign (ensure-campaign campaign)))
