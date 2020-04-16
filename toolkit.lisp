@@ -96,3 +96,8 @@
                       :body (alexandria:read-file-into-string
                              (@template "email/sample-body.mess"))
                       :save NIL))
+
+(defun int* (thing &optional default)
+  (if (and thing (string/= thing ""))
+      (parse-integer thing)
+      default))

@@ -16,8 +16,8 @@
 (define-api courier/host (host) (:access (perm courier host))
   (api-output (check-accessible (ensure-host host))))
 
-(define-api courier/host/list () (:access (perm courier host list))
-  (api-output (list-hosts (auth:current))))
+(define-api courier/host/list (&optional amount skip) (:access (perm courier host list))
+  (api-output (list-hosts (auth:current) :amount (int* amount) :skip (int* skip 0))))
 
 (define-api courier/host/new (title address hostname &optional display-name port username password encryption batch-size batch-cooldown) (:access (perm courier host new))
   (check-title title)
@@ -84,8 +84,8 @@
 (define-api courier/campaign (campaign) (:access (perm courier campaign))
   (api-output (check-accessible (ensure-campaign campaign))))
 
-(define-api courier/campaign/list () (:access (perm courier campaign))
-  (api-output (list-campaigns (auth:current))))
+(define-api courier/campaign/list (&optional amount skip) (:access (perm courier campaign))
+  (api-output (list-campaigns (auth:current) :amount (int* amount) :skip (int* skip 0))))
 
 (define-api courier/campaign/new (host title &optional address description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
@@ -137,9 +137,9 @@
 (define-api courier/mail (mail) (:access (perm courier mail))
   (api-output (check-accessible (ensure-mail mail))))
 
-(define-api courier/mail/list (campaign) (:access (perm courier mail list))
+(define-api courier/mail/list (campaign &optional amount skip) (:access (perm courier mail list))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-mails campaign))))
+    (api-output (list-mails campaign :amount (int* amount) :skip (int* skip 0)))))
 
 (define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier mail new))
   (check-title title)
@@ -217,13 +217,13 @@
 (define-api courier/tag (tag) (:access (perm courier tag))
   (api-output (check-accessible (ensure-tag tag))))
 
-(define-api courier/tag/list (campaign) (:access (perm courier tag))
+(define-api courier/tag/list (campaign &optional amount skip) (:access (perm courier tag))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-tags campaign))))
+    (api-output (list-tags campaign :amount (int* amount) :skip (int* skip 0)))))
 
-(define-api courier/tag/subscribers (tag) (:access (perm courier tag))
+(define-api courier/tag/subscribers (tag &optional amount skip) (:access (perm courier tag))
   (let ((tag (check-accessible (ensure-tag tag))))
-    (api-output (list-subscribers tag))))
+    (api-output (list-subscribers tag :amount (int* amount) :skip (int* skip 0)))))
 
 (define-api courier/tag/tagged-rate (tag) (:access (perm courier tag))
   (let* ((tag (check-accessible (ensure-tag tag)))
@@ -263,9 +263,9 @@
 (define-api courier/trigger (trigger) (:access (perm courier trigger))
   (api-output (check-accessible (ensure-trigger trigger))))
 
-(define-api courier/trigger/list (campaign) (:access (perm courier trigger))
+(define-api courier/trigger/list (campaign &optional amount skip) (:access (perm courier trigger))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-triggers campaign))))
+    (api-output (list-triggers campaign :amount (int* amount) :skip (int* skip 0)))))
 
 (define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description delay tag-constraint) (:access (perm courier trigger new))
   (let ((campaign (check-accessible (ensure-campaign campaign)))
@@ -296,20 +296,20 @@
   (let ((campaign (check-accessible (ensure-campaign campaign))))
     (api-output (make-link campaign :url url))))
 
-(define-api courier/link/list (campaign) (:access (perm courier link))
+(define-api courier/link/list (campaign &optional amount skip) (:access (perm courier link))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-links campaign))))
+    (api-output (list-links campaign :amount (int* amount) :skip (int* skip 0)))))
 
 (define-api courier/subscriber (subscriber) (:access (perm courier subscriber))
   (api-output (check-accessible (ensure-subscriber subscriber))))
 
-(define-api courier/subscriber/list (campaign) (:access (perm courier subscriber))
+(define-api courier/subscriber/list (campaign &optional amount skip) (:access (perm courier subscriber))
   (let ((campaign (check-accessible (ensure-campaign campaign))))
-    (api-output (list-subscribers campaign))))
+    (api-output (list-subscribers campaign :amount (int* amount) :skip (int* skip 0)))))
 
-(define-api courier/subscriber/tags (subscriber) (:access (perm courier subscriber))
+(define-api courier/subscriber/tags (subscriber &optional amount skip) (:access (perm courier subscriber))
   (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
-    (api-output (list-tags subscriber))))
+    (api-output (list-tags subscriber :amount (int* amount) :skip (int* skip 0)))))
 
 (define-api courier/subscriber/new (campaign name address &optional tag[] fields[] values[]) (:access (perm courier subscriber new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
@@ -392,8 +392,8 @@
     (setf (dm:field file "url") (file-url file))
     (api-output file)))
 
-(define-api courier/file/list (campaign) (:access (perm courier file))
-  (api-output (list-files (check-accessible (ensure-campaign campaign)))))
+(define-api courier/file/list (campaign &optional amount skip) (:access (perm courier file))
+  (api-output (list-files (check-accessible (ensure-campaign campaign)) :amount (int* amount) :skip (int* skip 0))))
 
 (define-api courier/file/new (campaign file) (:access (perm courier file new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
@@ -411,8 +411,8 @@
     (setf (dm:field sequence "triggers") (list-triggers sequence))
     (api-output sequence)))
 
-(define-api courier/sequence/list (campaign) (:access (perm courier sequence))
-  (api-output (list-sequences (check-accessible (ensure-campaign campaign)))))
+(define-api courier/sequence/list (campaign &optional amount skip) (:access (perm courier sequence))
+  (api-output (list-sequences (check-accessible (ensure-campaign campaign)) :amount (int* amount) :skip (int* skip 0))))
 
 (define-api courier/sequence/new (campaign title &optional delay[] subject[]) (:access (perm courier sequence new))
   (let* ((campaign (check-accessible (ensure-campaign campaign)))
