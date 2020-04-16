@@ -563,7 +563,7 @@
 
 (defun list-links (campaign &key amount (skip 0))
   (dm:get 'link (db:query (:= 'campaign (dm:id campaign)))
-          :sort '((title :asc)) :amount amount :skip skip))
+          :sort '((url :asc)) :amount amount :skip skip))
 
 (defun link-received-p (link subscriber)
   (< 0 (db:count 'link-receipt (db:query (:and (:= 'link (ensure-id link))

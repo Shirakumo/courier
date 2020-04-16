@@ -188,7 +188,7 @@ class Courier{
         for(var i=0; i<data.length; ++i){
             select.appendChild(self.constructElement("option",{
                 attributes: {value: data[i]._id, selected: (data[i]._id == selectedValue)},
-                text: data[i].title || data[i].name + " " + data[i].address
+                text: data[i].title || data[i].url || data[i].name + " " + data[i].address
             }));
         }
     }
