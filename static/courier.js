@@ -337,8 +337,8 @@ class Courier{
             nav.querySelector(".preview").addEventListener("click",()=>{
                 if(preview.classList.contains("hidden")){
                     self.apiCall(previewEndpoint, element.closest("form"), {format:"html"})
-                        .then((r)=>preview.src = "data:text/html;charset=utf-8,"+escape(r),
-                              (r)=>preview.src = "data:text/html;charset=utf-8,"+escape("Preview failed: "+r.message));
+                        .then((r)=>preview.srcdoc = r,
+                              (r)=>preview.srcdoc = "Preview failed: "+r.message);
                     preview.classList.remove("hidden");
                     element.querySelector(".CodeMirror").classList.add("hidden");
                 }else{
