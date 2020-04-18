@@ -84,7 +84,7 @@
   <body>
     <div class="header">
       <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
-      <a href="#" lquery="(attr :href mail-url)" class="in-browser">View this email in your browser</a>
+      <a href="#" class="in-browser" target="_blank" lquery="(attr :href mail-url)">View this email in your browser</a>
     </div>
     <div class="main" id="main" lquery="(html body)">
       Body
@@ -93,7 +93,7 @@
       <hr>
       <div class="note">
         You are receiving this email because you opted in via our website.<br>
-        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" lquery="(attr :href unsubscribe-url)">unsubscribe here</a>
+        If you no longer want to receive these emails, you can <a href="#" class="unsubscribe" target="_blank" lquery="(attr :href unsubscribe-url)">unsubscribe here</a>
       </div>
       <div class="address">
         <div class="line">Our mailing address is:</div>
@@ -108,7 +108,7 @@
         Copyright © <span lquery="(time T :year)">20XX</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>
       </div>
       <div class="software">
-        Running on <a href="https://shirakumo.org/projects/courier">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>
+        Running on <a href="https://shirakumo.org/projects/courier" target="_blank">Courier <c:splice lquery="(text software-version)">0.0.0</c:splice></a>
       </div>
     </div>
   </body>
