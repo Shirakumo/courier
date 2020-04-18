@@ -280,10 +280,11 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
     (render-page "Mail Log"
                  (@template "mail-log.ctml")
-                 ;; Does not work right, sigh.
-                 :log (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
-                              (db:query (:= 'campaign (dm:id campaign)))
-                              :sort '(("send-time" :desc)) :amount 100))))
+                 ;; KLUDGE: Can't use the query to limit to campaign since the join messes things up.
+                 :log (remove-if-not (lambda (dm) (equal (dm:id campaign) (dm:field dm "campaign")))
+                                     (dm:get (rdb:join (((mail-log subscriber) (subscriber _id)) mail) (mail _id))
+                                             (db:query :all)
+                                             :sort '(("send-time" :desc)) :amount 100)))))
 
 (define-page subscriber-log "courier/^log/subscriber/([^/]+)" (:uri-groups (subscriber) :access (perm courier user))
   (let ((subscriber (check-accessible (ensure-subscriber subscriber) :target 'mail)))
