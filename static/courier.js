@@ -425,26 +425,20 @@ class Courier{
                         labels: []
                     },
                     options: {
-                        layout: {
-                            padding: 5
-                        },
-                        legend: {
-                            display: false
-                        },
+                        layout: {padding: 5},
+                        legend: {display: false},
                         scales: {
                             yAxes: [{
-                                ticks: {
-                                    suggestedMin: 0
-                                }
+                                ticks: {suggestedMin: 0}
                             }]
                         },
                         plugins: {
-                            colorschemes: {
-                                scheme: 'tableau.Classic20'
-                            }
+                            colorschemes: {scheme: 'tableau.Classic20'}
                         }
                     }
                 });
+                if(element.dataset.type == "bar")
+                    chart.options.scales.yAxes[0].ticks.suggestedMax = 1.0;
                 refresh();
             });
         [].forEach.call(element.querySelectorAll("select"), (el)=>{

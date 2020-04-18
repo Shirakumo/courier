@@ -296,25 +296,19 @@
   (.page.mail.log
    :max-width 1024px
    :margin 1em auto
-   ((:or .mail .subscriber .time)
-    :padding 0.1em 0.2em)
-   (.mail :width 30%)
-   (.subscriber :flex-grow 1)
-   (.time :text-align right)
-   (header
-    :display flex
-    :align-items center
+   (.time :text-align right :white-space nowrap)
+   (thead
+    (.host :text-align left)
+    (.mail :width 100% :text-align left))
+   (.receipt
+    (.host :min-width 5em)
+    (.attempts :text-align center)
+    (.status :display block :text-align center))
+   (.log
     :border 1px solid (hex AAAAAA)
-    :border-radius 0.25em 0.25em 0 0)
-   (ul.log
-    :border 1px solid (hex AAAAAA)
-    :border-top none
     :list-style none
     :padding 0
-    :margin 0
-    (li.receipt
-     :display flex
-     :position relative)))
+    :margin 0))
   
   (.page.subscriber.edit
    (.tag-list

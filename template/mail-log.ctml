@@ -1,16 +1,18 @@
 <article class="page mail list log">
-  <header>
-    <span class="mail">Mail</span>
-    <span class="subscriber">Subscriber</span>
-    <span class="time">Send Time</span>
-  </header>
-  <ul class="log" iterate="log">
-    <li class="receipt">
-      <a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a>
-      <a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a>
-      <i class="fas status" lquery="(add-class (case status (0 :fa-check-circle) (T :fa-exclamation-triangle)))"></i>
-      <time class="time" lquery="(time send-time)">2020</time>
-    </li>
-  </ul>
+  <table class="log">
+    <thead>
+      <th class="mail">Mail</th>
+      <th class="subscriber">Subscriber</th>
+      <th class="status">Status</th>
+      <th class="time">Send Time</th>
+    </thead>
+    <tbody iterate="log">
+      <tr class="receipt">
+        <td><a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a></td>
+        <td><a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a></td>
+        <td><i class="fas status" lquery="(add-class (case status (0 :fa-check-circle) (T :fa-exclamation-triangle)))"></i></td>
+        <td><time class="time" lquery="(time send-time)">2020</time></td>
+      </tr>
+    </tbody>
 </article>
 

@@ -1,18 +1,19 @@
 <article class="page mail list log">
-  <header>
-    <span class="host">Host</span>
-    <span class="mail">Mail</span>
-    <span class="subscriber">Subscriber</span>
-    <span class="attempts">Send Attempts</span>
-    <span class="time">Send Time</span>
-  </header>
-  <ul class="log" iterate="log">
-    <li class="receipt">
-      <a class="host" lquery="(text title)" @href="courier/host/{1} host">host</a>
-      <a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a>
-      <a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a>
-      <span class="attempts" lquery="(text attempts)">0</span>
-      <time class="time" lquery="(time send-time)">2020</time>
-    </li>
-  </ul>
+  <table class="log">
+    <thead>
+      <th class="host">Host</th>
+      <th class="mail">Mail</th>
+      <th class="subscriber">Subscriber</th>
+      <th class="attempts">Attempts</th>
+      <th class="time">Send Time</th>
+    </thead>
+    <tbody iterate="queue">
+      <tr class="receipt">
+        <td class="host"><a lquery="(text host)" @href="courier/host/{1} host">host</a></td>
+        <td class="mail"><a lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a></td>
+        <td class="subscriber"><a lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a></td>
+        <td class="attempts" lquery="(text attempts)">0</td>
+        <td class="time"><time lquery="(time send-time)">2020</time></td>
+      </tr>
+    </tbody>
 </article>
