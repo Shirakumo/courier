@@ -44,7 +44,6 @@ Courier includes a full REST API that allows you to query and manipulate all of 
 ; TODO: triggers for count of opened mail
 ; TODO: mail link syntax
 ; TODO: more rigorous testing
-; TODO: CodeMirror Markless mode
 ; TODO: documentation
 ; TODO: list update reports via email
 ; TODO: RSS/ATOM feed mails
