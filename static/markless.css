@@ -1,0 +1,7 @@
+.cm-header{ font-size: 1.8em; }
+.cm-bold{ font-weight: bold; }
+.cm-italic{ font-style: italic; }
+.cm-underline{ text-decoration: underline; }
+.cm-strikethrough{ text-decoration: line-through; }
+.cm-supertext{ vertical-align: super; font-size: 0.8em; }
+.cm-subtext{ vertical-align: sub; font-size: 0.8em; }

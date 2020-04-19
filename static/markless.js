@@ -10,96 +10,115 @@
 
     var defaultConfig = {
         lineDirectives: {
-            paragraph: {
-                prefix: / */
-            },
             blockquoteHeader: {
-                prefix: /~ /,
-                content: "inline"
+                prefix: "~ ",
+                content: "inline",
+                style: "def blockquote-header"
             },
             blockquote: {
-                prefix: /\| /,
-                type: "spanning"
+                prefix: "\\| ",
+                type: "spanning",
+                style: "string blockquote"
             },
             unorderedList: {
-                prefix: /- /,
-                type: "list"
+                prefix: "- ",
+                type: "list",
+                style: "unordered-list"
             },
             orderedList: {
-                prefix: /\d+\./,
-                type: "list"
+                prefix: "\\d+\\.",
+                type: "list",
+                style: "ordered-list"
             },
             header: {
-                prefix: /#+ /,
-                content: "inline"
+                prefix: "#+ ",
+                content: "inline",
+                style: "header"
             },
             horizontalRule: {
-                prefix: /==+/,
-                content: "none"
+                prefix: "==+",
+                content: "none",
+                style: "punctuation horizontal-rule"
             },
             codeBlock: {
-                prefix: /::+/,
+                prefix: "::+",
                 type: "guarded",
-                content: "none"
+                content: "none",
+                style: "builtin code-block"
             },
             instruction: {
-                prefix: /! /,
-                content: "none"
+                prefix: "! ",
+                content: "none",
+                style: "keyword instruction"
             },
             comment: {
-                prefix: /;+ /,
-                content: "none"
+                prefix: ";+ ",
+                content: "none",
+                style: "comment"
             },
             embed: {
-                prefix: /\[ /,
-                content: "none"
+                prefix: "\\[ ",
+                content: "none",
+                style: "meta embed"
             },
             footnote: {
-                prefix: /[\d+]/,
-                content: "inline"
+                prefix: "\\[\\d+\\]",
+                content: "inline",
+                style: "footnote"
             }
         },
         inlineDirectives: {
             bold: {
-                prefix: /\*\*/
+                prefix: /\*\*/,
+                style: "variable bold"
             },
             italic: {
-                prefix: /\/\//
+                prefix: /\/\//,
+                style: "variable-2 italic"
             },
             underline: {
-                prefix: /__/
+                prefix: /__/,
+                style: "variable-3 underline"
             },
             strikethrough: {
                 prefix: /<-/,
-                suffix: /->/
+                suffix: /->/,
+                style: "strikethrough"
             },
             code: {
                 prefix: /``/,
-                content: "none"
+                content: "none",
+                style: "builtin code"
             },
             supertext: {
                 prefix: /\^\(/,
-                suffix: /\)/
+                suffix: /\)/,
+                style: "supertext"
             },
             subtext: {
                 prefix: /v\(/,
-                suffix: /\)/
+                suffix: /\)/,
+                style: "subtext"
             },
             compound: {
                 prefix: /"/,
-                suffix: /"\(.*?\)/
+                suffix: /"\(.*?\)/,
+                style: "compound"
             },
             footnoteReference: {
                 prefix: /\[\d+\]/,
-                suffix: ""
+                suffix: "",
+                style: "footnote-reference"
             },
             dash: {
                 prefix: /---?/,
-                suffix: ""
+                suffix: "",
+                style: "punctuation dash"
             },
             newline: {
                 prefix: /-\/-/,
-                suffix: ""
+                suffix: "",
+                style: "punctuation newline"
             }
         }
     };
@@ -109,28 +128,36 @@
             to[prop] = from[prop];
     };
 
-    var normalizeLineDirective = function(directive){
+    var normalizeLineDirective = function(name, directive){
         if(!directive.prefix)
             throw "Directive does not contain a prefix expression.";
         if(!(directive.prefix instanceof RegExp))
-            directive.prefix = new RegExp(directive.prefix);
+            directive.prefix = new RegExp("^"+directive.prefix);
         if(!directive.type)
             directive.type = "singular";
         if(!directive.content)
             directive.content = "line";
+        if(!directive.style)
+            directive.style = "text";
+        if(!directive.name)
+            directive.name = name;
     };
 
-    var normalizeInlineDirective = function(directive){
+    var normalizeInlineDirective = function(name, directive){
         if(!directive.prefix)
             throw "Directive does not contain a prefix expression.";
         if(!(directive.prefix instanceof RegExp))
-            directive.prefix = new RegExp(directive.prefix);
+            directive.prefix = new RegExp("^"+directive.prefix);
         if(directive.suffix === undefined)
             directive.suffix = directive.prefix;
         if(!(directive.suffix instanceof RegExp))
-            directive.suffix = new RegExp(directive.suffix);
+            directive.suffix = new RegExp("^"+directive.suffix);
         if(!directive.content)
             directive.content = "inline";
+        if(!directive.style)
+            directive.style = "text";
+        if(!directive.name)
+            directive.name = name;
     };
 
     CodeMirror.defineMode("markless", function(editorConf, config_) {
@@ -141,64 +168,80 @@
         copyDict(config_.inlineDirectives, config.inlineDirectives);
 
         for(var prop in config.lineDirectives)
-            normalizeLineDirective(config.lineDirectives[prop]);
+            normalizeLineDirective(prop, config.lineDirectives[prop]);
         for(var prop in config.inlineDirectives)
-            normalizeInlineDirective(config.inlineDirectives[prop]);
+            normalizeInlineDirective(prop, config.inlineDirectives[prop]);
+
+        var computeStyle = function(state){
+            var style = "";
+            for(var i=0; i<=state.top; i++)
+                style += " "+state.stack[i].style;
+            return style;
+        };
+
+        var push = function(state, directive){
+            state.top++;
+            state.stack[state.top] = directive;
+            return computeStyle(state);
+        };
+
+        var pop = function(state){
+            var style = computeStyle(state);
+            state.top--;
+            return style;
+        };
 
         return {
+            config: config,
+            
             startState: function() {
                 return {
-                    stack: [config.lineDirectives.paragraph],
+                    stack: [{style: "text"}],
                     top: 0
                 };
             },
             
             blankLine: function(state) {
                 if(state.stack[state.top].type != "guarded"){
-                    state.stack = [config.lineDirectives.paragraph];
+                    state.stack = [{style: "text"}];
                     state.top = 0;
                 }
             },
 
             token: function(stream, state) {
+                if(stream.sol() && state.stack[state.top].type != "guarded")
+                    state.top = 0;
                 var top = state.stack[state.top];
                 switch(top.content){
+                case undefined:
                 case "line":
                     // Try to parse more line directives. If not, fall to inline.
                     for(var prop in config.lineDirectives){
                         var directive = config.lineDirectives[prop];
-                        if(stream.eat(directive.prefix) !== undefined){
-                            state.top++;
-                            state.stack[state.top] = directive;
-                            return directive.style;
-                        }
+                        var match = stream.match(directive.prefix, true);
+                        if(match)
+                            return push(state, directive);
                     }
                 case "inline":
                     // Try to end current directive first.
-                    if(top.suffix && stream.eat(top.suffix) !== undefined){
-                        state.top--;
-                        return top.style;
-                    }
+                    if(top.suffix && stream.match(top.suffix, true))
+                        return pop(state);
                     // Then search for more.
                     for(var prop in config.inlineDirectives){
                         var directive = config.inlineDirectives[prop];
-                        if(stream.eat(directive.prefix) !== undefined){
-                            state.top++;
-                            state.stack[state.top] = directive;
-                            return directive.style;
-                        }   
+                        var match = stream.match(directive.prefix, true);
+                        if(match)
+                            return push(state, directive);
                     }
                     // No matches found, continue.
                     stream.next();
-                    return top.style;
+                    return computeStyle(state);
                     break;
                 case "none":
-                    if(top.suffix && stream.eat(top.suffix) !== undefined){
-                        state.top--;
-                        return top.style;
-                    }
+                    if(stream.match(top.suffix || top.prefix, true))
+                        return pop(state);
                     stream.next();
-                    return top.style;
+                    return computeStyle(state);
                     break;
                 default:
                     throw "Bad parser state: no content marker on directive stack";

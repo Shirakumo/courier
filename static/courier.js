@@ -343,6 +343,7 @@ class Courier{
             .then(()=>self.loadJS("/static/courier/markless.js"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"))
             .then(()=>self.loadCSS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/theme/mdn-like.min.css"))
+            .then(()=>self.loadCSS("/static/courier/markless.css"))
             .then(()=>{
                 editor = CodeMirror.fromTextArea(textarea, {
                     mode: mode,
