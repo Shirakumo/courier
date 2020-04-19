@@ -22,12 +22,10 @@
             },
             unorderedList: {
                 prefix: "- ",
-                type: "list",
                 style: "unordered-list"
             },
             orderedList: {
                 prefix: "\\d+\\.",
-                type: "list",
                 style: "ordered-list"
             },
             header: {
@@ -69,54 +67,54 @@
         },
         inlineDirectives: {
             bold: {
-                prefix: /\*\*/,
+                prefix: "\\*\\*",
                 style: "variable bold"
             },
             italic: {
-                prefix: /\/\//,
+                prefix: "\\/\\/",
                 style: "variable-2 italic"
             },
             underline: {
-                prefix: /__/,
+                prefix: "__",
                 style: "variable-3 underline"
             },
             strikethrough: {
-                prefix: /<-/,
-                suffix: /->/,
+                prefix: "<-",
+                suffix: "->",
                 style: "strikethrough"
             },
             code: {
-                prefix: /``/,
+                prefix: "``",
                 content: "none",
                 style: "builtin code"
             },
             supertext: {
-                prefix: /\^\(/,
-                suffix: /\)/,
+                prefix: "\\^\\(",
+                suffix: "\\)",
                 style: "supertext"
             },
             subtext: {
-                prefix: /v\(/,
-                suffix: /\)/,
+                prefix: "v\\(",
+                suffix: "\\)",
                 style: "subtext"
             },
             compound: {
-                prefix: /"/,
-                suffix: /"\(.*?\)/,
+                prefix: "\"",
+                suffix: "\"\\(.*?\\)",
                 style: "compound"
             },
             footnoteReference: {
-                prefix: /\[\d+\]/,
+                prefix: "\\[\\d+\\]",
                 suffix: "",
-                style: "footnote-reference"
+                style: "number footnote-reference"
             },
             dash: {
-                prefix: /---?/,
+                prefix: "---?",
                 suffix: "",
                 style: "punctuation dash"
             },
             newline: {
-                prefix: /-\/-/,
+                prefix: "-/-",
                 suffix: "",
                 style: "punctuation newline"
             }
@@ -179,6 +177,11 @@
             return style;
         };
 
+        var reset = function(state){
+            state.stack = [{style: "text", content: "line"}];
+            state.top = 0;
+        };
+
         var push = function(state, directive){
             state.top++;
             state.stack[state.top] = directive;
@@ -203,17 +206,15 @@
             
             blankLine: function(state) {
                 if(state.stack[state.top].type != "guarded"){
-                    state.stack = [{style: "text"}];
-                    state.top = 0;
+                    reset(state);
                 }
             },
 
             token: function(stream, state) {
                 if(stream.sol() && state.stack[state.top].type != "guarded")
-                    state.top = 0;
+                    reset(state);
                 var top = state.stack[state.top];
                 switch(top.content){
-                case undefined:
                 case "line":
                     // Try to parse more line directives. If not, fall to inline.
                     for(var prop in config.lineDirectives){
@@ -230,8 +231,11 @@
                     for(var prop in config.inlineDirectives){
                         var directive = config.inlineDirectives[prop];
                         var match = stream.match(directive.prefix, true);
-                        if(match)
+                        if(match){
+                            // Poison base state to avoid further line matches.
+                            state.stack[0].content = "inline";
                             return push(state, directive);
+                        }
                     }
                     // No matches found, continue.
                     stream.next();
