@@ -139,6 +139,7 @@
             directive.style = "text";
         if(!directive.name)
             directive.name = name;
+        directive.type = "line";
     };
 
     var normalizeInlineDirective = function(name, directive){
@@ -156,6 +157,7 @@
             directive.style = "text";
         if(!directive.name)
             directive.name = name;
+        directive.type = "inline";
     };
 
     CodeMirror.defineMode("markless", function(editorConf, config_) {
@@ -165,10 +167,16 @@
         copyDict(config_.lineDirectives, config.lineDirectives);
         copyDict(config_.inlineDirectives, config.inlineDirectives);
 
-        for(var prop in config.lineDirectives)
-            normalizeLineDirective(prop, config.lineDirectives[prop]);
-        for(var prop in config.inlineDirectives)
-            normalizeInlineDirective(prop, config.inlineDirectives[prop]);
+        for(var prop in config.lineDirectives){
+            if(config.lineDirectives[prop])
+                normalizeLineDirective(prop, config.lineDirectives[prop]);
+            else delete config.lineDirectives[prop];
+        }
+        for(var prop in config.inlineDirectives){
+            if(config.inlineDirectives[prop])
+                normalizeInlineDirective(prop, config.inlineDirectives[prop]);
+            else delete config.inlineDirectives[prop];
+        }
 
         var computeStyle = function(state){
             var style = "";
