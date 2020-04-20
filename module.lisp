@@ -10,6 +10,7 @@
   (:shadow #:trigger #:delete-file #:file #:make-sequence #:sequence)
   (:export)
   (:local-nicknames
+   (#:feeder #:org.shirakumo.feeder)
    (#:markless #:org.shirakumo.markless)
    (#:components #:org.shirakumo.markless.components)))
 (in-package #:courier)

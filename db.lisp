@@ -6,6 +6,7 @@
 
 (in-package #:courier)
 
+;; TODO: move collection definitions into the respective files.
 (define-trigger db:connected ()
   (db:create 'host
              '((author :id)
@@ -139,7 +140,21 @@
                (author :id)
                (filename (:varchar 64))
                (mime-type (:varchar 32)))
-             :indices '(campaign)))
+             :indices '(campaign))
+
+  (db:create 'feed
+             '((campaign (:id campaign))
+               (title (:varchar 32))
+               (url (:varchar 256))
+               (last-update (:integer 5))
+               (frequency (:integer 2))
+               (send-new :boolean)
+               (template :text)))
+
+  (db:create 'feed-entry
+             '((feed (:id feed))
+               (mail (:id mail))
+               (guid (:varchar 256)))))
 
 (defun ensure-id (id-ish)
   (etypecase id-ish

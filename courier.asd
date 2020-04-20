@@ -29,6 +29,7 @@
                (:file "trigger")
                (:file "file")
                (:file "sequence")
+               (:file "feed")
                (:file "send")
                (:file "send-queue")
                (:file "prune")
@@ -40,6 +41,8 @@
                :r-data-model
                :r-clip
                :i-json
+               :drakma
+               :feeder
                :ratify
                :alexandria
                :crypto-shortcuts
