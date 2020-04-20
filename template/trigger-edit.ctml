@@ -55,7 +55,7 @@
             <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/trigger/delete" />
           </c:then>
           <c:else>
-            <input type="submit" value="Create Tag" @formaction="courier/api/courier/trigger/new" />
+            <input type="submit" value="Create Trigger" @formaction="courier/api/courier/trigger/new" />
           </c:else>
         </c:if>
       </div>
