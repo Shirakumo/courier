@@ -34,6 +34,10 @@
                 Mail Queue
                 <i class="fas fa-fw fa-clipboard-list"></i>
               </a>
+              <a href="#" @href="courier/help/">
+                Help
+                <i class="fas fa-fw fa-info-circle"></i>
+              </a>
             </nav>
           </div>
         </c:then>
