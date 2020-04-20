@@ -40,6 +40,11 @@ Every email contains a body of text that is filled into the campaign template in
 ## REST API
 Courier includes a full REST API that allows you to query and manipulate all of the objects managed by Courier. Using this API, new extensions can be easily written and integrated into other applications.
 
+## General Setup Advice
+Since the signup form allows pretty much anyone to cause an email to be sent from your configured host to another email address, it is heavily advised to put a strong rate limitation on the form and monitor your mail traffic for strange patterns. Rate limiting is not implemented in Courier, but front-facing webservers like nginx should offer highly performant rate limiting out of the box that you can set up for the ``courier/subscription/new`` endpoint.
+
+The signup form already includes some honeypot fields in order to try and catch automated spammers, which typically catches most spam. Detailed spam prevention is a very difficult endeavour however, and if the need arises you might have to develop your own solutions to it, such as employing a captcha.
+
 ; TODO: more rigorous testing
 ;       In specific any interaction a subscriber might have with the system needs to be
 ;       thoroughly verified to work correctly. This includes but isn't limited to:
@@ -47,10 +52,6 @@ Courier includes a full REST API that allows you to query and manipulate all of 
 ;       - Viewing emails and archives after unsubscription or after resubscription
 ;       - Verifying that triggers are actually triggered, and that they actually perform
 ;         the advertised changes.
-; TODO: rate limit subscription
-;       In order to minimize the risk of abusing the open mail host as a spamming device,
-;       the subscription form needs to be heavily rate limited. Probably with a
-;       combination of cookie and IP tracking.
 ; TODO: documentation
 ;       Need to document all the collections, functions, and api endpoints.
 ; TODO: list update reports via email

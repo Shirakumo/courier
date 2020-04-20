@@ -4,6 +4,14 @@
     <c:when test='(equalp "subscribe" (** :action))'>
       <form @action="courier/api/courier/subscription/new" method="post">
         <p class="description" lquery="(text description)">Description</p>
+        <div class="row _">
+          <label for="username">Leave this empty</label>
+          <input autocomplete="off" type="text" id="username" name="username" />
+        </div>
+        <div class="row _">
+          <label for="email">Leave this as is</label>
+          <input autocomplete="off" type="text" id="email" name="email" lquery="(val (courier::hash (mconfig :courier :salt)))" />
+        </div>
         <div class="row">
           <label for="name">Your name</label>
           <input type="text" name="name" id="name" autofocus />
@@ -54,3 +62,6 @@
     </c:when>
   </c:using>
 </article>
+<script type="text/javascript">
+  [].forEach.call(document.querySelectorAll("._"), (el)=>el.style.display="none");
+</script>

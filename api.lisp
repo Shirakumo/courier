@@ -450,7 +450,11 @@
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
-(define-api courier/subscription/new (campaign name address &optional fields[] values[]) ()
+(define-api courier/subscription/new (campaign name address &optional fields[] values[] username email) ()
+  ;; Honeypot
+  (when (or username
+            (string/= email (hash (config :salt))))
+    (error 'api-argument-invalid :argument 'username :message "Invalid email address."))
   (let* ((campaign (ensure-campaign campaign))
          (attributes (loop for field in fields[]
                            for value in values[]
