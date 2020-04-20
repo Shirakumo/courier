@@ -6,126 +6,117 @@
 
 (in-package #:courier)
 
-(defun compile-mail (template &rest args)
-  ;; FIXME: softdrink apply stylesheet
-  (apply #'r-clip:process
-         (etypecase template
-           (string template)
-           (pathname (@template (namestring template))))
-         :copyright (config :copyright)
-         :software-title (config :title)
-         :software-version (asdf:component-version (asdf:find-system :courier))
-         args))
+(defun ensure-mail (mail-ish)
+  (or
+   (etypecase mail-ish
+     (dm:data-model mail-ish)
+     (db:id (dm:get-one 'mail (db:query (:= '_id mail-ish))))
+     (string (ensure-mail (db:ensure-id mail-ish))))
+   (error 'request-not-found :message "No such mail.")))
 
-(defun extract-plaintext (html)
-  ;; KLUDGE: This is real dumb.
-  ;; FIXME: links do not get retained
-  (with-output-to-string (out)
-    (lquery:$ html "body" (text) (each (lambda (text) (write-line text out))))))
+(defun list-mails (thing &key amount (skip 0) query)
+  (macrolet ((query (clause)
+               `(if query
+                    (let ((query (prepare-query query)))
+                      (db:query (:and ,clause
+                                      (:or (:matches 'title query)
+                                           (:matches 'subject query)
+                                           (:matches 'body query)))))
+                    (db:query ,clause))))
+    (ecase (dm:collection thing)
+      (campaign
+       (dm:get 'mail (query (:= 'campaign (dm:id thing)))
+               :sort '((time :desc)) :amount amount :skip skip))
+      (subscriber
+       (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
+               :sort '(("send-time" :desc)) :hull 'mail)))))
 
-(defun extract-subject (html)
-  (lquery:$1 html "head title" (text)))
+(defun make-mail (campaign &key title subject body (save T))
+  (let ((campaign (ensure-campaign campaign)))
+    (dm:with-model mail ('mail NIL)
+      (setf-dm-fields mail title subject body campaign)
+      (setf (dm:field mail "time") (get-universal-time))
+      (when save
+        (dm:insert mail))
+      mail)))
 
-(defun format-mail (text)
-  (etypecase text
-    (string
-     (values text))
-    (plump:node
-     (values (extract-plaintext text)
-             (plump:serialize text NIL)))))
+(defun edit-mail (mail &key title subject body (save T))
+  (let ((mail (ensure-mail mail)))
+    (setf-dm-fields mail title subject body)
+    (when save (dm:save mail))
+    mail))
 
-(defun send (host to subject message &key plain reply-to message-id campaign unsubscribe)
-  (multiple-value-bind (extracted html) (format-mail message)
-    (l:trace :courier.mail "Sending to ~a via ~a/~a:~a"
-             to
-             (dm:field host "address")
-             (dm:field host "hostname")
-             (dm:field host "port"))
-    (let ((cl-smtp::*x-mailer* #.(format NIL "Courier Mailer ~a" (asdf:component-version (asdf:find-system :courier)))))
-      (cl-smtp:send-email
-       (copy-seq (dm:field host "hostname"))
-       (dm:field host "address")
-       to subject (or plain extracted)
-       :html-message html
-       :extra-headers `(,@(when campaign
-                            `(("X-Campaign" ,(princ-to-string campaign))
-                              ("X-campaignid" ,(princ-to-string campaign))
-                              ("List-ID" ,(princ-to-string campaign))
-                              ("Message-ID" ,(format NIL "<~a@courier.~a>"
-                                                     (hash (format NIL "~a-~a" message-id campaign))
-                                                     (dm:field host "hostname")))))
-                        ,@(when unsubscribe
-                            `(("List-Unsubscribe" ,unsubscribe)
-                              ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
-       :ssl (ecase (dm:field host "encryption")
-              (0 NIL) (1 :starttls) (2 :tls))
-       :port (dm:field host "port")
-       :reply-to reply-to
-       :authentication (when (dm:field host "username")
-                         (list :plain
-                               (dm:field host "username")
-                               (decrypt (dm:field host "password"))))
-       :display-name (dm:field host "display-name")))))
+(defun delete-mail (mail)
+  (let ((mail (ensure-mail mail)))
+    (db:with-transaction ()
+      (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
+      (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
+      (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
+      (delete-triggers-for mail)
+      (dm:delete mail))))
 
-(defun mail-template-args (campaign mail subscriber)
-  (list* :mail-receipt-image (mail-receipt-url mail subscriber)
-         :mail-url (mail-url mail subscriber)
-         :archive-url (archive-url subscriber)
-         :unsubscribe-url (unsubscribe-url subscriber)
-         :title (dm:field mail "title")
-         :subject (dm:field mail "subject")
-         :campaign (dm:field campaign "title")
-         :description (dm:field campaign "description")
-         :reply-to (dm:field campaign "reply-to")
-         :to (dm:field subscriber "address")
-         :name (dm:field subscriber "name")
-         :tags (list-tags subscriber)
-         :time (get-universal-time)
-         :address (dm:field campaign "address")
-         (subscriber-attributes subscriber)))
+(defun mark-link-received (link subscriber)
+  (db:with-transaction ()
+    (unless (link-received-p link subscriber)
+      (db:insert 'link-receipt `(("link" . ,(ensure-id link))
+                                 ("subscriber" . ,(ensure-id subscriber))
+                                 ("time" . ,(get-universal-time))))
+      (process-triggers subscriber link))))
 
-(defun compile-mail-content (campaign mail subscriber &key (template (dm:field campaign "template")) (format 'html-format))
-  (let ((args (mail-template-args campaign mail subscriber)))
-    (apply #'compile-mail template
-           (list* :body (compile-mail-body (dm:field mail "body") args
-                                           :campaign campaign
-                                           :subscriber subscriber
-                                           :mail mail
-                                           :format format)
-                  args))))
+(defun mail-received-p (mail subscriber)
+  (< 0 (db:count 'mail-receipt (db:query (:and (:= 'mail (ensure-id mail))
+                                               (:= 'subscriber (ensure-id subscriber)))))))
 
-(defun send-mail (mail subscriber)
-  (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
-  (let* ((campaign (ensure-campaign (dm:field mail "campaign")))
-         (host (ensure-host (dm:field campaign "host")))
-         html plain)
-    (handler-bind ((error (lambda (e)
-                            (declare (ignore e))
-                            (mark-mail-sent mail subscriber :compile-falied))))
-      (setf html (compile-mail-content campaign mail subscriber))
-      (setf plain (compile-mail-content campaign mail subscriber :template #p"email/text-template.ctml" :format 'plain-format)))
-    (handler-bind ((error (lambda (e)
-                            (declare (ignore e))
-                            (mark-mail-sent mail subscriber :send-failed))))
-      (send host (dm:field subscriber "address")
-            (extract-subject html)
-            html
-            :plain (plump:text plain)
-            :reply-to (dm:field campaign "reply-to")
-            :message-id (dm:id mail)
-            :campaign (dm:field mail "campaign")
-            :unsubscribe (unsubscribe-url subscriber)))
-    (mark-mail-sent mail subscriber)))
+(defun mail-sent-p (mail subscriber)
+  (let ((query (db:query (:and (:= 'mail (ensure-id mail))
+                               (:= 'subscriber (ensure-id subscriber))))))
+    (or (< 0 (db:count 'mail-log query))
+        (< 0 (db:count 'mail-queue query)))))
 
-(defun send-system-mail (body address host campaign &rest args)
-  (let ((html (apply #'compile-mail #p"email/system-template.ctml"
-                     (list* :body (compile-mail-body body args)
-                            args))))
-    (send host address
-          (extract-subject html)
-          html
-          :reply-to (if campaign
-                        (dm:field campaign "reply-to")
-                        (dm:field host "address"))
-          :campaign (when campaign
-                      (dm:id campaign)))))
+(defun mail-coverage (mail)
+  (let ((sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
+        (read (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))))
+    (if (= 0 sent) 0
+        (/ read sent))))
+
+(defun mail-sent-count (thing)
+  (ecase (dm:collection thing)
+    (mail
+     (db:count 'mail-log (db:query (:= 'mail (dm:id thing)))))
+    (subscriber
+     (db:count 'mail-log (db:query (:= 'subscriber (dm:id thing)))))))
+
+(defun mark-mail-received (mail subscriber)
+  (db:with-transaction ()
+    (unless (mail-received-p mail subscriber)
+      (db:insert 'mail-receipt `(("mail" . ,(ensure-id mail))
+                                 ("subscriber" . ,(ensure-id subscriber))
+                                 ("time" . ,(get-universal-time))))
+      (process-triggers subscriber mail))))
+
+(defun mark-mail-sent (mail subscriber &optional (status :success))
+  (db:insert 'mail-log `(("mail" . ,(dm:id mail))
+                         ("subscriber" . ,(dm:id subscriber))
+                         ("send-time" . ,(get-universal-time))
+                         ("status" . ,(mail-status-id status)))))
+
+(defun mail-count (thing)
+  (ecase (dm:collection thing)
+    (campaign (db:count 'mail (db:query (:= 'campaign (dm:id thing)))))))
+
+(defun mail-status-id (status)
+  (ecase status
+    (:success 0)
+    (:unlocked 1)
+    (:failed 10)
+    (:send-failed 11)
+    (:compile-failed 12)
+    ((0 1 10 11 12) status)))
+
+(defun id-mail-status (id)
+  (ecase id
+    (0 :success)
+    (1 :unlocked)
+    (10 :failed)
+    (11 :send-failed)
+    (12 :compile-failed)))

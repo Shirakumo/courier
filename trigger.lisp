@@ -6,6 +6,70 @@
 
 (in-package #:courier)
 
+(defun ensure-trigger (trigger-ish)
+  (or
+   (etypecase trigger-ish
+     (dm:data-model trigger-ish)
+     (db:id (dm:get-one 'trigger (db:query (:= '_id trigger-ish))))
+     (T (ensure-trigger (db:ensure-id trigger-ish))))
+   (error 'request-not-found :message "No such trigger.")))
+
+(defun list-triggers (thing &key amount (skip 0))
+  (ecase (dm:collection thing)
+    (campaign
+     (dm:get 'trigger (db:query (:= 'campaign (dm:id thing)))
+             :amount amount :skip skip))
+    (sequence
+     (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
+             (db:query (:= 'sequence (dm:id thing)))
+             :amount amount :skip skip :hull 'trigger))
+    ((link mail tag)
+     (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
+                                      (:= 'target-type (collection-type thing))))
+             :amount amount :skip skip))))
+
+(defun list-source-triggers (thing &key amount (skip 0))
+  (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))
+                                   (:= 'source-type (collection-type thing))))
+          :amount amount :skip skip))
+
+(defun make-trigger (campaign source target &key description (delay 0) tag-constraint (save T))
+  (dm:with-model trigger ('trigger NIL)
+    (setf-dm-fields trigger campaign description delay tag-constraint)
+    (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign (or tag-constraint "")))
+    (setf (dm:field trigger "source-id") (dm:id source))
+    (setf (dm:field trigger "source-type") (collection-type source))
+    (setf (dm:field trigger "target-id") (dm:id target))
+    (setf (dm:field trigger "target-type") (collection-type target))
+    (when save (dm:insert trigger))
+    trigger))
+
+(defun edit-trigger (trigger &key description source target delay tag-constraint (save T))
+  (setf-dm-fields trigger description delay tag-constraint)
+  (when tag-constraint
+    (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
+  (when source
+    (setf (dm:field trigger "source-id") (dm:id source))
+    (setf (dm:field trigger "source-type") (collection-type source)))
+  (when target
+    (setf (dm:field trigger "target-id") (dm:id target))
+    (setf (dm:field trigger "target-type") (collection-type target)))
+  (when save (dm:save trigger))
+  trigger)
+
+(defun delete-trigger (trigger)
+  (let ((trigger (ensure-trigger trigger)))
+    (db:with-transaction ()
+      (db:remove 'sequence-trigger (db:query (:= 'trigger (dm:id trigger))))
+      (dm:delete trigger))))
+
+(defun delete-triggers-for (thing)
+  (db:with-transaction ()
+    (mapcar #'delete-trigger (dm:get 'trigger (db:query (:or (:and (:= 'target-id (dm:id thing))
+                                                                   (:= 'target-type (collection-type thing)))
+                                                             (:and (:= 'source-id (dm:id thing))
+                                                                   (:= 'source-type (collection-type thing)))))))))
+
 (defun parse-constraint (constraint)
   (with-input-from-string (in constraint)
     (let ((buffer (make-string-output-stream))
