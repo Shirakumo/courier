@@ -58,6 +58,9 @@
         <p>
           You have been unsubscribed.
         </p>
+        <p>
+          If you have done so in error, you can <a lquery='(attr :href (courier::confirm-url (post/get "id")))'>resubscribe</a>
+        </p>
       </form>
     </c:when>
   </c:using>

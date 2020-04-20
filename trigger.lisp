@@ -81,19 +81,21 @@
     (l:info :courier.trigger "Running trigger ~a for ~a" trigger subscriber)
     (let ((target (resolve-typed (dm:field trigger "target-type")
                                  (dm:field trigger "target-id"))))
-      (ecase (dm:collection target)
-        (mail
-         (unless (mail-sent-p target subscriber)
-           (case (dm:field trigger "target-type")
-             (10 (mark-mail-sent target subscriber :unlocked))
-             (0 (enqueue-mail target
-                              :target subscriber
-                              :time (+ (get-universal-time)
-                                       (dm:field trigger "delay")))))))
-        (tag
-         (tag subscriber target))
-        (campaign
-         (delete-subscriber subscriber))))))
+      (if target
+          (ecase (dm:collection target)
+            (mail
+             (unless (mail-sent-p target subscriber)
+               (case (dm:field trigger "target-type")
+                 (10 (mark-mail-sent target subscriber :unlocked))
+                 (0 (enqueue-mail target
+                                  :target subscriber
+                                  :time (+ (get-universal-time)
+                                           (dm:field trigger "delay")))))))
+            (tag
+             (tag subscriber target))
+            (campaign
+             (delete-subscriber subscriber)))
+          (l:warn :courier.trigger "Trigger ~a does not have an existing target!" trigger)))))
 
 (defun process-triggers (subscriber triggers)
   (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
