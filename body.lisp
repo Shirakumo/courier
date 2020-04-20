@@ -15,7 +15,8 @@
 (defmethod variable-value (var (f mail-format))
   (loop for (key val) on (vars f) by #'cddr
         do (when (string-equal key var)
-             (return val))))
+             (return (values val T)))
+        finally (return (values NIL NIL))))
 
 (defclass html-format (mail-format org.shirakumo.markless.plump:plump) ())
 (defclass plain-format (mail-format org.shirakumo.markless:markless) ())
@@ -26,15 +27,16 @@
 
 (defun make-link* (f url)
   ;; Do not encode links that are already pointing to Courier.
-  (if (search #.(url> "courier/") url)
+  (if (or (search #.(url> "courier/") url)
+          (null (campaign f))
+          (null (subscriber f)))
       url
       (let ((link (make-link (campaign f) :url url)))
         (link-receipt-url (subscriber f) link (mail f)))))
 
 (defun transform-link (element f)
-  (when (campaign f)
-    (setf (plump-dom:attribute element "target") "_blank")
-    (setf (plump-dom:attribute element "href") (make-link* f (plump-dom:attribute element "href")))))
+  (setf (plump-dom:attribute element "target") "_blank")
+  (setf (plump-dom:attribute element "href") (make-link* f (plump-dom:attribute element "href"))))
 
 (defmethod markless:output-component ((c components:url) (target plump-dom:nesting-node) (f html-format))
   (let ((element (call-next-method)))
@@ -54,14 +56,18 @@
   ((name :initarg :name :initform (error "NAME required") :accessor name)))
 
 (defmethod markless:output-component ((var var) (target plump-dom:nesting-node) (f html-format))
-  (let ((value (variable-value (name var) f)))
-    (when value
-      (plump-dom:make-text-node target (princ-to-string value)))))
+  (multiple-value-bind (value found) (variable-value (name var) f)
+    (cond ((not found)
+           (plump-dom:make-text-node target (format NIL "{~a}" (name var))))
+          (value
+           (plump-dom:make-text-node target (princ-to-string value))))))
 
 (defmethod markless:output-component ((var var) (target stream) (f plain-format))
-  (let ((value (variable-value (name var) f)))
-    (when value
-      (princ value target))))
+  (multiple-value-bind (value found) (variable-value (name var) f)
+    (cond ((not found)
+           (format target "{~a}" (name var)))
+          (value
+           (princ value target)))))
 
 (defclass button (components:embed)
   ())
