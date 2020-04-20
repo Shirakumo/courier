@@ -239,13 +239,16 @@
     :list-style none
     :margin 0 0 1em 0
     :padding 0 0 0 1em
+    :display table
     (li
-     :display flex
+     :display table-row
+     (>* :display table-cell)
      :align-items center
      (.title :min-width 10em)
-     ((:or .address .description .subject) :flex-grow 1)
+     ((:or .address .description .subject .tags) :width 100%)
      (.status :padding 0 1em)
-     (.actions :white-space nowrap))))
+     (time :white-space nowrap)
+     (.actions :white-space nowrap :text-align right))))
   
   (.page.subscriber.list
    (time :margin 0 0.2em)
