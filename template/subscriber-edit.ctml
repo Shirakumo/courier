@@ -58,7 +58,7 @@
           <c:then>
             <input type="hidden" name="subscriber" lquery="(val _id)" />
             <input type="submit" value="Save Changes" @formaction="courier/api/courier/subscriber/edit" />
-            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/subscriber/delete" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/subscriber/unsubscribe" />
           </c:then>
           <c:else>
             <input type="submit" value="Create Subscriber" @formaction="courier/api/courier/subscriber/new" />

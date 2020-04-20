@@ -12,13 +12,15 @@
       <i class="fas status" lquery="(add-class (case status (0 :fa-question-circle) (1 :fa-check-circle) (2 :fa-times-circle)))"></i>
       <time lquery="(time signup-time)"></time>
       <nav class="actions">
+        <c:when test="(= 1 status)">
+          <a class="button confirm" href="#" @href="courier/api/courier/subscriber/unsubscribe?subscriber={0}&browser=true _id">
+            <i class="fas fa-trash"></i>
+            Unsubscribe
+          </a>
+        </c:when>
         <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/edit campaign _id">
           <i class="fas fa-edit"></i>
           Edit
-        </a>
-        <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0}&browser=true _id">
-          <i class="fas fa-trash"></i>
-          Unsubscribe
         </a>
       </nav>
     </li>

@@ -350,6 +350,14 @@
     (delete-subscriber subscriber)
     (output subscriber "Subscriber deleted." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
+(define-api courier/subscriber/unsubscribe (subscriber) (:access (perm courier user))
+  (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
+    (when (string= (dm:field subscriber "address")
+                   (dm:field (ensure-campaign (dm:field subscriber "campaign")) "reply-to"))
+      (error 'api-argument-invalid :argument "subscriber" :message "Cannot unsubscribe yourself."))
+    (edit-subscriber subscriber :status :deactivated)
+    (output subscriber "Subscriber deactivated." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
+
 (define-api courier/subscriber/import (campaign &optional content file) (:access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
          (subs (import-subscribers campaign (or file content))))
