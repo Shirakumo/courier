@@ -532,9 +532,10 @@ class Courier{
     }
 
     setElementValue(element, value){
+        console.log(element, value);
         switch(element.tagName){
-        case "input": element.value = value; break;
-        case "textarea": element.innerText = value; break;
+        case "input":
+        case "textarea": element.value = value; break;
         case "select": [].forEach.call(element.querySelectorAll("option"), (el)=>{
             if(el.getAttribute("value") == value) el.setAttribute("checked", "checked");
         }); break;
