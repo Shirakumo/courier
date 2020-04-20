@@ -29,7 +29,7 @@
               <a class="button remove-self">
                 <i class="fas fa-trash"></i>
               </a>
-              <input type="text" placeholder="Label" minlength="1" maxlength="32" required
+              <input type="text" placeholder="Label" minlength="1" maxlength="32"
                      data-name="attribute[]" />
               <select data-name="attribute-type[]" iterate="(symbol-value 'courier::*attribute-types*)">
                 <option lquery="(val (first *)) (text (third *))">Name</option>
