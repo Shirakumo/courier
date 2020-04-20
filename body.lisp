@@ -41,10 +41,8 @@
     (when (string= "a" (plump-dom:tag-name element))
       (transform-link element f))))
 
-(defmethod markless:output-component ((c components:compound) (target plump-dom:nesting-node) (f html-format))
-  (let ((element (call-next-method)))
-    (when (string= "a" (plump-dom:tag-name element))
-      (transform-link element f))))
+(defmethod markless:output-component :after ((c components:link-option) (target plump-dom:nesting-node) (f html-format))
+  (transform-link target f))
 
 (defmethod markless:output-component ((c components:url) (target stream) (f plain-format))
   (markless:output-component (make-link* f (components:target c)) target f))
@@ -88,6 +86,26 @@
 
 (defmethod markless:output-component ((c button) (target stream) (f plain-format))
   (markless:output-component (format NIL "~%[  ~a  ]~%" (make-link* f (components:target c))) target f))
+
+(defclass mail-option (components:compound-option)
+  ((mail :initarg :mail :reader mail)))
+
+(defmethod markless:parse-compound-option-type ((proto mail-option) option)
+  (make-instance (class-of proto) :mail (subseq option (length "mail "))))
+
+(defmethod markless:output-component ((option mail-option) (target plump:nesting-node) (f html-format))
+  (let ((mail (or (dm:get-one 'mail (db:query (:and (:= 'campaign (dm:id (campaign f)))
+                                                    (:= 'title (mail option)))))
+                  (ensure-mail (mail option)))))
+    (setf (plump-dom:tag-name target) "a")
+    (setf (plump-dom:attribute target "class") "external-link mail-link")
+    (setf (plump-dom:attribute target "href") (mail-url mail (subscriber f)))))
+
+(defmethod markless:output-component ((option mail-option) (target stream) (f plain-format))
+  (let ((mail (or (dm:get-one 'mail (db:query (:and (:= 'campaign (dm:id (campaign f)))
+                                                    (:= 'title (mail option)))))
+                  (ensure-mail (mail option)))))
+    (markless:output-component (format NIL "link ~a" (mail-url mail (subscriber f))) target f)))
 
 (defclass template-var (markless:inline-directive)
   ())

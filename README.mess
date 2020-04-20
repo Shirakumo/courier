@@ -45,14 +45,6 @@ Courier includes a full REST API that allows you to query and manipulate all of 
 ;       deactivate their account, preventing new emails from being sent out (only unlock
 ;       them instead). When they resubscribe, the account should just be reactivated,
 ;       retaining their archives and previously seen emails.
-; TODO: mail link syntax
-;       Links to an email are subscriber specific in order to allow tracking when a
-;       subscriber views the email, and in order to ensure only the right subscribers
-;       can see certain emails. When referring to an older email in a new email,
-;       the user thus cannot just insert a fixed link and instead needs to instruct the
-;       template system to generate the correct link and insert it in its place, which
-;       requires special syntax. Perhaps a new markless compound option would do the
-;       trick.
 ; TODO: more rigorous testing
 ;       In specific any interaction a subscriber might have with the system needs to be
 ;       thoroughly verified to work correctly. This includes but isn't limited to:

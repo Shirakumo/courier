@@ -75,3 +75,14 @@ The target of the button can also be a variable expression:
 ::
 
 The styling of the button is dependent on your template.
+
+### Referring to Other Emails
+In order to include a subscriber-specific link to another email and give them access to it, you can use the ``mail`` compound option. Let's pretend  you have an email with the title ``secrets revealed!``. You can hand out a link to it like this:
+
+::markless
+Check out this "earlier email"(mail secrets revealed!)
+::
+
+Note that if the title contains commas, you need to escape the commas with a backslash (``\\``), as otherwise Markless will interpret them as multiple options.
+
+You can also refer to an email by its unique ID instead of its title. The ID is usually displayed in the address bar when editing or viewing the details on an email.
