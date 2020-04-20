@@ -24,17 +24,19 @@
         (dm:data-model
          (ecase (dm:collection target)
            (subscriber
-            (if (dm:field target "confirmed")
+            (if (eql :active (id-user-status (dm:field target "status")))
                 (send (dm:id target))
-                (error "Subscriber ~a has not yet confirmed their subscription" (dm:field target "address"))))
+                (error 'api-argument-invalid
+                       :argument 'target
+                       :message (format NIL "Subscriber ~a is not an active subscription" (dm:field target "address")))))
            (tag
             (mapcar #'send (db:iterate (rdb:join (tab-table subscriber) (subscriber _id))
                              (db:query (:and (:= 'tag (dm:id target))
-                                             (:= 'confirmed T)))
+                                             (:= 'status (user-status-id :active))))
                              (lambda (r) (gethash "subscriber" r) :fields '("subscriber") :accumulate T))))
            (campaign
             (mapcar #'send (db:iterate 'subscriber (db:query (:and (:= 'campaign (dm:id target))
-                                                                   (:= 'confirmed T)))
+                                                                   (:= 'status (user-status-id :active))))
                                        (lambda (r) (gethash "_id" r)) :fields '("_id") :accumulate T)))))
         (db:id
          (send target))))))

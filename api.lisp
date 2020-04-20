@@ -327,7 +327,7 @@
                                 (error "Invalid attribute field."))
                            collect (cons attribute value)))
          (tags (mapcar #'ensure-tag tag[]))
-         (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :confirmed T)))
+         (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :status :active)))
     (output subscriber "Subscriber added." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
 (define-api courier/subscriber/edit (subscriber &optional name tag[] fields[] values[]) (:access (perm courier user))
@@ -475,7 +475,7 @@
 
 (define-api courier/subscription/confirm (id) ()
   (let ((subscriber (dm:get-one 'subscriber (db:query (:= '_id (first (decode-id id)))))))
-    (setf (dm:field subscriber "confirmed") T)
+    (setf (dm:field subscriber "status") (user-status-id :active))
     (dm:save subscriber)
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:field subscriber "campaign"))))
@@ -487,7 +487,7 @@
     (when (string= (dm:field subscriber "address")
                    (dm:field campaign "reply-to"))
       (error 'api-argument-invalid :argument "subscriber" :message "Cannot unsubscribe the campaign's primary user."))
-    (delete-subscriber subscriber)
+    (edit-subscriber subscriber :status :deactivated)
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/subscription/~a/unsubscribed" (dm:id campaign))))
         (api-output NIL))))

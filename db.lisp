@@ -60,8 +60,8 @@
                (name (:varchar 64))
                (address (:varchar 64))
                (signup-time (:integer 5))
-               (confirmed :boolean))
-             :indices '(campaign confirmed))
+               (status (:integer 1)))
+             :indices '(campaign status))
 
   (db:create 'attribute
              '((campaign (:id campaign))
@@ -226,7 +226,7 @@
         (make-subscriber campaign
                          (or (user:field "name" author) (user:username author))
                          reply-to
-                         :confirmed T)))
+                         :status :active)))
     campaign))
 
 (defun edit-campaign (campaign &key host author title description reply-to template attributes address (save T))
@@ -322,13 +322,14 @@
   (dm:get 'campaign-access (db:query (:= 'campaign (ensure-id campaign)))
           :sort `((user :asc)) :amount amount :skip skip))
 
-(defun make-subscriber (campaign name address &key attributes tags confirmed (signup-time (get-universal-time)) (save t))
+(defun make-subscriber (campaign name address &key attributes tags (status :unconfirmed) (signup-time (get-universal-time)) (save t))
   (db:with-transaction ()
     (when (< 0 (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                      (:= 'address address)))))
       (error 'api-argument-invalid :argument 'address :message "This email address is already subscribed."))
     (dm:with-model subscriber ('subscriber NIL)
-      (setf-dm-fields subscriber campaign name address confirmed)
+      (setf-dm-fields subscriber campaign name address)
+      (setf (dm:field subscriber "status") (user-status-id status))
       (setf (dm:field subscriber "signup-time") signup-time)
       (when save
         (dm:insert subscriber)
@@ -340,14 +341,15 @@
                    (dm:insert attribute-value)))
         (loop for tag in tags
               do (tag subscriber tag))
-        (when confirmed
+        (when (eql :active status)
           (process-triggers subscriber campaign)))
       subscriber)))
 
-(defun edit-subscriber (subscriber &key name address attributes tags confirmed (save T))
+(defun edit-subscriber (subscriber &key name address attributes tags status (save T))
   (db:with-transaction ()
     (let ((subscriber (ensure-subscriber subscriber)))
-      (setf-dm-fields subscriber name address confirmed)
+      (setf-dm-fields subscriber name address)
+      (setf (dm:field subscriber "status") (user-status-id status))
       (when save
         (dm:save subscriber)
         (loop for (attribute . value) in attributes
@@ -363,7 +365,7 @@
         (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
         (loop for tag in tags
               do (tag subscriber tag))
-        (when confirmed
+        (when (eql :active status)
           (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign")))))
       subscriber)))
 
@@ -769,6 +771,19 @@
     (10 :failed)
     (11 :send-failed)
     (12 :compile-failed)))
+
+(defun user-status-id (status)
+  (ecase status
+    (:unconfirmed 0)
+    (:active 1)
+    (:deactivated 2)
+    ((0 1 2) status)))
+
+(defun id-user-status (id)
+  (ecase id
+    (0 :unconfirmed)
+    (1 :active)
+    (2 :deactivated)))
 
 (defun collection-type (collection)
   (ecase (etypecase collection

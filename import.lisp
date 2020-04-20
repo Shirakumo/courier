@@ -53,7 +53,7 @@
                          (error "No email address found."))
                      :signup-time (when (value :signup-time)
                                     (maybe-parse-date (value :signup-time)))
-                     :confirmed T)))
+                     :status :active)))
 
 (defun import-subscribers (campaign csv)
   (db:with-transaction ()

@@ -9,7 +9,7 @@
       <ul class="tags" iterate="(courier::list-tags *)">
         <li class="tag" lquery="(text title)"></li>
       </ul>
-      <i class="fas status" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
+      <i class="fas status" lquery="(add-class (case status (0 :fa-question-circle) (1 :fa-check-circle) (2 :fa-times-circle)))"></i>
       <time lquery="(time signup-time)"></time>
       <nav class="actions">
         <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/edit campaign _id">
