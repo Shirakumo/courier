@@ -334,6 +334,7 @@ class Courier{
         var type = element.dataset.type.toLowerCase();
         var mode = 
              (type == "html") ? "htmlmixed"
+            :(type == "ctml") ? "htmlmixed"
             :(type == "js") ? "javascript"
             :(type == "css") ? "css"
             :(type == "markless") ? "markless"

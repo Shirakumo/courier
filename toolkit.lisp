@@ -110,3 +110,8 @@
                (write-char #\\ out))
              (write-char (char-downcase c) out))
     (write-string ".*" out)))
+
+(defun enlength (sequence length)
+  (if (<= (length sequence) length)
+      sequence
+      (subseq sequence 0 length)))

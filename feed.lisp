@@ -106,11 +106,12 @@
   (db:with-transaction ()
     (let* ((content (compile-mail-body (dm:field feed "template") :ctml :html
                                        :vars (feed-variables data entry)))
+           (plump:*tag-dispatchers* plump:*html-tags*)
            (mail (make-mail (dm:field feed "campaign")
-                            :title (feeder:title entry)
+                            :title (enlength (feeder:title entry) 32)
                             ;; FIXME: allow customising this
-                            :subject (feeder:title entry)
-                            :body content
+                            :subject (enlength (feeder:title entry) 128)
+                            :body (plump:serialize content NIL)
                             :type :ctml)))
       (db:insert 'feed-entry `(("feed" . ,(dm:id feed))
                                ("mail" . ,(dm:id mail))
