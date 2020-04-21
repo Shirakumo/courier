@@ -18,9 +18,10 @@
   :serial T
   :components ((:file "module")
                (:file "toolkit")
+               (:file "task-runner")
                (:file "markless")
-               (:file "host")
                (:file "db")
+               (:file "host")
                (:file "campaign")
                (:file "subscriber")
                (:file "mail")
@@ -32,12 +33,12 @@
                (:file "feed")
                (:file "send")
                (:file "send-queue")
-               (:file "prune")
                (:file "import")
                (:file "front")
                (:file "api"))
   :depends-on ((:interface :relational-database)
                (:interface :auth)
+               :bordeaux-threads
                :r-data-model
                :r-clip
                :i-json

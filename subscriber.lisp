@@ -113,3 +113,18 @@
     (0 :unconfirmed)
     (1 :active)
     (2 :deactivated)))
+
+(defun prune-unconfirmed-subscribers ()
+  (let* ((expiry-time (- (get-universal-time) (* 60 60 24)))
+         (matching (dm:get 'subscriber (db:query (:and (:= 'status (user-status-id :unconfirmed))
+                                                       (:< 'signup-time expiry-time)))
+                           :amount 10)))
+    (when matching
+      (dolist (subscriber matching T)
+        (l:info :courier.prune "Pruning unconfirmed subscriber ~a" (dm:field subscriber "address"))
+        (delete-subscriber subscriber)))))
+
+(define-task prune-unconfirmed-subscribers ()
+  (unless (prune-unconfirmed-subscribers)
+    ;; TODO: be smarter about this and schedule for the nearest matching instead.
+    (setf (due-time task) (* 12 60 60))))

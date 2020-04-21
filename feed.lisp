@@ -32,6 +32,7 @@
           (dolist (entry (feeder:content data))
             (db:insert 'feed-entry `(("feed" . ,(dm:id feed))
                                      ("guid" . ,(feed-guid entry))))))))
+    (notify-task 'update-all-feeds)
     feed))
 
 (defun edit-feed (feed &key url title frequency template (send-new NIL send-new-p))
@@ -43,7 +44,9 @@
       (setf-dm-fields feed url title frequency template)
       (when send-new-p
         (setf (dm:field feed "send-new") send-new))
-      (dm:save feed))))
+      (dm:save feed)))
+  (notify-task 'update-all-feeds)
+  feed)
 
 (defun delete-feed (feed)
   (db:with-transaction ()
@@ -136,5 +139,10 @@
 
 (defun update-all-feeds ()
   (let ((feeds (dm:get 'feed (db:query :all) :sort '((last-update :desc)))))
-    (dolist (feed feeds)
-      (maybe-update-feed feed))))
+    (loop for feed in feeds
+          do (maybe-update-feed feed)
+          minimize (+ (dm:field feed "last-update")
+                      (* 60 (dm:field feed "frequency"))))))
+
+(define-task update-all-feeds ()
+  (setf (due-time task) (update-all-feeds)))
