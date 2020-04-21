@@ -8,7 +8,7 @@ The most important text styling you'll need is making things ``**bold**``, ``//i
 
 Another important part will be headings:
 
-::markless
+:: markless
 # Top header
 ## Section
 ### Subsection
@@ -18,7 +18,7 @@ Another important part will be headings:
 
 You can also define listings, though those will probably be less frequent in emails:
 
-::markless
+:: markless
 - One
 - Two
 - Three
@@ -33,7 +33,7 @@ You can also define listings, though those will probably be less frequent in ema
 ### Embeds
 Embeds allow you to integrate content like images or videos into your text. A very simple example would be just:
 
-::markless
+:: markless
 [ image https://example.com/image.jpg ]
 ::
 
@@ -43,18 +43,27 @@ While Markless does support audio and video embeds as well, it's likely that man
 ### Links
 In order to use links, you can either simply put the entire link verbatim into the text, or use the compound directive to turn some text into a link:
 
-::markless
+:: markless
 https://example.com
 "example"(https://example.com)
 ::
 
 All links that do not already refer to a Courier page will automatically be transformed into a link that is specific to the given email and subscriber. Thus, when the user clicks on any link in an email, it will first resolve through Courier, allowing Courier to record that the link has been visited and the email been read, before redirecting the user to the intended target.
 
+### Raw HTML
+Sometimes it might be convenient to insert raw HTML into the resulting email. For this you can use Markless' code block with the ``inline`` option:
+
+::: markless
+:: html, inline
+<a href="https://example.com">An example.</a>
+::
+:::
+
 ### Variables
 You can include the content of a variable in your text using the following syntax: ``{variable}``
 For example, creating a simple greeting of the subscriber would work as follows:
 
-::markless
+:: markless
 # Hello, {name}
 Hope you're doing great!
 ::
@@ -64,13 +73,13 @@ See the section on "variables"(link variables) for available variables.
 ### Buttons
 Often you'd want to include a call to action button, or some other central link. You can use this with the button embed type.
 
-::markless
+:: markless
 [ button https://example.com, caption Exciting Stuff! ]
 ::
 
 The target of the button can also be a variable expression:
 
-::markless
+:: markless
 [ button {archive-url}, caption Take me to the archive ]
 ::
 
@@ -79,7 +88,7 @@ The styling of the button is dependent on your template.
 ### Referring to Other Emails
 In order to include a subscriber-specific link to another email and give them access to it, you can use the ``mail`` compound option. Let's pretend  you have an email with the title ``secrets revealed!``. You can hand out a link to it like this:
 
-::markless
+:: markless
 Check out this "earlier email"(mail secrets revealed!)
 ::
 

@@ -3,7 +3,7 @@ Templates are defined in a templating language called "Clip"(https://shinmera.gi
 
 In order to explain how Clip works in the context of Courier, let's take a look at the default template Courier offers:
 
-::
+:: html
 <!DOCTYPE html>
 <html>
   <head>
@@ -49,25 +49,25 @@ In order to explain how Clip works in the context of Courier, let's take a look 
 
 The CSS styling has been removed for brevity. The first use of Clip is on the 5th line:
 
-::
+:: html
     <title lquery="(text subject)">Subject</title>
 ::
 
 The ``lquery`` attribute defines a use of the "lQuery"(https://shinmera.github.io/lquery) system that applies transforms to the current element. In this case, we simply set the textual contents of the ``title`` element to the value of the "``subject``"(link variables#subject) variable. Another use of the ``lquery`` attribute is on line 12:
 
-::
+:: html
       <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
 ::
 
 Here we set the ``src`` attribute of the ``img`` element to the value of the "``mail-receipt-image``"(link variables#mail-receipt-image) variable. Most of the things that happen will be either setting text or attributes with lQuery like this. One important part is to actually include the content body in the email. This happens on line 15:
 
-::
+:: html
     <div class="main" id="main" lquery="(html body)">
 ::
 
 Here we simply use the ``html`` function of lQuery to splice the raw "``body``"(link variables#body) HTML into the contents of the ``div``. Finally, a slightly more advanced use of Clip is on line 26:
 
-::
+:: html
         <c:splice lquery="(text address)">
 ::
 
