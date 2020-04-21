@@ -268,6 +268,26 @@
                  :next-page (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
                                   :query `(("page" . ,(princ-to-string (1+ page))))))))
 
+(define-page feed-list "courier/^campaign/([^/]+)/feed/?" (:uri-groups (campaign) :access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed)))
+    (render-page "Feed list"
+                 (@template "feed-list.ctml")
+                 :campaign campaign
+                 :feeds (list-feeds campaign))))
+
+(define-page feed-new "courier/^campaign/([^/]+)/feed/new" (:uri-groups (campaign) :access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
+         (feed (make-feed campaign "" :save NIL)))
+    (render-page "Create Feed"
+                 (@template "feed-edit.ctml")
+                 :feed feed)))
+
+(define-page feed-edit "courier/^campaign/([^/]+)/feed/([^/+])/edit" (:uri-groups (campaign feed) :access (perm courier user))
+  (let ((feed (check-accessible (ensure-feed feed))))
+    (render-page "Edit Feed"
+                 (@template "feed-edit.ctml")
+                 :feed feed)))
+
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail))))
     (render-page "Mail Log"
@@ -325,7 +345,10 @@
     (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
            (subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field mail "campaign")))
-           (content (compile-mail-body (dm:field mail "body") (mail-template-args campaign mail subscriber)
+           (content (compile-mail-body (dm:field mail "body")
+                                       (id-mail-type (dm:field mail "type"))
+                                       :html
+                                       :vars (mail-template-args campaign mail subscriber)
                                        :campaign campaign
                                        :subscriber subscriber
                                        :mail mail)))

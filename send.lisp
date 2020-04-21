@@ -67,7 +67,7 @@
                                (decrypt (dm:field host "password"))))
        :display-name (dm:field host "display-name")))))
 
-(defun mail-template-args (campaign mail subscriber)
+(defun mail-template-vars (campaign mail subscriber)
   (list* :mail-receipt-image (mail-receipt-url mail subscriber)
          :mail-url (mail-url mail subscriber)
          :archive-url (archive-url subscriber)
@@ -84,15 +84,32 @@
          :address (dm:field campaign "address")
          (subscriber-attributes subscriber)))
 
-(defun compile-mail-content (campaign mail subscriber &key (template (dm:field campaign "template")) (format 'html-format))
-  (let ((args (mail-template-args campaign mail subscriber)))
+(defgeneric compile-mail-body (body source-type target-type &key &allow-other-keys))
+
+(defmethod compile-mail-body (body (source-type (eql :text)) (target-type (eql :text)) &key)
+  body)
+
+(defmethod compile-mail-body (body (source-type (eql :text)) (target-type (eql :html)) &key)
+  (make-instance 'plump-dom:text-node :parent NIL :text body))
+
+(defmethod compile-mail-body (body (source-type (eql :ctml)) (target-type (eql :text)) &key vars)
+  ;; FIXME: This does not personalise links.
+  (plump-dom:text (apply #'r-clip:process body vars)))
+
+(defmethod compile-mail-body (body (source-type (eql :ctml)) (target-type (eql :html)) &key vars)
+  (apply #'r-clip:process body vars))
+
+(defun compile-mail-content (campaign mail subscriber &key (template (dm:field campaign "template")) (type :html))
+  (let ((vars (mail-template-vars campaign mail subscriber)))
     (apply #'compile-mail template
-           (list* :body (compile-mail-body (dm:field mail "body") args
+           (list* :body (compile-mail-body (dm:field mail "body")
+                                           (id-mail-type (dm:field mail "type"))
+                                           type
+                                           :vars vars
                                            :campaign campaign
                                            :subscriber subscriber
-                                           :mail mail
-                                           :format format)
-                  args))))
+                                           :mail mail)
+                  vars))))
 
 (defun send-mail (mail subscriber)
   (l:debug :courier.mail "Sending ~a to ~a" mail subscriber)
@@ -103,7 +120,7 @@
                             (declare (ignore e))
                             (mark-mail-sent mail subscriber :compile-falied))))
       (setf html (compile-mail-content campaign mail subscriber))
-      (setf plain (compile-mail-content campaign mail subscriber :template #p"email/text-template.ctml" :format 'plain-format)))
+      (setf plain (compile-mail-content campaign mail subscriber :template #p"email/text-template.ctml" :type :text)))
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
                             (mark-mail-sent mail subscriber :send-failed))))
@@ -119,7 +136,7 @@
 
 (defun send-system-mail (body address host campaign &rest args)
   (let ((html (apply #'compile-mail #p"email/system-template.ctml"
-                     (list* :body (compile-mail-body body args)
+                     (list* :body (compile-mail-body body :markless :html :vars args)
                             args))))
     (send host address
           (extract-subject html)

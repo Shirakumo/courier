@@ -1,0 +1,70 @@
+<article class="page feed edit">
+  <c:using value="feed">
+    <form method="post">
+      <div class="row">
+        <label for="host">Campaign:</label>
+        <input type="hidden" name="campaign" lquery="(val campaign)" />
+        <input type="text" readonly
+               id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
+      </div>
+      <div class="row" title="The title of the feed. This is an internal detail.">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row" title="The URL from which the feed is fetched.">
+        <label for="url">URL:</label>
+        <input type="url" minlength="10" maxlength="128" autocomplete="none" required
+               id="url" name="url" lquery="(val url)" />
+      </div>
+      <div class="row" title="How often (in minutes) to check for new etnries in the feed.">
+        <label for="frequency">Frequency</label>
+        <input type="number" min="1" autocomplete="none"
+               id="frequency" name="frequency" lquery="(val frequency)" />
+      </div>
+      <div class="row" title="What to do when a new entry is discovered.">
+        <label for="send-new">On new entry</label>
+        <select name="send-new" id="send-new" lquery='(select (if send-new "true" "false"))'>
+          <option value="false">Create email</option>
+          <option value="true">Create and send email</option>
+        </select>
+      </div>
+      <c:unless test="_id">
+        <div class="row" title="Whether to immediately create new emails for entries that are currently found in the feed. If not checked, only entries that are added to the feed after this has been created are turned into emails.">
+          <label for="backfill">Back-fill entries</label>
+          <input type="checkbox" name="backfill" id="backfill" value="true" />
+        </div>
+      </c:unless>
+      <div class="row big">
+        <label for="template">Template:</label>
+        <div class="editor" data-type="html" data-preview-endpoint="feed/preview">
+          <nav>
+            <a @href="courier/help/feed" title="Feed help" target="_blank">
+              <i class="fas fa-info-circle"></i>
+            </a>
+            <a href="#" title="Upload an Image" class="upload">
+              <i class="fas fa-file-upload"></i>
+            </a>
+            <a href="#" title="Preview" class="preview" style="float: right">
+              <i class="fas fa-eye"></i>
+            </a>
+          </nav>
+          <textarea id="template" name="template" lquery="(text template)" />
+        </div>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="feed" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/feed/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/feed/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Feed" @formaction="courier/api/courier/feed/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+  </c:using>
+</article>

@@ -154,25 +154,28 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
     (api-output (list-mails campaign :amount (int* amount) :skip (int* skip 0) :query (or* query)))))
 
-(define-api courier/mail/new (campaign title subject body &optional send) (:access (perm courier user))
+(define-api courier/mail/new (campaign title subject body &optional type send) (:access (perm courier user))
   (check-title title)
   (db:with-transaction ()
     (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)) :target 'mail))
-           (mail (make-mail campaign
-                            :title title
-                            :subject subject
-                            :body body)))
+           (type (cond ((or (null type) (string= type "markless")) :markless)
+                       ((string= type "text") :text)
+                       ((string= type "html") :html)))
+           (mail (make-mail campaign :title title :subject subject :body body :type type)))
       ;; Compile template once to check for validity
       (compile-mail-content campaign mail (campaign-author campaign))
       (when send (enqueue-mail mail))
       (output mail "Mail created." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
-(define-api courier/mail/edit (mail &optional title subject body) (:access (perm courier user))
+(define-api courier/mail/edit (mail &optional title subject body type) (:access (perm courier user))
   (check-title title)
   (db:with-transaction ()
     (let* ((mail (check-accessible (ensure-mail mail)))
+           (type (cond ((string= type "markless") :markless)
+                       ((string= type "text") :text)
+                       ((string= type "html") :html)))
            (campaign (ensure-campaign (dm:field mail "campaign"))))
-      (edit-mail mail :title title :subject subject :body body)
+      (edit-mail mail :title title :subject subject :body body :type type)
       ;; Compile template once to check for validity
       (try-compile-content campaign mail (campaign-author campaign))
       (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
@@ -199,7 +202,7 @@
 (define-api courier/mail/preview (&optional mail campaign title subject body) (:access (perm courier user))
   (let* ((mail (cond (mail (check-accessible (ensure-mail mail)))
                      (campaign (make-mail (ensure-campaign campaign) :save NIL))
-                     (T (error "Need MAIL or CAMPAIGN."))))
+                     (T (error 'api-argument-missing :argument '(mail campaign) :message "Need MAIL or CAMPAIGN."))))
          (campaign (ensure-campaign (dm:field mail "campaign"))))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields mail title subject body)
@@ -324,7 +327,7 @@
                            for value in values[]
                            for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
                            do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
-                                (error "Invalid attribute field."))
+                                (error 'api-argument-invalid :argument 'field[] :message "Invalid attribute."))
                            collect (cons attribute value)))
          (tags (mapcar #'ensure-tag tag[]))
          (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :status :active)))
@@ -336,7 +339,7 @@
                            for value in values[]
                            for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
                            do (unless (equal (dm:field subscriber "campaign") (dm:field attribute "campaign"))
-                                (error "Invalid attribute field."))
+                                (error 'api-argument-invalid :argument 'field[] :message "Invalid attribute."))
                            collect (cons attribute value)))
          (tags (mapcar #'ensure-tag tag[])))
     (edit-subscriber subscriber :name name :tags tags :attributes attributes)
@@ -455,6 +458,50 @@
     (delete-sequence sequence)
     (output NIL "Sequence deleted." "courier/campaign/~a/sequence" (dm:field sequence "campaign"))))
 
+(define-api courier/feed (feed) (:access (perm courier user))
+  (let ((feed (check-accessible (ensure-feed feed))))
+    (setf (dm:field feed "entries") (db:select 'feed-entry (db:query (:= 'feed (dm:id feed)))))
+    (api-output feed)))
+
+(define-api courier/feed/list (campaign &optional amount skip) (:access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed)))
+    (api-output (list-feeds campaign :amount (int* amount) :skip (int* skip 0)))))
+
+(define-api courier/feed/new (campaign url &optional title frequency template send-new backfill) (:access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
+        (feed (make-feed campaign url :title title :frequency (int* frequency 10) :template template
+                                      :send-new (if send-new T NIL) :backfill backfill)))
+    (output feed "Feed created." "courier/campaign/~a/feed" (dm:id campaign))))
+
+(define-api courier/feed/edit (feed &optional url title frequency template send-new) (:access (perm courier user))
+  (let ((feed (check-accessible (ensure-feed feed))))
+    (if send-new
+        (edit-feed feed :url url :title title :frequency (int* frequency) :template template :send-new (string= send-new "true"))
+        (edit-feed feed :url url :title title :frequency (int* frequency) :template template))
+    (output feed "Feed edited." "courier/campaign/~a/feed" (dm:field feed "campaign"))))
+
+(define-api courier/feed/delete (feed) (:access (perm courier user))
+  (let ((feed (check-accessible (ensure-feed feed))))
+    (delete-feed feed)
+    (output NIL "Feed deleted." "courier/campaign/~a/feed" (dm:field feed "campaign"))))
+
+(define-api courier/feed/preview (&optional feed campaign url template) (:access (perm courier user))
+  (let* ((feed (cond (feed (check-accessible (ensure-feed feed)))
+                     ((and campaign url) (make-feed (ensure-campaign campaign) url :save NIL))
+                     (T (error 'api-argument-missing :argument '(mail url campaign) :message "Need a feed URL."))))
+         (campaign (ensure-campaign (dm:field feed "campaign")))
+         (data (fetch-feed (or* url (dm:field feed "url"))))
+         (entry (first (feeder:content data)))
+         (content (compile-mail-body (or* template (dm:field feed "template")) :ctml :html
+                                     :vars (feed-variables data entry)))
+         (mail (make-mail campaign :title (feeder:title entry)
+                                   :subject (feeder:title entry)
+                                   :body content
+                                   :type :ctml
+                                   :save NIL)))
+    (setf (content-type *response*) "text/html; encoding=utf-8")
+    (try-compile-content campaign mail (campaign-author campaign))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
@@ -468,7 +515,7 @@
                            for value in values[]
                            for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
                            do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
-                                (error "Invalid attribute field."))
+                                (error 'api-argument-invalid :argument fields[] :message "Invalid attribute."))
                            collect (cons attribute value))))
     (handler-case ;; Try to add normally
         (let ((subscriber (make-subscriber campaign name address :attributes attributes)))

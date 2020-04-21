@@ -245,7 +245,7 @@
      (>* :display table-cell)
      :align-items center
      (.title :min-width 10em)
-     ((:or .address .description .subject .tags) :width 100%)
+     ((:or .address .description .subject .tags .url) :width 100%)
      (.status :padding 0 1em)
      (time :white-space nowrap)
      (.actions :white-space nowrap :text-align right))))

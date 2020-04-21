@@ -1,0 +1,2 @@
+<h1 lquery="(text title)">Title</h1>
+<c:splice lquery="(html content)"/>

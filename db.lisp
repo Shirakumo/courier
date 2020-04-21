@@ -66,6 +66,7 @@
                (title (:varchar 32))
                (subject (:varchar 128))
                (body :text)
+               (type (:integer 1))
                (time (:integer 5)))
              :indices '(campaign title))
 
@@ -221,7 +222,7 @@
        (check (dm:field dm "author")))
       (campaign
        (check-campaign dm))
-      ((mail tag trigger link subscriber file sequence)
+      ((mail tag trigger link subscriber file sequence feed)
        (check-campaign (dm:field dm "campaign"))))
     dm))
 
@@ -243,7 +244,8 @@
       (when (< 1 access-level)
         (set-bit (collection-type 'tag))
         (set-bit (collection-type 'trigger))
-        (set-bit (collection-type 'sequence)))
+        (set-bit (collection-type 'sequence))
+        (set-bit (collection-type 'feed)))
       (when (< 2 access-level)
         (set-bit (collection-type 'subscriber)))
       (when (< 3 access-level)

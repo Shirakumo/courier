@@ -55,7 +55,7 @@
       </c:if>
       <div class="row big">
         <label for="body">Body:</label>
-        <div class="editor" data-type="markless" data-preview-endpoint="mail/preview">
+        <div class="editor" data-preview-endpoint="mail/preview" lquery="(data :type (courier::id-mail-type type))">
           <nav>
             <a @href="courier/help/mail" title="Email help" target="_blank">
               <i class="fas fa-info-circle"></i>

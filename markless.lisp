@@ -130,16 +130,22 @@
                     (vector-push-extend (make-instance 'var :name (subseq line cursor i)) children)
                     (return (1+ i))))))
 
-(defun compile-mail-body (content vars &key campaign subscriber mail (format 'html-format))
-  (when (typep content 'string)
-    (setf content (cl-ppcre:regex-replace-all "\\r\\n" content (string #\Linefeed))))
-  (let ((target (ecase format
-                  (html-format (plump-dom:make-root))
-                  (plain-format NIL))))
-    (markless:output (markless:parse content (make-instance 'parser))
-                     :target target
-                     :format (make-instance format
-                                            :vars vars
-                                            :campaign campaign
-                                            :subscriber subscriber
-                                            :mail mail))))
+(defmethod compile-mail-body (body (source-type (eql :markless)) (target-type (eql :html)) &key vars campaign subscriber mail)
+  (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed)))
+  (markless:output (markless:parse body (make-instance 'parser))
+                   :target (plump-dom:make-root)
+                   :format (make-instance 'html-format
+                                          :vars vars
+                                          :campaign campaign
+                                          :subscriber subscriber
+                                          :mail mail)))
+
+(defmethod compile-mail-body (body (source-type (eql :markless)) (target-type (eql :text)) &key vars campaign subscriber mail)
+  (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed)))
+  (markless:output (markless:parse body (make-instance 'parser))
+                   :target NIL
+                   :format (make-instance 'plain-format
+                                          :vars vars
+                                          :campaign campaign
+                                          :subscriber subscriber
+                                          :mail mail)))

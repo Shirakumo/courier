@@ -13,14 +13,16 @@
      (T (dm:get-one 'feed (db:query (:= '_id (db:ensure-id feed-ish))))))
    (error 'request-not-found :message "No such feed.")))
 
-(defun list-feeds (campaign)
-  (dm:get 'feed (db:query (:= 'campaign (ensure-id campaign)))))
+(defun list-feeds (campaign &key amount (skip 0))
+  (dm:get 'feed (db:query (:= 'campaign (ensure-id campaign)))
+          :sort '((title :asc)) :skip skip :amount amount))
 
 (defun make-feed (campaign url &key title (frequency 10) template (send-new T) backfill (save T))
-  (let* ((data (fetch-feed url))
-         (title (or title (feeder:title data) ""))
-         (template (or template (alexandria:read-file-into-string (@template "email/default-feed.mess"))))
-         (feed (dm:hull 'feed)))
+  (let* ((data (when save (fetch-feed url)))
+         (title (or title (when data (feeder:title data)) ""))
+         (template (or template (alexandria:read-file-into-string (@template "email/default-feed.ctml"))))
+         (feed (dm:hull 'feed))
+         (frequency (max 1 frequency)))
     (setf-dm-fields feed campaign url title frequency template send-new)
     (setf (dm:field feed "last-update") (get-universal-time))
     (when save
@@ -34,7 +36,8 @@
 
 (defun edit-feed (feed &key url title frequency template (send-new NIL send-new-p))
   (db:with-transaction ()
-    (let ((feed (ensure-feed feed)))
+    (let ((feed (ensure-feed feed))
+          (frequency (when frequency (max 1 frequency))))
       ;; Ensure the URL is valid.
       (when url (fetch-feed url))
       (setf-dm-fields feed url title frequency template)
@@ -84,7 +87,7 @@
         :contributors (or (feeder:contributors entry) (feeder:contributors feed))
         :categories (or (feeder:categories entry) (feeder:categories feed))
         :language (or (feeder:language entry) (feeder:language feed))
-        :published-on (when (feeder:published-on entry) (format-human-date (feeder:published-on entry)))
+        :published-on (feeder:published-on entry)
         :link (when (feeder:link entry) (feeder:url (feeder:link entry)))
         :title (feeder:title entry)
         :summary (feeder:summary entry)
@@ -98,14 +101,14 @@
 
 (defun process-feed-entry (feed data entry)
   (db:with-transaction ()
-    (let* ((content (compile-mail-body (dm:field feed "template")
-                                       (feed-variables data entry)
-                                       :format 'plain-format))
+    (let* ((content (compile-mail-body (dm:field feed "template") :ctml :html
+                                       :vars (feed-variables data entry)))
            (mail (make-mail (dm:field feed "campaign")
                             :title (feeder:title entry)
                             ;; FIXME: allow customising this
                             :subject (feeder:title entry)
-                            :body content)))
+                            :body content
+                            :type :ctml)))
       (db:insert 'feed-entry `(("feed" . ,(dm:id feed))
                                ("mail" . ,(dm:id mail))
                                ("guid" . ,(feed-guid entry))))
@@ -120,6 +123,18 @@
           for guid = (feed-guid entry)
           do (unless (< 0 (db:count 'feed-entry (db:query (:and (:= 'feed (dm:id feed))
                                                                 (:= 'guid guid)))))
-               (l:debug :courier.feed "Found new entry with guid ~a" guid)
+               (l:info :courier.feed "Found new entry with guid ~a in ~a" guid feed)
                (process-feed-entry feed data entry)))
     (setf (dm:field feed "last-update") (get-universal-time))))
+
+(defun maybe-update-feed (feed)
+  (let ((feed (ensure-feed feed)))
+    (when (< (+ (dm:field feed "last-update")
+                (* 60 (dm:field feed "frequency")))
+             (get-universal-time))
+      (update-feed feed))))
+
+(defun update-all-feeds ()
+  (let ((feeds (dm:get 'feed (db:query :all) :sort '((last-update :desc)))))
+    (dolist (feed feeds)
+      (maybe-update-feed feed))))

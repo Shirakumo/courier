@@ -1,0 +1,54 @@
+## Feeds
+Courier allows you to automatically generate emails when a remote RSS or Atom news feed updates. To do this, you supply a URL to get the feed from, and specify a template that will generate an email based on the feed data.
+
+The template is written in CTML, just as the "campaign template is"(link template). Unlike for the campaign though, a separate set of variables is used. The available variables are described below.
+
+Whenever a new entry in the feed is discovered, a new email instance is created from the feed contents. You can then edit this email like you would any other and set triggers on it or send it out to people.
+
+### authors
+A list of ``feeder:author`` instances that describe the authors of the feed entry.
+
+### categories
+A list of strings describing the categories the entry belongs to.
+
+### comment-section
+If present, a URL to the comment section of the entry.
+
+### content
+The text or HTML content of the entry. You typically want to include this via the ``html`` lquery function.
+
+### contributors
+A list of ``feeder:author`` instances that describe the contributors of the feed entry.
+
+### feed-link
+If present, a URL to the feed itself or its main homepage.
+
+### generator
+A description of the generator that created the feed.
+
+### id
+A, hopefully, globally unique ID for the entry. May or may not be a URL.
+
+### language
+If present, an identifier for the language in which the feed entry is written.
+
+### link
+If present, a URL to the feed entry on its original website.
+
+### logo
+If present, a URL to an image that should be used for the feed's logo.
+
+### published-on
+If present, a ``local-time:timestamp`` of the time the entry was first published. You typically want to include this via the ``time`` lquery function. 
+
+### source
+If present, a URL or description of the original source of the feed entry, if it was aggregated from somewhere else.
+
+### summary
+The text or HTML summary of the entry. You typically want to include this via the ``html`` lquery function.
+
+### title
+The title of the feed entry in text or HTML format.
+
+### webmaster
+If present, a ``feeder:author`` instance describing the contact for administrative problems with the feed.

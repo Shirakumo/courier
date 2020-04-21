@@ -331,10 +331,12 @@ class Courier{
         var self = this;
         var textarea = element.querySelector("textarea");
         var nav = element.querySelector("nav");
-        var mode = (element.dataset.type == "html") ? "htmlmixed"
-            :(element.dataset.type == "js") ? "javascript"
-            :(element.dataset.type == "css") ? "css"
-            :(element.dataset.type == "markless") ? "markless"
+        var type = element.dataset.type.toLowerCase();
+        var mode = 
+             (type == "html") ? "htmlmixed"
+            :(type == "js") ? "javascript"
+            :(type == "css") ? "css"
+            :(type == "markless") ? "markless"
             : "";
         var editor = null;
         self.loadJS("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.js")

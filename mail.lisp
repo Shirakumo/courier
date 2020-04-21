@@ -31,18 +31,21 @@
        (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
                :sort '(("send-time" :desc)) :hull 'mail)))))
 
-(defun make-mail (campaign &key title subject body (save T))
+(defun make-mail (campaign &key title subject body (type :markless) (save T))
   (let ((campaign (ensure-campaign campaign)))
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body campaign)
       (setf (dm:field mail "time") (get-universal-time))
+      (setf (dm:field mail "type") (mail-type-id type))
       (when save
         (dm:insert mail))
       mail)))
 
-(defun edit-mail (mail &key title subject body (save T))
+(defun edit-mail (mail &key title subject body type (save T))
   (let ((mail (ensure-mail mail)))
     (setf-dm-fields mail title subject body)
+    (when type
+      (setf (dm:field mail "type") (mail-type-id type)))
     (when save (dm:save mail))
     mail))
 
@@ -120,3 +123,16 @@
     (10 :failed)
     (11 :send-failed)
     (12 :compile-failed)))
+
+(defun mail-type-id (type)
+  (ecase type
+    (:text 0)
+    (:markless 1)
+    (:ctml 2)
+    ((0 1 2) type)))
+
+(defun id-mail-type (id)
+  (ecase id
+    (0 :text)
+    (1 :markless)
+    (2 :ctml)))
