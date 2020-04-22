@@ -1,0 +1,13 @@
+# List update for {campaign}
+Since the last update, you have gained {count} new subscribers.
+
+## New Subscribers
+:: html, inline
+<ul iterate="subscribers">
+  <li>
+    <img class="gravatar" alt="Avatar" lquery="(attr :src (courier::gravatar address))">
+    <a class="name" lquery="(text name)" @href="courier/campaign/{0}/subscriber/{1} campaign _id">Max Example</a>
+    <a class="address" lquery='(text address) (attr :href (format NIL "mailto:~a" address))'>example@example.com</a>
+  </li>
+</ul>
+::

@@ -97,13 +97,14 @@
 (define-api courier/campaign/list (&optional amount skip) (:access (perm courier user))
   (api-output (list-campaigns (auth:current) :amount (int* amount) :skip (int* skip 0))))
 
-(define-api courier/campaign/new (host title &optional address description reply-to template attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
+(define-api courier/campaign/new (host title &optional address description reply-to template report-interval attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
   (check-title title)
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
       (let* ((host (check-accessible (ensure-host host) :target 'campaign))
              (campaign (make-campaign (user:id (auth:current)) host title
                                       :description description :address address :reply-to reply-to :template template
+                                      :report-interval (int* report-interval 0)
                                       :attributes (loop for title in attribute[]
                                                         for type in attribute-type[]
                                                         for required in attribute-required[]
@@ -112,12 +113,13 @@
         (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign created." "courier/campaign/")))))
 
-(define-api courier/campaign/edit (campaign &optional title host address description reply-to template attribute[] attribute-type[] attribute-required[]) :access (perm courier user)
+(define-api courier/campaign/edit (campaign &optional title host address description reply-to template report-interval attribute[] attribute-type[] attribute-required[]) :access (perm courier user)
   (when title (check-title title))
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
       (let ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)))))
         (edit-campaign campaign :host host :title title :address address :description description :reply-to reply-to :template template
+                                :report-interval (int* report-interval)
                                 :attributes (loop for title in attribute[]
                                                   for type in attribute-type[]
                                                   for required in attribute-required[]

@@ -14,10 +14,17 @@
 (defclass task ()
   ((due-time :initarg :due-time :initform 0 :accessor due-time)))
 
+(defmethod print-object ((task task) stream)
+  (print-unreadable-object (task stream :type T)
+    (format-human-date (due-time task) stream)))
+
 (defgeneric run-task (task))
 
 (defmethod task-ready-p ((task task))
   (<= (due-time task) (get-universal-time)))
+
+(defmethod reschedule-in (time (task task))
+  (setf (due-time task) (+ time (get-universal-time))))
 
 (defun nearest-task (tasks)
   (loop for task in tasks
@@ -62,7 +69,7 @@
                         (run-task task))))
            (bt:with-lock-held (*task-lock*)
              (bt:condition-wait *task-condition* *task-lock*
-                                :timeout (nearest-task *tasks*)))))
+                                :timeout (max 1 (- (nearest-task *tasks*) (get-universal-time)))))))
 
 (defun start-task-runner ()
   (when (and *task-runner*

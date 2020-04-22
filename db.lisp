@@ -31,6 +31,8 @@
                (description :text)
                (time (:integer 5))
                (reply-to (:varchar 64))
+               (report-interval (:integer 4))
+               (last-report (:integer 5))
                (template :text)
                (address :text))
              :indices '(author title))

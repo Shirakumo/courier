@@ -131,7 +131,8 @@
                     (return (1+ i))))))
 
 (defmethod compile-mail-body (body (source-type (eql :markless)) (target-type (eql :html)) &key vars campaign subscriber mail)
-  (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed)))
+  (when (stringp body)
+    (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed))))
   (markless:output (markless:parse body (make-instance 'parser))
                    :target (plump-dom:make-root)
                    :format (make-instance 'html-format
@@ -141,7 +142,8 @@
                                           :mail mail)))
 
 (defmethod compile-mail-body (body (source-type (eql :markless)) (target-type (eql :text)) &key vars campaign subscriber mail)
-  (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed)))
+  (when (stringp body)
+    (setf body (cl-ppcre:regex-replace-all "\\r\\n" body (string #\Linefeed))))
   (markless:output (markless:parse body (make-instance 'parser))
                    :target NIL
                    :format (make-instance 'plain-format

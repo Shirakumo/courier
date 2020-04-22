@@ -134,10 +134,11 @@
             :unsubscribe (unsubscribe-url subscriber)))
     (mark-mail-sent mail subscriber)))
 
-(defun send-system-mail (body address host campaign &rest args)
+(defun send-system-mail (body address host campaign &rest vars)
   (let ((html (apply #'compile-mail #p"email/system-template.ctml"
-                     (list* :body (compile-mail-body body :markless :html :vars args)
-                            args))))
+                     (list* :body (compile-mail-body body :markless :html :vars vars)
+                            vars)))
+        (host (ensure-host host)))
     (send host address
           (extract-subject html)
           html

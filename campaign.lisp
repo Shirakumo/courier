@@ -35,12 +35,13 @@
       (dm:get 'campaign (db:query :all)
               :sort '((title :asc)) :amount amount :skip skip)))
 
-(defun make-campaign (author host title &key description reply-to template attributes address (save T))
+(defun make-campaign (author host title &key description reply-to template attributes address (report-interval (* 60 60 24)) (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)
                                                       (:= 'title title))))
   (dm:with-model campaign ('campaign NIL)
-    (setf-dm-fields campaign title host description reply-to template address)
+    (setf-dm-fields campaign title host description reply-to template address report-interval)
     (setf (dm:field campaign "author") (user:id author))
+    (setf (dm:field campaign "last-report") (get-universal-time))
     (when save
       (db:with-transaction ()
         (dm:insert campaign)
@@ -57,12 +58,13 @@
         (make-subscriber campaign
                          (or (user:field "name" author) (user:username author))
                          reply-to
-                         :status :active)))
+                         :status :active))
+      (notify-task 'report-subscribers))
     campaign))
 
-(defun edit-campaign (campaign &key host author title description reply-to template attributes address (save T))
+(defun edit-campaign (campaign &key host author title description reply-to template attributes address report-interval (save T))
   (let ((campaign (ensure-campaign campaign)))
-    (setf-dm-fields campaign host author title description reply-to template address)
+    (setf-dm-fields campaign host author title description reply-to template address report-interval)
     (when save
       (db:with-transaction ()
         (dm:save campaign)
@@ -87,7 +89,8 @@
                                                   ("required" . ,required))))))
           (dolist (attribute existing)
             (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
-            (dm:delete attribute)))))
+            (dm:delete attribute))))
+      (notify-task 'report-subscribers))
     campaign))
 
 (defun campaign-author (campaign)
@@ -131,3 +134,39 @@
 (defun list-access (campaign &key amount (skip 0))
   (dm:get 'campaign-access (db:query (:= 'campaign (ensure-id campaign)))
           :sort `((user :asc)) :amount amount :skip skip))
+
+(defun send-subscriber-update (campaign &optional since)
+  (let* ((campaign (ensure-campaign campaign))
+         (since (or since (dm:field campaign "last-report")))
+         (new (new-subscribers-since campaign since)))
+    (send-system-mail
+     (@template "email/subscriber-report.mess")
+     (dm:field campaign "reply-to")
+     (dm:field campaign "host")
+     campaign
+     :subject (format NIL "Mailing list subscription report for ~a" (dm:field campaign "title"))
+     :campaign (dm:field campaign "title")
+     :count (length new)
+     :subscribers new)
+    (db:with-transaction ()
+      ;; FIXME: rejigger this so that reports always happen at specified times of the day
+      (setf (dm:field campaign "last-report") (get-universal-time))
+      (dm:save campaign))))
+
+(defun report-subscribers (&optional campaign)
+  (if campaign
+      (let ((campaign (ensure-campaign campaign))
+            (next-report (+ (dm:field campaign "report-interval")
+                            (dm:field campaign "last-report"))))
+        (cond ((< 0 (dm:field campaign "report-interval"))
+               (when (<= next-report (get-universal-time))
+                 (send-subscriber-update campaign)
+                 (setf next-report (+ (get-universal-time) (dm:field campaign "report-interval"))))
+               next-report)
+              (T
+               (+ (get-universal-time) (* 60 60 24 365 100)))))
+      (loop for campaign in (list-campaigns)
+            minimize (report-subscribers campaign))))
+
+(define-task report-subscribers ()
+  (setf (due-time task) (report-subscribers)))

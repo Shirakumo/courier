@@ -101,6 +101,12 @@
     (campaign (db:count 'subscriber (db:query (:= 'campaign (dm:id thing)))))
     (tag (db:count 'tag-table (db:query (:= 'tag (dm:id thing)))))))
 
+(defun new-subscribers-since (campaign time)
+  (dm:get 'subscriber (db:query (:and (:= 'campaign (ensure-id campaign))
+                                      (:= 'status (user-status-id :active))
+                                      (:<= time 'signup-time)))
+          :sort '((address :asc))))
+
 (defun user-status-id (status)
   (ecase status
     (:unconfirmed 0)
@@ -127,4 +133,4 @@
 (define-task prune-unconfirmed-subscribers ()
   (unless (prune-unconfirmed-subscribers)
     ;; TODO: be smarter about this and schedule for the nearest matching instead.
-    (setf (due-time task) (* 12 60 60))))
+    (reschedule-in (due-time task) (* 12 60 60))))

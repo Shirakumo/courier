@@ -115,3 +115,7 @@
   (if (<= (length sequence) length)
       sequence
       (subseq sequence 0 length)))
+
+(defun gravatar (email &key (size 32) (default :mm))
+  (format NIL "https://secure.gravatar.com/avatar/~a?s=~d&d=~a"
+          (cryptos:md5 (string-downcase email)) size (string-downcase default)))

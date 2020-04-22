@@ -17,9 +17,19 @@
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
       <div class="row" title="The email address replies to campaign mails will be sent to. This is also the default email address status emails will be sent to.">
-        <label for="address">Reply To Address:</label>
+        <label for="address">Reply to address:</label>
         <input type="email" minlength="3" maxlength="64" placeholder="user@mail.com" autocomplete="email"
                id="reply-to" name="reply-to" lquery="(val reply-to)" />
+      </div>
+      <div class="row" title="How often to send reports about new subscribers to your reply-to address.">
+        <label for="report-interval">Report interval:</label>
+        <select name="report-interval" id="report-interval" lquery="(select report-interval)">
+          <option value="0">Never</option>
+          <option value="3600">Hourly</option>
+          <option value="86400">Daily</option>
+          <option value="604800">Weekly</option>
+          <option value="2592000">Monthly</option>
+        </select>
       </div>
       <div class="row dynamic-list" title="Additional attributes that the user should fill out on the subscription form.">
         <label for="attributes">Attributes:</label>

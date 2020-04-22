@@ -54,9 +54,6 @@ The signup form already includes some honeypot fields in order to try and catch 
 ;         the advertised changes.
 ; TODO: documentation
 ;       Need to document all the collections, functions, and api endpoints.
-; TODO: list update reports via email
-;       Sending an update on who subscribed or unsubscribed via email in a configurable
-;       interval would be very nice.
 ; TODO: verify at least email host for MX DNS record
 ;       This should ensure that we don't even let users subscribe an email address that
 ;       cannot exist. It won't guarantee that all subscribed addresses exist, but it
