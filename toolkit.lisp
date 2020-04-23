@@ -119,3 +119,20 @@
 (defun gravatar (email &key (size 32) (default :mm))
   (format NIL "https://secure.gravatar.com/avatar/~a?s=~d&d=~a"
           (cryptos:md5 (string-downcase email)) size (string-downcase default)))
+
+(defun check-address-valid (email)
+  (flet ((fail (message)
+           (error 'api-argument-invalid :argument 'address :message message)))
+    (unless (ratify:email-p email)
+      (fail "This is not a validly formatted email."))
+    (let* ((host (subseq email (1+ (position #\@ email))))
+           (dns:*dns-servers* (append dns:*cloudflare-servers* dns:*google-servers*))
+           (mx-records (handler-case (dns:with-dns-error-handling
+                                       (dns:query-data host :type :mx))
+                         (error () ()))))
+      (when (null mx-records)
+        (fail "The email does not belong to a valid address: no MX record found."))
+      (let* ((mx (first (sort mx-records (lambda (a b) (< (getf a :priority) (getf b :priority))))))
+             (ip (dns:resolve (or* (getf mx :name) host))))
+        (when (null ip)
+          (fail "The email does not belong to a valid address: the MX record is invalid."))))))

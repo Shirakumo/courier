@@ -10,6 +10,7 @@
   (:shadow #:trigger #:delete-file #:file #:make-sequence #:sequence)
   (:export)
   (:local-nicknames
+   (#:dns #:org.shirakumo.dns-client)
    (#:feeder #:org.shirakumo.feeder)
    (#:markless #:org.shirakumo.markless)
    (#:components #:org.shirakumo.markless.components)))

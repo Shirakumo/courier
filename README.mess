@@ -54,10 +54,6 @@ The signup form already includes some honeypot fields in order to try and catch 
 ;         the advertised changes.
 ; TODO: documentation
 ;       Need to document all the collections, functions, and api endpoints.
-; TODO: verify at least email host for MX DNS record
-;       This should ensure that we don't even let users subscribe an email address that
-;       cannot exist. It won't guarantee that all subscribed addresses exist, but it
-;       should at least reject completely bogus ones.
 ; TODO: mobile layout optimisation
 ;       In order to use the service from mobile devices and limited screen sizes, the
 ;       layout needs to be tested and optimised.

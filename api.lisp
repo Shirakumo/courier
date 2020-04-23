@@ -512,6 +512,7 @@
   (when (or username
             (string/= email (hash (config :salt))))
     (error 'api-argument-invalid :argument 'username :message "Invalid email address."))
+  (check-address-valid address)
   (let* ((campaign (ensure-campaign campaign))
          (attributes (loop for field in fields[]
                            for value in values[]
