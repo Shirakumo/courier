@@ -82,7 +82,12 @@
              (setf *task-runner* NIL))))
     (setf *task-runner* (bt:make-thread #'task-runner-thunk :name "courier task runner"))))
 
-(define-trigger (server-start start-task-runner) ()
+(define-trigger (startup-done start-task-runner) ()
   (unless (and *task-runner*
                (bt:thread-alive-p *task-runner*))
     (start-task-runner)))
+
+(define-trigger (shutdown-done stop-task-runner) ()
+  (loop while (and *task-runner*
+                   (bt:thread-alive-p *task-runner*))
+        do (bt:condition-notify *task-condition*)))
