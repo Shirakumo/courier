@@ -118,7 +118,7 @@
          html plain)
     (handler-bind ((error (lambda (e)
                             (declare (ignore e))
-                            (mark-mail-sent mail subscriber :compile-falied))))
+                            (mark-mail-sent mail subscriber :compile-failed))))
       (setf html (compile-mail-content campaign mail subscriber))
       (setf plain (compile-mail-content campaign mail subscriber :template #p"email/text-template.ctml" :type :text)))
     (handler-bind ((error (lambda (e)
