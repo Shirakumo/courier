@@ -348,7 +348,7 @@
            (content (compile-mail-body (dm:field mail "body")
                                        (id-mail-type (dm:field mail "type"))
                                        :html
-                                       :vars (mail-template-args campaign mail subscriber)
+                                       :vars (mail-template-vars campaign mail subscriber)
                                        :campaign campaign
                                        :subscriber subscriber
                                        :mail mail)))
