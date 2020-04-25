@@ -37,6 +37,7 @@
   (db:with-transaction ()
     ;; Don't delete campaigns, just set the host to NULL
     (db:update 'campaign (db:query (:= 'host (dm:id host))) `(("host" . NIL)))
+    (db:remove 'mail-queue (db:query (:= 'host (dm:id host))))
     (dm:delete host)
     host))
 
