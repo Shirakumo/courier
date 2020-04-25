@@ -133,4 +133,4 @@
 (define-task prune-unconfirmed-subscribers ()
   (unless (prune-unconfirmed-subscribers)
     ;; TODO: be smarter about this and schedule for the nearest matching instead.
-    (reschedule-in (due-time task) (* 12 60 60))))
+    (reschedule-in (* 12 60 60) task)))
