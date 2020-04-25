@@ -139,11 +139,14 @@
                      (list* :body (compile-mail-body body :markless :html :vars vars)
                             vars)))
         (host (ensure-host host)))
-    (send host address
-          (extract-subject html)
-          html
-          :reply-to (if campaign
-                        (dm:field campaign "reply-to")
-                        (dm:field host "address"))
-          :campaign (when campaign
-                      (dm:id campaign)))))
+    (handler-bind ((error (lambda (e)
+                            (error 'api-error :message (format NIL "Failed to send email over host ~s:~%  ~a"
+                                                               (dm:field host "hostname") e)))))
+        (send host address
+              (extract-subject html)
+              html
+              :reply-to (if campaign
+                            (dm:field campaign "reply-to")
+                            (dm:field host "address"))
+              :campaign (when campaign
+                          (dm:id campaign))))))
