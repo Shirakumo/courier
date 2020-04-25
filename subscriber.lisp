@@ -34,7 +34,8 @@
   (db:with-transaction ()
     (let ((subscriber (ensure-subscriber subscriber)))
       (setf-dm-fields subscriber name address)
-      (setf (dm:field subscriber "status") (user-status-id status))
+      (when status
+        (setf (dm:field subscriber "status") (user-status-id status)))
       (when save
         (dm:save subscriber)
         (loop for (attribute . value) in attributes
