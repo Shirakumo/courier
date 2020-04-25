@@ -21,8 +21,6 @@ After loading Courier, you should consider configuring the following properties:
     The exponent to use to determine the waiting interval between retry attempts. The wait-time is ``i^e`` minutes, where ``i`` is the current attempt number and ``e`` the exponent you configured. You should not need to set this.
   - ``:retry-attempts``
     The maximum number of retries before an email is dropped as being unable to send. You should not need to set this.
-  - ``:poll-interval``
-     The number of seconds to wait before polling for new emails to send out.
 
 ## Mail Hosts
 Courier provides double authentication for subscription, meaning that users need to confirm their subscription with a clickable link from an email before they are added to a campaign. This is vital to avoid sending mails to spam traps, or sending unsolicited subscription email.
@@ -63,3 +61,8 @@ The signup form already includes some honeypot fields in order to try and catch 
 ; TODO: triggers for count of opened mail
 ;       Triggers should be able to fire after a user has opened a certain number of
 ;       emails.
+; TODO: Fix triggers that apply when a constraint is newly passed.
+;       Right now the system does not re-evaluate triggers that might apply when
+;       a user is tagged and the tag constraint now passes but didn't before.
+;       This requires some more fiddling since, in order to avoid retriggering over
+;       and over, the system should now remember if a trigger has been fired before.

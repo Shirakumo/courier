@@ -1,0 +1,8 @@
+## Sequences
+Often in email marketing you'd like to define something called an auto responder or a lead in sequence. This is a system where new subscribers receive new emails in regular intervals to keep them engaged.
+
+This allows you to set up a catered schedule of emails for new subscribers and filter out ones that would drop out anyway, only retaining those subscribers that really pay attention to your emails.
+
+In Courier you can do this manually by setting up the appropriate triggers and emails, or you can use the shorthand sequence interface, which allows you to quickly see which emails are sent when and defines the appropriate triggers and emails for you.
+
+Note that when you delete a sequence, it will only delete the associated triggers, not the emails that were a part of the sequence. This is to prevent you from losing emails that you might want to reuse or send out later.
