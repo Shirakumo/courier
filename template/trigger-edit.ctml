@@ -12,7 +12,9 @@
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
       <div class="row" title="Whether the trigger should only react when applicable on new changes, or whether it should apply whenever its conditions are fulfilled.">
-        <label for="rule">Trigger type:</label>
+        <label for="rule">Trigger type:
+          <a @href="courier/help/triggers"><i class="fas fa-question-circle"/></a>
+        </label>
         <select name="rule" id="rule" lquery='(select (if rule "true" "false"))'>
           <option value="false">reactive trigger</option>
           <option value="true">retroactive rule</option>
