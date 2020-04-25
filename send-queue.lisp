@@ -53,39 +53,48 @@
          (timeout (- (+ (dm:field host "last-send-time")
                         (dm:field host "batch-cooldown"))
                      (get-universal-time))))
-    (when (< timeout 0)
-      (let ((queued (dm:get 'mail-queue (db:query (:and (:= 'host (dm:id host))
-                                                        (:<= 'send-time (get-universal-time))))
-                            :amount (dm:field host "batch-size") :sort '((send-time :asc)))))
-        (dolist (queue queued)
-          (restart-case
-              (handler-bind ((error (lambda (e)
-                                      (l:error :courier.send-queue "Failed to send queued mail.")
-                                      (l:trace :courier.send-queue e)
-                                      (cond (radiance:*debugger*
-                                             (invoke-debugger e))
-                                            ((< (dm:field queue "attempts") (config :send-queue :retry-attempts))
-                                             (l:debug :courier.send-queue "Rescheduling to try again later.")
-                                             (invoke-restart 'ignore))
-                                            (T
-                                             (l:debug :courier.send-queue "Exceeded max send attempts, dropping mail.")
-                                             (invoke-restart 'forget))))))
-                (send-queue queue))
-            (ignore ()
-              :report "Ignore the send and retry later."
-              (setf (dm:field queued "time") (expt (dm:field queued "attempts") (config :send-queue :retry-backoff-exponent)))
-              (incf (dm:field queued "attempts"))
-              (dm:save queued))
-            (forget ()
-              :report "Give up trying to send the queued mail."
-              (dm:delete queue))))
-        (when queued
-          (setf (dm:field host "last-send-time") (get-universal-time))
-          (dm:save host))))
-    (+ (dm:field host "last-send-time")
-       (dm:field host "batch-cooldown"))))
+    (or (when (< timeout 0)
+          (let ((queued (dm:get 'mail-queue (db:query (:and (:= 'host (dm:id host))
+                                                            (:<= 'send-time (get-universal-time))))
+                                :amount (dm:field host "batch-size") :sort '((send-time :asc)))))
+            (break)
+            (dolist (queue queued)
+              (restart-case
+                  (handler-bind ((error (lambda (e)
+                                          (l:error :courier.send-queue "Failed to send queued mail.")
+                                          (l:trace :courier.send-queue e)
+                                          (cond (radiance:*debugger*
+                                                 (invoke-debugger e))
+                                                ((< (dm:field queue "attempts") (config :send-queue :retry-attempts))
+                                                 (l:debug :courier.send-queue "Rescheduling to try again later.")
+                                                 (invoke-restart 'ignore))
+                                                (T
+                                                 (l:debug :courier.send-queue "Exceeded max send attempts, dropping mail.")
+                                                 (invoke-restart 'forget))))))
+                    (send-queue queue))
+                (ignore ()
+                  :report "Ignore the send and retry later."
+                  (setf (dm:field queued "time") (expt (dm:field queued "attempts") (config :send-queue :retry-backoff-exponent)))
+                  (incf (dm:field queued "attempts"))
+                  (dm:save queued))
+                (forget ()
+                  :report "Give up trying to send the queued mail."
+                  (dm:delete queue))))
+            (when queued
+              (setf (dm:field host "last-send-time") (get-universal-time))
+              (dm:save host))
+            ;; If we were full, back off by batch cooldown.
+            (when (<= (dm:field host "batch-size") (length queued))
+              (+ (get-universal-time) (dm:field host "batch-cooldown")))))
+        ;; If we have a next email scheduled, back off until then.
+        (let ((next (db:select 'mail-queue (db:query (:= 'host (dm:id host)))
+                               :amount 1 :sort '((send-time :asc)) :fields '(send-time))))
+          (when next (gethash "send-time" next)))
+        ;; Otherwise back off by a bunch.
+        (+ (get-universal-time) (* 60 60 24)))))
 
 (defun process-send-queue ()
+  
   (loop for host in (dm:get 'host (db:query :all))
         maximize (process-send-queue-for-host host)))
 
