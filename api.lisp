@@ -96,6 +96,7 @@
     (send-system-mail (@template "email/confirm-host.mess")
                       (dm:field host "address") host NIL
                       :subject "Courier host test"
+                      :recipient (dm:field host "display-name")
                       :link (url> "courier/api/courier/host/confirm"
                                   :query `(("host" . ,(princ-to-string (dm:id host)))
                                            ("token" . ,(hash (dm:id host)))
