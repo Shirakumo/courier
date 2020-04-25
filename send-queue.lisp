@@ -57,7 +57,6 @@
           (let ((queued (dm:get 'mail-queue (db:query (:and (:= 'host (dm:id host))
                                                             (:<= 'send-time (get-universal-time))))
                                 :amount (dm:field host "batch-size") :sort '((send-time :asc)))))
-            (break)
             (dolist (queue queued)
               (restart-case
                   (handler-bind ((error (lambda (e)
