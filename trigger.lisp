@@ -162,8 +162,9 @@
           (l:warn :courier.trigger "Trigger ~a does not have an existing target!" trigger)))))
 
 (defun process-triggers (subscriber triggers)
-  (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
-  (dolist (trigger (etypecase triggers
-                     (list triggers)
-                     (dm:data-model (list-triggers triggers))))
-    (process-trigger subscriber trigger)))
+  (let ((triggers (etypecase triggers
+                    (list triggers)
+                    (dm:data-model (list-source-triggers triggers)))))
+    (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
+    (dolist (trigger triggers)
+      (process-trigger subscriber trigger))))
