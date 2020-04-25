@@ -139,9 +139,7 @@
                      (list* :body (compile-mail-body body :markless :html :vars vars)
                             vars)))
         (host (ensure-host host)))
-    (handler-bind ((error (lambda (e)
-                            (error 'api-error :message (format NIL "Failed to send email over host ~s:~%  ~a"
-                                                               (dm:field host "hostname") e)))))
+    (handler-case
         (send host address
               (extract-subject html)
               html
@@ -149,4 +147,13 @@
                             (dm:field campaign "reply-to")
                             (dm:field host "address"))
               :campaign (when campaign
-                          (dm:id campaign))))))
+                          (dm:id campaign)))
+      (usocket:ns-error ()
+        (error 'api-error :message (format NIL "Failed to resolve email hostname ~s. Is your hostname correct?"
+                                           (dm:field host "hostname"))))
+      (usocket:socket-error ()
+        (error 'api-error :message (format NIL "Failed to connect to email host ~s. Is the server up and running?"
+                                           (dm:field host "hostname"))))
+      (cl-smtp:smtp-error ()
+        (error 'api-error :message (format NIL "Failed to send email over host ~s. Are your credentials correct?"
+                                           (dm:field host "hostname")))))))
