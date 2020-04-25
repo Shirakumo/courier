@@ -125,8 +125,9 @@
                (target-id :id)
                (delay (:integer 5))
                (tag-constraint (:varchar 64))
-               (normalized-constraint :text))
-             :indices '(campaign source-type source-id))
+               (normalized-constraint :text)
+               (rule :boolean))
+             :indices '(campaign source-type source-id target-type target-id))
 
   (db:create 'trigger-receipt
              '((trigger (:id trigger))

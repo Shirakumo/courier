@@ -291,21 +291,24 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'trigger)))
     (api-output (list-triggers campaign :amount (int* amount) :skip (int* skip 0)))))
 
-(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description delay tag-constraint) (:access (perm courier user))
+(define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description delay tag-constraint rule) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'trigger))
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
     (let ((trigger (make-trigger campaign source target
                                  :description description :delay (parse-integer delay)
-                                 :tag-constraint tag-constraint)))
+                                 :tag-constraint tag-constraint :rule rule)))
       (output trigger "Trigger created." "courier/campaign/~a/trigger" (dm:field trigger "campaign")))))
 
-(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description delay tag-constraint) (:access (perm courier user))
+(define-api courier/trigger/edit (trigger &optional source-type source-id target-type target-id description delay tag-constraint rule) (:access (perm courier user))
   (let ((trigger (check-accessible (ensure-trigger trigger)))
         (source (check-accessible (resolve-typed source-type source-id)))
         (target (check-accessible (resolve-typed target-type target-id))))
-    (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
-                          :source source :target target)
+    (if rule
+        (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
+                              :source source :target target :rule (string-equal rule "true"))
+        (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
+                              :source source :target target))
     (output trigger "Trigger edited." "courier/campaign/~a/trigger" (dm:field trigger "campaign"))))
 
 (define-api courier/trigger/delete (trigger) (:access (perm courier user))

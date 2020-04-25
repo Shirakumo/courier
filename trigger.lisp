@@ -33,18 +33,21 @@
                                    (:= 'source-type (collection-type thing))))
           :amount amount :skip skip))
 
-(defun make-trigger (campaign source target &key description (delay 0) tag-constraint (save T))
+(defun make-trigger (campaign source target &key description (delay 0) tag-constraint rule (save T))
   (dm:with-model trigger ('trigger NIL)
-    (setf-dm-fields trigger campaign description delay tag-constraint)
+    (setf-dm-fields trigger campaign description delay tag-constraint rule)
     (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign (or tag-constraint "")))
     (setf (dm:field trigger "source-id") (dm:id source))
     (setf (dm:field trigger "source-type") (collection-type source))
     (setf (dm:field trigger "target-id") (dm:id target))
     (setf (dm:field trigger "target-type") (collection-type target))
-    (when save (dm:insert trigger))
+    (when save
+      (dm:insert trigger)
+      (when rule ;; Make sure we process the rule immediately.
+        (process-rule trigger campaign)))
     trigger))
 
-(defun edit-trigger (trigger &key description source target delay tag-constraint (save T))
+(defun edit-trigger (trigger &key description source target delay tag-constraint (rule NIL rule-p) (save T))
   (setf-dm-fields trigger description delay tag-constraint)
   (when tag-constraint
     (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
@@ -54,7 +57,12 @@
   (when target
     (setf (dm:field trigger "target-id") (dm:id target))
     (setf (dm:field trigger "target-type") (collection-type target)))
-  (when save (dm:save trigger))
+  (when rule-p
+    (setf (dm:field trigger "rule") rule))
+  (when save
+    (dm:save trigger)
+    (when (dm:field trigger "rule") ;; Make sure we process the rule immediately.
+      (process-rule trigger T)))
   trigger)
 
 (defun delete-trigger (trigger)
@@ -144,6 +152,21 @@
                  (#\| (when passed (return T)))))
           finally (return passed))))
 
+(defun trigger-satisfied-p (subscriber trigger)
+  (and (tag-constraint-applicable-p (dm:field trigger "normalized-constraint") subscriber)
+       (let ((source (resolve-typed (dm:field trigger "source-type")
+                                    (dm:field trigger "source-id"))))
+         (ecase (dm:collection source)
+           (campaign
+            (equal (dm:field subscriber "campaign")
+                   (dm:field trigger "campaign")))
+           (mail
+            (mail-received-p source subscriber))
+           (link
+            (link-received-p source subscriber))
+           (tag
+            (tagged-p source subscriber))))))
+
 (defun process-trigger (trigger subscriber &key force)
   (when (or force
             (and (not (trigger-triggered-p trigger subscriber))
@@ -178,4 +201,30 @@
                     (dm:data-model (list-source-triggers triggers)))))
     (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
     (dolist (trigger triggers)
-      (process-trigger trigger subscriber))))
+      (process-trigger trigger subscriber))
+    ;; A trigger condition might have changed, always also run rules.
+    (process-rules subscriber)))
+
+(defun process-rule (trigger target)
+  (etypecase target
+    ((eql T)
+     (process-rule trigger (ensure-campaign (dm:field trigger "campaign"))))
+    (dm:data-model
+     (ecase (dm:collection target)
+       (subscriber
+        (when (and (not (trigger-triggered-p trigger target))
+                   (trigger-satisfied-p target trigger))
+          ;; Set force to T so we bypass the double tests.
+          (process-trigger trigger target :force T)))
+       (campaign
+        (dolist (subscriber (list-subscribers target))
+          (process-rule trigger subscriber)))))))
+
+(defun process-rules (subscriber)
+  (let* ((subscriber (ensure-subscriber subscriber))
+         (campaign (dm:field subscriber "campaign"))
+         (triggers (dm:get 'trigger (db:query (:and (:= 'campaign campaign)
+                                                    (:= 'rule T))))))
+    (l:debug :courier "Processing rules for ~a" subscriber)
+    (dolist (trigger triggers)
+      (process-rule trigger subscriber))))

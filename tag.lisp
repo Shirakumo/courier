@@ -44,13 +44,13 @@
      (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
              :sort '((title :asc)) :amount amount :skip skip :hull 'tag))))
 
-(defun tagged-p (subscriber tag)
+(defun tagged-p (tag subscriber)
   (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))
                                             (:= 'tag (ensure-id tag)))))))
 
 (defun tag (subscriber tag)
   (db:with-transaction ()
-    (unless (tagged-p subscriber tag)
+    (unless (tagged-p tag subscriber)
       (db:insert 'tag-table `(("tag" . ,(ensure-id tag))
                               ("subscriber" . ,(ensure-id subscriber))))
       (process-triggers subscriber tag))))
