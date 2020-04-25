@@ -88,7 +88,7 @@
         ;; If we have a next email scheduled, back off until then.
         (let ((next (db:select 'mail-queue (db:query (:= 'host (dm:id host)))
                                :amount 1 :sort '((send-time :asc)) :fields '(send-time))))
-          (when next (gethash "send-time" next)))
+          (when next (gethash "send-time" (first next))))
         ;; Otherwise back off by a bunch.
         (+ (get-universal-time) (* 60 60 24)))))
 
