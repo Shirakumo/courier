@@ -10,6 +10,8 @@
   (let* ((time (or time 0))
          (campaign (dm:get-one 'campaign (db:query (:= '_id (dm:field mail "campaign")))))
          (host (dm:field campaign "host")))
+    (unless host
+      (error 'api-argument-invalid :argument 'host :message (format NIL "The campaign does not have a host configured!")))
     (flet ((send (subscriber-id)
              (db:insert 'mail-queue `(("host" . ,host)
                                       ("subscriber" . ,subscriber-id)
