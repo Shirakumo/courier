@@ -61,8 +61,3 @@ The signup form already includes some honeypot fields in order to try and catch 
 ; TODO: triggers for count of opened mail
 ;       Triggers should be able to fire after a user has opened a certain number of
 ;       emails.
-; TODO: Fix triggers that apply when a constraint is newly passed.
-;       Right now the system does not re-evaluate triggers that might apply when
-;       a user is tagged and the tag constraint now passes but didn't before.
-;       This requires some more fiddling since, in order to avoid retriggering over
-;       and over, the system should now remember if a trigger has been fired before.

@@ -84,7 +84,6 @@
     (T (princ-to-string (feeder:id entry)))))
 
 (defun feed-variables (feed entry)
-  ;; FIXME: how do we splice the HTML content?
   (list :id (feed-guid entry)
         :authors (or (feeder:authors entry) (feeder:authors feed))
         :contributors (or (feeder:contributors entry) (feeder:contributors feed))
