@@ -52,6 +52,7 @@
 (defun delete-mail (mail)
   (let ((mail (ensure-mail mail)))
     (db:with-transaction ()
+      (db:update 'feed-entry (db:query (:= 'mail (dm:id mail))) '((mail . NIL)))
       (db:remove 'mail-queue (db:query (:= 'mail (dm:id mail))))
       (db:remove 'mail-log (db:query (:= 'mail (dm:id mail))))
       (db:remove 'mail-receipt (db:query (:= 'mail (dm:id mail))))
