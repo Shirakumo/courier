@@ -6,7 +6,7 @@ View this email in your browser:
 <c:splice lquery="(text body)"/>
 
 ------------------------------------------------------------------------------
-Copyright <c:splice lquery="(time T :year)"/> <c:splice lquery="(text copyright)"/>
+Copyright <time lquery="(time T :year)"/> <c:splice lquery="(text copyright)"/>
 
 Our mailing address is:
 <c:splice lquery="(text address)"/>
