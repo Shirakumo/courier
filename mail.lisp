@@ -72,10 +72,13 @@
                                                (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun mail-sent-p (mail subscriber)
-  (let ((query (db:query (:and (:= 'mail (ensure-id mail))
-                               (:= 'subscriber (ensure-id subscriber))))))
-    (or (< 0 (db:count 'mail-log query))
-        (< 0 (db:count 'mail-queue query)))))
+  (< 0 (db:count 'mail-log (db:query (:and (:= 'mail (ensure-id mail))
+                                           (:= 'status (mail-status-id :success))
+                                           (:= 'subscriber (ensure-id subscriber)))))))
+
+(defun mail-in-queue-p (mail subscriber)
+  (< 0 (db:count 'mail-queue (db:query (:and (:= 'mail (ensure-id mail))
+                                             (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun mail-coverage (mail)
   (let ((sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
@@ -99,10 +102,12 @@
       (process-triggers subscriber mail))))
 
 (defun mark-mail-sent (mail subscriber &optional (status :success))
-  (db:insert 'mail-log `(("mail" . ,(dm:id mail))
-                         ("subscriber" . ,(dm:id subscriber))
-                         ("send-time" . ,(get-universal-time))
-                         ("status" . ,(mail-status-id status)))))
+  (db:with-transaction ()
+    (unless (mail-sent-p mail subscriber)
+      (db:insert 'mail-log `(("mail" . ,(dm:id mail))
+                             ("subscriber" . ,(dm:id subscriber))
+                             ("send-time" . ,(get-universal-time))
+                             ("status" . ,(mail-status-id status)))))))
 
 (defun mail-count (thing)
   (ecase (dm:collection thing)
