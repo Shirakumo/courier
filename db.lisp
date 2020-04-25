@@ -128,6 +128,11 @@
                (normalized-constraint :text))
              :indices '(campaign source-type source-id))
 
+  (db:create 'trigger-receipt
+             '((trigger (:id trigger))
+               (subscriber (:id subscriber)))
+             :indices '(trigger subscriber))
+
   (db:create 'sequence
              '((campaign (:id campaign))
                (title :text))

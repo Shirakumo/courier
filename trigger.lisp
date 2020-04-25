@@ -61,6 +61,7 @@
   (let ((trigger (ensure-trigger trigger)))
     (db:with-transaction ()
       (db:remove 'sequence-trigger (db:query (:= 'trigger (dm:id trigger))))
+      (db:remove 'trigger-receipt (db:query (:= 'trigger (dm:id trigger))))
       (dm:delete trigger))))
 
 (defun delete-triggers-for (thing)
@@ -69,6 +70,10 @@
                                                                    (:= 'target-type (collection-type thing)))
                                                              (:and (:= 'source-id (dm:id thing))
                                                                    (:= 'source-type (collection-type thing)))))))))
+
+(defun trigger-triggered-p (trigger subscriber)
+  (< 0 (db:count 'trigger-receipt (db:query (:and (:= 'trigger (ensure-id trigger))
+                                                  (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun parse-constraint (constraint)
   (with-input-from-string (in constraint)
@@ -139,27 +144,33 @@
                  (#\| (when passed (return T)))))
           finally (return passed))))
 
-(defun process-trigger (subscriber trigger &key force)
+(defun process-trigger (trigger subscriber &key force)
   (when (or force
-            (tag-constraint-applicable-p (dm:field trigger "normalized-constraint") subscriber))
+            (and (not (trigger-triggered-p trigger subscriber))
+                 (tag-constraint-applicable-p (dm:field trigger "normalized-constraint") subscriber)))
     (l:info :courier.trigger "Running trigger ~a for ~a" trigger subscriber)
-    (let ((target (resolve-typed (dm:field trigger "target-type")
-                                 (dm:field trigger "target-id"))))
-      (if target
-          (ecase (dm:collection target)
-            (mail
-             (unless (mail-sent-p target subscriber)
-               (case (dm:field trigger "target-type")
-                 (10 (mark-mail-sent target subscriber :unlocked))
-                 (0 (enqueue-mail target
-                                  :target subscriber
-                                  :time (+ (get-universal-time)
-                                           (dm:field trigger "delay")))))))
-            (tag
-             (tag subscriber target))
-            (campaign
-             (delete-subscriber subscriber)))
-          (l:warn :courier.trigger "Trigger ~a does not have an existing target!" trigger)))))
+    (with-simple-restart (continue "Skip running the trigger.")
+      (let ((target (resolve-typed (dm:field trigger "target-type")
+                                   (dm:field trigger "target-id"))))
+        (unless target
+          (error "Trigger ~a does not have an existing target!" trigger))
+        (ecase (dm:collection target)
+          (mail
+           (unless (or (mail-sent-p target subscriber)
+                       (mail-in-queue-p target subscriber))
+             (case (dm:field trigger "target-type")
+               (10 (mark-mail-sent target subscriber :unlocked))
+               (0 (enqueue-mail target
+                                :target subscriber
+                                :time (+ (get-universal-time)
+                                         (dm:field trigger "delay")))))))
+          (tag
+           (tag subscriber target))
+          (campaign
+           (delete-subscriber subscriber))))
+      (unless (trigger-triggered-p trigger subscriber)
+        (db:insert 'trigger-receipt `((subscriber . ,(dm:id subscriber))
+                                      (trigger . ,(dm:id trigger))))))))
 
 (defun process-triggers (subscriber triggers)
   (let ((triggers (etypecase triggers
@@ -167,4 +178,4 @@
                     (dm:data-model (list-source-triggers triggers)))))
     (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
     (dolist (trigger triggers)
-      (process-trigger subscriber trigger))))
+      (process-trigger trigger subscriber))))
