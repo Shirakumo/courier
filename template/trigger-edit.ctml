@@ -11,6 +11,13 @@
         <label for="description">Description:</label>
         <textarea id="description" name="description" lquery="(text description)" />
       </div>
+      <div class="row" title="Whether the trigger should only react when applicable on new changes, or whether it should apply whenever its conditions are fulfilled.">
+        <label for="rule">Trigger type:</label>
+        <select name="rule" id="rule" lquery='(select (if rule "true" "false"))'>
+          <option value="false">Reactive Trigger</option>
+          <option value="true">Retroactive Rule</option>
+        </select>
+      </div>
       <div class="row" title="The condition that will cause the trigger to fire">
         <label for="source">Trigger when:</label>
         <div class="type-select" lquery="(data :campaign campaign)">
