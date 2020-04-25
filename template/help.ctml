@@ -7,6 +7,7 @@
     <a @href="courier/help/sequences">Sequences</a>
     <a @href="courier/help/constraints">Tag Constraints</a>
     <a @href="courier/help/variables">Template Variables</a>
+    <a @href="courier/help/triggers">Triggers</a>
   </nav>
   <section lquery="(html text)">
     Content

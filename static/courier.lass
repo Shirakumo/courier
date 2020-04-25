@@ -289,6 +289,15 @@
   
   (.page.sequence.list
    (.title :flex-grow 1))
+
+  (.page.trigger.list
+   (.type
+    :white-space nowrap
+    :padding 0 0.5em
+    :border-radius 1em
+    :border 1px solid (hex E0E0E0)
+    :background (hex F0F0F0)
+    :color (hex 000000)))
   
   (.page.campaign.edit
    (textarea[name=template]

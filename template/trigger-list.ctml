@@ -3,6 +3,9 @@
     <li class="trigger">
       <a class="title" @href="courier/campaign/{0}/trigger/{1}/edit campaign _id" lquery="(text _id)">Trigger</a>
       <span class="description" lquery="(text description)"></span>
+      <span class="type" lquery='(text (if rule "Rule" "Trigger"))'>
+        <i class="fas fa-fw" lquery="(add-class (if rule :fa-recycle :fa-bolt))"/>
+      </span>
       <nav class="actions">
         <a class="button" href="#" @href="courier/campaign/{0}/trigger/{1}/edit campaign _id">
           <i class="fas fa-edit"></i>

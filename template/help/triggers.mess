@@ -1,0 +1,20 @@
+## Triggers
+Courier supports a rather flexible trigger system that should allow you to automate user and mail management.
+
+Triggers come in two flavours, 'reactive triggers', and 'retroactive rules'. For both though, each trigger has a condition, an action, a potential delay, and a tag constraint.
+
+The condition says what should happen for the trigger to become applicable, and the constraint allows you to limit the trigger to be applicable only for subscribers with a certain set of tags. For more information on constraints, please see the section on "constraints"(link constraints).
+
+Finally, when a trigger is applicable to a subscriber and is actually activated, the trigger action is performed for the subscriber. A trigger can only be activated once per subscriber to prevent double tagging or sending a mail twice.
+
+### Reactive Triggers
+Reactive triggers are like the word 'trigger' seems to suggest: at the moment the trigger condition is fulfilled and the tag constraint passes, the trigger is activated and its action is executed.
+
+Triggers that are defined at a later point won't execute for existing subscribers, even if they would already pass the condition. Similarly, if a subscriber receives a change in tags that would make it now pass the tag constraint of a trigger and the subscriber already passed the condition, the trigger will not be activated.
+
+### Retroactive Rules
+Rules on the other hand represent relations in the system and will activate whenever they become applicable. As such they are useful to represent invariants like: 'any user that visited link "demo" and has the tag "dedicated" will have the email "got any feedback?"'
+
+Even if a rule is defined at a later point or a user only passes its constraint at a later time, it will still activate and perform its action.
+
+Do note however that neither reactive triggers nor retroactive rules are undone automatically. This means that if a subscriber no longer passes the condition or constraint of a rule, the rule's action effects will still be in the system.
