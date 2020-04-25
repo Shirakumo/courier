@@ -178,11 +178,12 @@ class Courier{
         var self = this;
         var popup = self.constructElement("div",{
             classes: ["popup"],
+            elements: [{tag:"div", classes:["content"]}]
         });
         popup.hide = ()=>{
             popup.parentNode.removeChild(popup);
         };
-        popup.appendChild(content);
+        popup.querySelector(".content").appendChild(content);
         popup.addEventListener("click", (ev)=>{
             if(ev.target == popup)popup.hide();
         });
@@ -195,6 +196,32 @@ class Courier{
         var updated = box.cloneNode(true);
         updated.innerText = content;
         box.parentNode.replaceChild(updated, box);
+    }
+
+    showSpinner(options){
+        var self = this;
+        options = options || {};
+        var spinner = document.querySelector(".spinner");
+        if(options.activate === undefined){
+            options.activate = (spinner)? false : true;
+        }
+        if(options.activate && !spinner){
+            spinner = self.constructElement("div", {
+                classes: ["popup", "spinner", options.classes],
+                elements: [
+                    {
+                        tag: "div",
+                        text: options.message || "Please Wait",
+                        classes: ["container"],
+                        elements: [{tag:"div"}, {tag:"div"}]
+                    }
+                ]
+            });
+            document.querySelector("body").appendChild(spinner);
+        }else if(spinner){
+            spinner.parentElement.removeChild(spinner);
+        }
+        return spinner;
     }
 
     populateSelect(select, data, selectedValue){
@@ -221,14 +248,21 @@ class Courier{
         if(!save) return;
         if(element.classList.contains("search")) return;
         save.addEventListener("click", (ev)=>{
+            var target = save.getAttribute("formaction") || element.getAttribute("action");
             ev.preventDefault();
-            if(element.checkValidity()){
-                self.apiCall(save.getAttribute("formaction") || element.getAttribute("action"), element)
-                    .then((r)=>{window.location.replace(r.target);},
-                          (r)=>{self.showError(r.message ||
-                                               new DOMParser().parseFromString(r, "text/html").querySelector("title").innerText);});
-            }else{
-                element.reportValidity();
+            if(!self.loading[target]){
+                if(element.checkValidity()){
+                    self.showSpinner();
+                    self.loading[target] =
+                        self.apiCall(target, element)
+                        .then((r)=>{window.location.replace(r.target);},
+                              (r)=>{self.showError(r.message ||
+                                                   new DOMParser().parseFromString(r, "text/html").querySelector("title").innerText);})
+                        .finally(()=>{delete self.loading[target];
+                                      self.showSpinner();});
+                }else{
+                    element.reportValidity();
+                }
             }
             return false;
         });
@@ -535,7 +569,6 @@ class Courier{
     }
 
     setElementValue(element, value){
-        console.log(element, value);
         switch(element.tagName){
         case "input":
         case "textarea": element.value = value; break;
