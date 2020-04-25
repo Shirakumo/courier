@@ -30,7 +30,7 @@
 (defun delete-link (link-ish)
   (db:with-transaction ()
     (let ((link (ensure-link link-ish)))
-      (db:remove 'link-receipt (db:query (:= link (dm:id link))))
+      (db:remove 'link-receipt (db:query (:= 'link (dm:id link))))
       (delete-triggers-for link)
       (dm:delete link))))
 
