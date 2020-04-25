@@ -48,9 +48,15 @@
                    (if (dm:hull-p attribute-value)
                        (dm:insert attribute-value)
                        (dm:save attribute-value))))
-        (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
-        (loop for tag in tags
-              do (tag subscriber tag))
+        (let ((existing (list-tags subscriber)))
+          (loop for tag-ish in tags
+                for tag = (ensure-tag tag)
+                for found = (find (dm:id tag) existing :key #'dm:id :test #'equal)
+                do (if found
+                       (setf existing (delete found existing))
+                       (tag subscriber tag)))
+          (loop for tag in existing
+                do (untag subscriber tag)))
         (when (eql :active status)
           (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign")))))
       subscriber)))

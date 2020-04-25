@@ -189,7 +189,7 @@
   (ecase type
     ((0 10 mail) 'mail)
     ((1 link) 'link)
-    ((2 tag) 'tag)
+    ((2 20 tag) 'tag)
     ((3 subscriber) 'subscriber)
     ((4 campaign) 'campaign)
     ((5 file) 'file)

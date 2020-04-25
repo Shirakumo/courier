@@ -18,6 +18,7 @@
             <option value="0">mail opened</option>
             <option value="1">link visited</option>
             <option value="2">tag assigned</option>
+            <option value="20">tag removed</option>
             <option value="4">subscribed</option>
           </select>
           <input type="courier-id" name="source-id" required lquery="(val source-id)" placeholder="id" />
@@ -28,8 +29,9 @@
         <div class="type-select" lquery="(data :campaign campaign)">
           <select name="target-type" id="target" lquery="(select target-type)">
             <option value="0">send mail</option>
-            <option value="2">assign tag</option>
             <option value="10">unlock mail</option>
+            <option value="2">assign tag</option>
+            <option value="20">remove tag</option>
             <option value="4">unsubscribe</option>
           </select>
           <input type="courier-id" name="target-id" required lquery="(val target-id)" placeholder="id" />

@@ -14,7 +14,7 @@
      (T (ensure-trigger (db:ensure-id trigger-ish))))
    (error 'request-not-found :message "No such trigger.")))
 
-(defun list-triggers (thing &key amount (skip 0))
+(defun list-triggers (thing &key amount (skip 0) (type (collection-type thing)))
   (ecase (dm:collection thing)
     (campaign
      (dm:get 'trigger (db:query (:= 'campaign (dm:id thing)))
@@ -25,12 +25,12 @@
              :amount amount :skip skip :hull 'trigger))
     ((link mail tag)
      (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
-                                      (:= 'target-type (collection-type thing))))
+                                      (:= 'target-type type)))
              :amount amount :skip skip))))
 
-(defun list-source-triggers (thing &key amount (skip 0))
+(defun list-source-triggers (thing &key amount (skip 0) (type (collection-type thing)))
   (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))
-                                   (:= 'source-type (collection-type thing))))
+                                   (:= 'source-type type)))
           :amount amount :skip skip))
 
 (defun make-trigger (campaign source target &key description (delay 0) tag-constraint rule (save T))
@@ -181,16 +181,18 @@
           (mail
            (unless (or (mail-sent-p target subscriber)
                        (mail-in-queue-p target subscriber))
-             (case (dm:field trigger "target-type")
+             (ecase (dm:field trigger "target-type")
                (10 (mark-mail-sent target subscriber :unlocked))
                (0 (enqueue-mail target
                                 :target subscriber
                                 :time (+ (get-universal-time)
                                          (dm:field trigger "delay")))))))
           (tag
-           (tag subscriber target))
+           (ecase (dm:field trigger "target-type")
+             (2 (tag subscriber target))
+             (20 (untag subscriber target))))
           (campaign
-           (delete-subscriber subscriber))))
+           (edit-subscriber subscriber :status :deactivated))))
       (unless (trigger-triggered-p trigger subscriber)
         (db:insert 'trigger-receipt `((subscriber . ,(dm:id subscriber))
                                       (trigger . ,(dm:id trigger))))))))
@@ -201,7 +203,8 @@
                     (dm:data-model (list-source-triggers triggers)))))
     (l:debug :courier.trigger "Processing triggers ~a for ~a" triggers subscriber)
     (dolist (trigger triggers)
-      (process-trigger trigger subscriber))
+      (unless (dm:field trigger "rule")
+        (process-trigger trigger subscriber)))
     ;; A trigger condition might have changed, always also run rules.
     (process-rules subscriber)))
 
