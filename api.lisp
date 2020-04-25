@@ -35,25 +35,27 @@
                              (:host hostname)
                              (:port port)
                              (:integer encryption batch-size batch-cooldown))
-    (let ((host (make-host :author (user:id (auth:current))
-                           :title title
-                           :display-name display-name
-                           :address address
-                           :hostname hostname
-                           :port port
-                           :username username
-                           :password (or* password)
-                           :encryption encryption
-                           :batch-size batch-size
-                           :batch-cooldown batch-cooldown)))
-      (send-system-mail (@template "email/confirm-host.mess")
-                        address host NIL
-                        :subject "Confirm your Courier host"
-                        :link (url> "courier/api/courier/host/confirm"
-                                    :query `(("host" . ,(princ-to-string (dm:id host)))
-                                             ("token" . ,(hash (dm:id host)))
-                                             ("browser" . "true"))))
-      (output host "Host created. Please check your emails to confirm." "courier/host/"))))
+    (db:with-transaction ()
+      (let ((host (make-host :author (user:id (auth:current))
+                             :title title
+                             :display-name display-name
+                             :address address
+                             :hostname hostname
+                             :port port
+                             :username username
+                             :password (or* password)
+                             :encryption encryption
+                             :batch-size batch-size
+                             :batch-cooldown batch-cooldown)))
+        (send-system-mail (@template "email/confirm-host.mess")
+                          address host NIL
+                          :subject "Confirm your Courier host"
+                          :recipient (dm:field host "display-name")
+                          :link (url> "courier/api/courier/host/confirm"
+                                      :query `(("host" . ,(princ-to-string (dm:id host)))
+                                               ("token" . ,(hash (dm:id host)))
+                                               ("browser" . "true"))))
+        (output host "Host created. Please check your emails to confirm." "courier/host/")))))
 
 (define-api courier/host/edit (host &optional title display-name address hostname port username password encryption batch-size batch-cooldown) :access (perm courier host edit)
   (when title (check-title title))
@@ -62,9 +64,18 @@
                                (:host hostname)
                                (:port port)
                                (:integer encryption batch-size batch-cooldown))
-      (setf-dm-fields host title display-name address hostname port username encryption batch-size batch-cooldown)
-      (when (or* password) (setf (dm:field host "password") (encrypt password)))
-      (dm:save host)
+      (db:with-transaction ()
+        (setf-dm-fields host title display-name address hostname port username encryption batch-size batch-cooldown)
+        (when (or* password) (setf (dm:field host "password") (encrypt password)))
+        (dm:save host)
+        (send-system-mail (@template "email/confirm-host.mess")
+                          (dm:field host "address") host NIL
+                          :subject "Confirm your Courier host"
+                          :recipient (dm:field host "display-name")
+                          :link (url> "courier/api/courier/host/confirm"
+                                      :query `(("host" . ,(princ-to-string (dm:id host)))
+                                               ("token" . ,(hash (dm:id host)))
+                                               ("browser" . "true")))))
       (output host "Host edited." "courier/host"))))
 
 (define-api courier/host/delete (host) (:access (perm courier host delete))
