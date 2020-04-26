@@ -14,7 +14,7 @@
     (dm:with-model subscriber ('subscriber NIL)
       (setf-dm-fields subscriber campaign name address)
       (setf (dm:field subscriber "status") (user-status-id status))
-      (setf (dm:field subscriber "signup-time") signup-time)
+      (setf (dm:field subscriber "signup-time") (or signup-time (get-universal-time)))
       (when save
         (dm:insert subscriber)
         (loop for (attribute . value) in attributes
@@ -91,11 +91,13 @@
        (dm:get 'subscriber (query (:= 'campaign (dm:id thing)))
                :sort '((signup-time :DESC)) :amount amount :skip skip))
       (tag
-       (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (query (:= 'tag (dm:id thing)))
-               :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber))
+       (fixup-ids (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (query (:= 'tag (dm:id thing)))
+                          :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber)
+                  "subscriber"))
       (link
-       (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (query (:= 'link (dm:id thing)))
-               :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber)))))
+       (fixup-ids (dm:get (rdb:join (subscriber _id) (link-receipt subscriber)) (query (:= 'link (dm:id thing)))
+                          :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber)
+                  "subscriber")))))
 
 (defun subscriber-attributes (subscriber)
   (loop for attribute in (db:select (rdb:join (attribute _id) (attribute-value attribute))

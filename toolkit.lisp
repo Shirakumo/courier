@@ -136,3 +136,7 @@
              (ip (dns:resolve (or* (getf mx :name) host))))
         (when (null ip)
           (fail "The email does not belong to a valid address: the MX record is invalid."))))))
+
+(defun fixup-ids (dms field)
+  (dolist (dm dms)
+    (setf (dm:field dm "_id") (dm:field dm field))))
