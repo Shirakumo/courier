@@ -60,6 +60,6 @@
   (db:with-transaction ()
     (let ((tag (ensure-tag tag)))
       (when (tagged-p tag subscriber)
-        (db:remove 'tag-table `(("tag" . ,(ensure-id tag))
-                                ("subscriber" . ,(ensure-id subscriber))))
+        (db:remove 'tag-table (db:query (:and (:= 'tag (ensure-id tag))
+                                              (:= 'subscriber (ensure-id subscriber)))))
         (process-triggers subscriber (list-source-triggers tag :type 20))))))
