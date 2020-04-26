@@ -604,7 +604,9 @@
   (destructuring-bind (subscriber link &optional mail) (decode-id id)
     (mark-link-received (ensure-link link) (ensure-subscriber subscriber))
     (when mail (mark-mail-received (ensure-mail mail) (ensure-subscriber subscriber)))
-    (let ((link (db:select 'link (db:query (:= '_id link)) :fields '("url"))))
+    (let ((link (first (db:select 'link (db:query (:= '_id link)) :fields '("url")))))
+      (unless link
+        (error 'api-argument-invalid :argument 'id :message "Invalid link ID."))
       (redirect (gethash "url" link)))))
 
 (defun link-receipt-url (subscriber link mail)
