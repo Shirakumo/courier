@@ -382,7 +382,9 @@
 
 (define-api courier/subscriber/import (campaign &optional content file) (:access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
-         (subs (import-subscribers campaign (or file content))))
+         (subs (import-subscribers campaign (if file
+                                                (first file)
+                                                content))))
     (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
 
 (define-api courier/subscriber/trend (campaign &optional (scale "week")) (:access (perm courier user))
