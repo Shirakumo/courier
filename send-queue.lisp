@@ -93,9 +93,8 @@
         (+ (get-universal-time) (* 60 60 24)))))
 
 (defun process-send-queue ()
-  
   (loop for host in (dm:get 'host (db:query :all))
-        maximize (process-send-queue-for-host host)))
+        minimize (process-send-queue-for-host host)))
 
 (define-task send-queue ()
   (setf (due-time task) (process-send-queue)))
