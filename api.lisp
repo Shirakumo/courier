@@ -65,9 +65,11 @@
                                (:port port)
                                (:integer encryption batch-size batch-cooldown))
       (db:with-transaction ()
-        (setf-dm-fields host title display-name address hostname port username encryption batch-size batch-cooldown)
-        (when (or* password) (setf (dm:field host "password") (encrypt password)))
-        (dm:save host)
+        ;; TODO: Actually check if things are different at all.
+        (edit-host host :title title :display-name display-name :address address
+                        :hostname hostname :port port :username username :password password
+                        :encryption encryption :batch-size batch-size :batch-cooldown batch-cooldown
+                        :confirmed NIL)
         (send-system-mail (@template "email/confirm-host.mess")
                           (dm:field host "address") host NIL
                           :subject "Confirm your Courier host"

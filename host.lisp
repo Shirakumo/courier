@@ -17,9 +17,11 @@
     (when save (dm:insert host))
     host))
 
-(defun edit-host (host &key author title display-name address hostname port username password encryption batch-size batch-cooldown confirmed save)
+(defun edit-host (host &key author title display-name address hostname port username password encryption batch-size batch-cooldown (confirmed NIL confirmed-p) save)
   (let ((host (ensure-host host)))
-    (setf-dm-fields host author title display-name address hostname port username password encryption batch-size batch-cooldown confirmed)
+    (setf-dm-fields host author title display-name address hostname port username encryption batch-size batch-cooldown)
+    (when confirmed-p (setf (dm:field host "confirmed") confirmed))
+    (when password (setf (dm:field host "password") (encrypt password)))
     (when save (dm:save host))
     host))
 
