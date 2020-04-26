@@ -13,7 +13,7 @@
       </div>
       <div class="row" title="Whether the trigger should only react when applicable on new changes, or whether it should apply whenever its conditions are fulfilled.">
         <label for="rule">Trigger type:
-          <a @href="courier/help/triggers"><i class="fas fa-question-circle"/></a>
+          <a @href="courier/help/triggers" target="_blank"><i class="fas fa-question-circle"/></a>
         </label>
         <select name="rule" id="rule" lquery='(select (if rule "true" "false"))'>
           <option value="false">reactive trigger</option>
@@ -52,7 +52,7 @@
       </div>
       <div class="row" title="Only fire the trigger for subscribers that match the given constraint of tags.">
         <label for="tag-constraint">Constrain to:
-          <a @href="courier/help/constraints"><i class="fas fa-question-circle"/></a>
+          <a @href="courier/help/constraints" target="_blank"><i class="fas fa-question-circle"/></a>
         </label>
         <input type="constraint" name="tag-constraint" id="tag-constraint" placeholder="a b -c" maxlength="64" pattern="([+-]?[^ +-]+ *|? *)*"
                lquery="(val tag-constraint)" />

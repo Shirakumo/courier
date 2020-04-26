@@ -14,7 +14,7 @@
       </div>
       <div class="row big dynamic-list">
         <label for="triggers">Emails:
-          <a @href="courier/help/sequences"><i class="fas fa-question-circle"/></a>
+          <a @href="courier/help/sequences" target="_blank"><i class="fas fa-question-circle"/></a>
         </label>
         <ul id="triggers">
           <li class="trigger template">
