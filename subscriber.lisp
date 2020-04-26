@@ -50,7 +50,7 @@
                        (dm:save attribute-value))))
         (let ((existing (list-tags subscriber)))
           (loop for tag-ish in tags
-                for tag = (ensure-tag tag)
+                for tag = (ensure-tag tag-ish)
                 for found = (find (dm:id tag) existing :key #'dm:id :test #'equal)
                 do (if found
                        (setf existing (delete found existing))
