@@ -48,21 +48,27 @@
     trigger))
 
 (defun edit-trigger (trigger &key description source target delay tag-constraint (rule NIL rule-p) (save T))
-  (setf-dm-fields trigger description delay tag-constraint)
-  (when tag-constraint
-    (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
-  (when source
-    (setf (dm:field trigger "source-id") (dm:id source))
-    (setf (dm:field trigger "source-type") (collection-type source)))
-  (when target
-    (setf (dm:field trigger "target-id") (dm:id target))
-    (setf (dm:field trigger "target-type") (collection-type target)))
-  (when rule-p
-    (setf (dm:field trigger "rule") rule))
-  (when save
-    (dm:save trigger)
-    (when (dm:field trigger "rule") ;; Make sure we process the rule immediately.
-      (process-rule trigger T)))
+  (db:with-transaction ()
+    (setf-dm-fields trigger description delay tag-constraint)
+    (when rule-p
+      (setf (dm:field trigger "rule") rule))
+    (when tag-constraint
+      (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
+    (when source
+      (setf (dm:field trigger "source-id") (dm:id source))
+      (setf (dm:field trigger "source-type") (collection-type source)))
+    (when target
+      (setf (dm:field trigger "target-id") (dm:id target))
+      (setf (dm:field trigger "target-type") (collection-type target))
+      ;; Our action changed, clear trigger receipt table to ensure the rule stays consistent
+      ;; and performs its action again for all applicable. This is fine even if it would cause
+      ;; duplicate fires since we prevent double-tagging or double-mailing already anyway.
+      (when (dm:field trigger "rule")
+        (db:remove 'trigger-receipt (db:query (:= 'trigger (dm:id trigger))))))
+    (when save
+      (dm:save trigger)
+      (when (dm:field trigger "rule") ;; Make sure we process the rule immediately.
+        (process-rule trigger T))))
   trigger)
 
 (defun delete-trigger (trigger)
