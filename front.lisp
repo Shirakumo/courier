@@ -92,7 +92,7 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0))
         (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
         (query (or* (post/get "query"))))
-    (render-page "Mails"
+    (render-page (format NIL "Mails for ~a" (dm:field campaign "title"))
                  (@template "mail-list.ctml")
                  :mails (list-mails campaign :amount 100 :skip (* 100 page) :query query)
                  :campaign campaign
@@ -127,7 +127,7 @@
 
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Tags"
+    (render-page (format NIL "Tags for ~a" (dm:field campaign "title"))
                  (@template "tag-list.ctml")
                  :tags (list-tags campaign)
                  :campaign campaign)))
@@ -163,7 +163,7 @@
 
 (define-page trigger-list "courier/^campaign/([^/]+)/trigger/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Triggers"
+    (render-page (format NIL "Triggers for ~a" (dm:field campaign "title"))
                  (@template "trigger-list.ctml")
                  :triggers (list-triggers campaign)
                  :campaign campaign)))
@@ -194,7 +194,7 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0))
         (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
         (query (or* (post/get "query"))))
-    (render-page (format NIL "~a Subscribers" (dm:field campaign "title"))
+    (render-page (format NIL "Subscribers for ~a" (dm:field campaign "title"))
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page) :query query)
@@ -240,7 +240,7 @@
 
 (define-page sequence-list "courier/^campaign/([^/]+)/sequence/?" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Sequences"
+    (render-page (format NIL "Sequences for ~a" (dm:field campaign "title"))
                  (@template "sequence-list.ctml")
                  :campaign campaign
                  :sequences (list-sequences campaign))))
@@ -261,7 +261,7 @@
 (define-page file-list "courier/^campaign/([^/]+)/file/?" (:uri-groups (campaign) :access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'file))
          (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
-    (render-page "File List"
+    (render-page (format NIL "Files for ~a" (dm:field campaign "title"))
                  (@template "file-list.ctml")
                  :campaign campaign
                  :files (list-files campaign :amount 100 :skip (* 100 page))
@@ -270,7 +270,7 @@
 
 (define-page feed-list "courier/^campaign/([^/]+)/feed/?" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed)))
-    (render-page "Feed list"
+    (render-page (format NIL "Feeds for ~a" (dm:field campaign "title"))
                  (@template "feed-list.ctml")
                  :campaign campaign
                  :feeds (list-feeds campaign))))
@@ -298,7 +298,7 @@
 
 (define-page campaign-log "courier/^log/campaign/([^/]+)" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
-    (render-page "Mail Log"
+    (render-page (format NIL "Mail log for ~a" (dm:field campaign "title"))
                  (@template "mail-log.ctml")
                  ;; KLUDGE: Can't use the query to limit to campaign since the join messes things up.
                  :log (remove-if-not (lambda (dm) (equal (dm:id campaign) (dm:field dm "campaign")))
