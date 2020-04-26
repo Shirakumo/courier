@@ -32,7 +32,7 @@
                    (cons
                     (destructuring-bind (delay subject) trigger
                       (let* ((title (format NIL "~a - ~a" title i))
-                             (mail (make-mail campaign :title title :subject subject))
+                             (mail (make-mail campaign :title title :subject subject :body "; TODO: Write mail"))
                              (trigger (make-trigger campaign campaign mail :description title :delay delay)))
                         (db:insert 'sequence-trigger `(("sequence" . ,(dm:id sequence))
                                                        ("trigger" . ,(dm:id trigger)))))))))))
@@ -55,7 +55,7 @@
                                      trigger))
                                   (T
                                    (let* ((title (format NIL "~a - ~a" title i))
-                                          (mail (make-mail campaign :title title :subject subject)))
+                                          (mail (make-mail campaign :title title :subject subject :body "; TODO: Write mail")))
                                      (make-trigger campaign campaign mail :description title :delay delay))))
               do (db:insert 'sequence-trigger `(("sequence" . ,(dm:id sequence))
                                                 ("trigger" . ,(dm:id trigger)))))))
