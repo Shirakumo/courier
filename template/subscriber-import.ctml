@@ -3,6 +3,7 @@
     <form method="post" enctype="multipart/form-data">
       <p>
         Note that the first line of the CSV <em>must</em> be a row that describes the field names.
+        <a @href="courier/help/import" target="_blank"><i class="fas fa-question-circle"/></a>
       </p>
       <div class="row">
         <label for="file">CSV File:</label>

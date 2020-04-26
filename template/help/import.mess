@@ -1,0 +1,51 @@
+## Importing Subscribers
+Courier allows you to mass import subscribers through a CSV file. This should allow you to migrate from another mailing list or existing userbase in another service to Courier.
+
+In order for Courier to know how to parse the CSV, it needs to recognise the fields in the CSV, though. To this end, the first line of the CSV must describe the names of the columns in the CSV data. Courier recognises the following fields. In order to support different formats, multiple names map to the same field.
+
+- ``email`` ``mail`` ``email address`` ``mail address``
+  The email address used by the subscriber. If not found, an error is signalled.
+- ``first name`` ``first`` ``name`` ``surname`` ``given name``
+  The first or full name of the subscriber.
+- ``last name`` ``last`` ``family name``
+  The last name of the subscriber. If present is merged with the first name to form the full name.
+- ``address`` ``home address`` ``physical address`` ``location``
+  The physical address of the subscriber (unused).
+- ``phone`` ``phone number`` ``telephone`` ``telephone number`` ``number``
+  The telephone number of the subscriber (unused).
+- ``birthday`` ``birth day`` ``birth``
+  The birth date of the subscriber, either with or without the year of birth (unused).
+- ``rating`` ``member rating``
+  A qualitative rating of the subscriber (unused).
+- ``signup time`` ``signed up`` ``optin time``
+  The time at which the subscriber was actually subscribed. See below for date formats.
+- ``confirm time`` ``confirmed``
+  The time at which the subscriber confirmed their subscription. Used if ``signup time`` is not present.
+- ``ip`` ``ip address`` ``confirm ip``
+  The IP address from which the subscriber signed up (unused).
+- ``latitude`` ``lat``
+  The estimated geographical latitude from which the subscriber signed up (unused).
+- ``longitude`` ``lng``
+  The estimated geographical longitude from which the subscriber signed up (unused).
+- ``timezone`` ``tmz`` ``zone``
+  The time zone from which the subscriber signed up (unused).
+- ``region``
+  The geographical region from which the subscriber signed up (unused).
+- ``notes`` ``note`` ``remarks`` ``remark`` ``additional notes`` ``comment`` ``comments``
+  Additional free-form text for notes or remarks on the subscriber (unused).
+- ``tags``
+  A list of tags the subscriber was assigned to (unused).
+
+### General Format
+The CSV columns should be separated by commas (``,``), and rows should be separated by ``CRLF`` or ``LF``. Values may be encased in double quotes (``"``) to escape them. Additional white space is trimmed from values automatically and may be inserted as desired.
+
+### Parsing of Dates
+Date formats are known to be an absolute travesty of different standards and completely botched values out in the wild. Courier attempts to be lenient when parsing dates, and supports the following formats, expressed as a regex:
+
+::
+(\d[-_/]\d{1,2}[-_/]\d{1,2}[Tt ]?)?(\d{1,2}:\d{1,2}:\d{1,2})?(+\d{1,4})?
+::
+
+Essentially this means that date parts may be separated by one of ``-_/``, and date/time may be separated by ``T`` or a space. The date, time, or timezone may also be omitted entirely.
+
+If the dates in your CSV do not comply to this format, Courier will fail to import.
