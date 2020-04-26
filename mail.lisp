@@ -28,8 +28,9 @@
        (dm:get 'mail (query (:= 'campaign (dm:id thing)))
                :sort '((time :desc)) :amount amount :skip skip))
       (subscriber
-       (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
-               :sort '(("send-time" :desc)) :hull 'mail)))))
+       (fixup-ids (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
+                          :sort '(("send-time" :desc)) :hull 'mail)
+                  "mail")))))
 
 (defun make-mail (campaign &key title subject body (type :markless) (save T))
   (let ((campaign (ensure-campaign campaign)))

@@ -29,9 +29,10 @@
       (append ;; KLUDGE: workaround for JOIN thrashing _id when not inner join
        (dm:get 'campaign (db:query (:= 'author (user:id user)))
                :sort '((title :asc)) :amount amount :skip skip)
-       (dm:get (rdb:join (campaign _id) (campaign-access campaign))
-               (db:query (:= 'user (user:id user)))
-               :sort '((title :asc)) :amount amount :skip skip :hull 'campaign))
+       (fixup-ids (dm:get (rdb:join (campaign _id) (campaign-access campaign))
+                          (db:query (:= 'user (user:id user)))
+                          :sort '((title :asc)) :amount amount :skip skip :hull 'campaign)
+                  "campaign"))
       (dm:get 'campaign (db:query :all)
               :sort '((title :asc)) :amount amount :skip skip)))
 

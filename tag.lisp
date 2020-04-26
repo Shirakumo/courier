@@ -41,8 +41,9 @@
      (dm:get 'tag (db:query (:= 'campaign (dm:id thing)))
              :sort '((title :asc)) :amount amount :skip skip))
     (subscriber
-     (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
-             :sort '((title :asc)) :amount amount :skip skip :hull 'tag))))
+     (fixup-ids (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
+                        :sort '((title :asc)) :amount amount :skip skip :hull 'tag)
+                "tag"))))
 
 (defun tagged-p (tag subscriber)
   (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))

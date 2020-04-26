@@ -20,9 +20,10 @@
      (dm:get 'trigger (db:query (:= 'campaign (dm:id thing)))
              :amount amount :skip skip))
     (sequence
-     (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
-             (db:query (:= 'sequence (dm:id thing)))
-             :amount amount :skip skip :hull 'trigger))
+     (fixup-ids (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
+                        (db:query (:= 'sequence (dm:id thing)))
+                        :amount amount :skip skip :hull 'trigger)
+                "trigger"))
     ((link mail tag)
      (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
                                       (:= 'target-type type)))
