@@ -380,11 +380,15 @@
     (edit-subscriber subscriber :status :deactivated)
     (output subscriber "Subscriber deactivated." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
-(define-api courier/subscriber/import (campaign &optional content file) (:access (perm courier user))
+(define-api courier/subscriber/import (campaign &optional content file if-exists) (:access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
          (subs (import-subscribers campaign (if file
                                                 (first file)
-                                                content))))
+                                                content)
+                                   :if-exists (cond ((or (null if-exists) (string-equal "abort" if-exists)) :abort)
+                                                    ((string-equal "ignore" if-exists) :ignore)
+                                                    ((string-equal "overwrite" if-exists) :overwrite)
+                                                    (T (error 'api-argument-invalid :argument 'if-exists))))))
     (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
 
 (define-api courier/subscriber/trend (campaign &optional (scale "week")) (:access (perm courier user))

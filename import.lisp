@@ -42,32 +42,40 @@
       (local-time:parse-timestring date :fail-on-error NIL :date-separator #\_ :date-time-separator #\ )
       (local-time:parse-timestring date :fail-on-error NIL :date-separator #\/ :date-time-separator #\ )))
 
-(defun import-subscriber (campaign fields)
+(defun import-subscriber (campaign fields &key (if-exists :abort))
   (flet ((value (key &optional default)
            (let ((cell (assoc key fields)))
              (if cell (cdr cell) default))))
-    (make-subscriber campaign
-                     (or (when (value :first-name)
-                           (format NIL "~a~@[ ~a~]" (value :first-name) (value :last-name)))
-                         (value :last-name)
-                         "")
-                     (or (value :email)
-                         (error "No email address found."))
-                     :signup-time (or (when (value :signup-time)
-                                        (maybe-parse-date (value :signup-time)))
-                                      (when (value :confirm-time)
-                                        (maybe-parse-date (value :confirm-time)))
-                                      (get-universal-time))
-                     :status :active)))
+    (let* ((address (or (value :email)
+                        (error "No email address found.")))
+           (name (or (when (value :first-name)
+                       (format NIL "~a~@[ ~a~]" (value :first-name) (value :last-name)))
+                     (value :last-name)
+                     ""))
+           (signup-time (or (when (value :signup-time)
+                              (maybe-parse-date (value :signup-time)))
+                            (when (value :confirm-time)
+                              (maybe-parse-date (value :confirm-time)))
+                            (get-universal-time)))
+           (existing (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                             (:= 'address address))))))
+      (if existing
+          (ecase if-exists
+            (:ignore)
+            (:abort
+             (error 'api-argument-invalid :argument 'csv :message "Subscriber"))
+            (:overwrite
+             (edit-subscriber existing :name name :status :active)))
+          (make-subscriber campaign name address :signup-time signup-time :status :active)))))
 
-(defun import-subscribers (campaign csv)
+(defun import-subscribers (campaign csv &key (if-exists :abort))
   (db:with-transaction ()
     (flet ((process (csv)
              (destructuring-bind (fields . entries) csv
                (let ((field-names (mapcar #'normalize-field-names fields)))
                  (loop for entry in entries
                        for fields = (normalize-fields field-names entry)
-                       collect (import-subscriber campaign fields))))))
+                       collect (import-subscriber campaign fields :if-exists if-exists))))))
       (etypecase csv
         (pathname
          (with-open-file (s csv)

@@ -5,6 +5,14 @@
         Note that the first line of the CSV <em>must</em> be a row that describes the field names.
         <a @href="courier/help/import" target="_blank"><i class="fas fa-question-circle"/></a>
       </p>
+      <div class="row" title="What to do if a subscriber that should be imported already exists.">
+        <label for="if-exists">If subscriber exists</label>
+        <option name="if-exists" id="if-exists">
+          <select value="abort">abort</select>
+          <select value="ignore">ignore</select>
+          <select value="overwrite">overwrite</select>
+        </option>
+      </div>
       <div class="row">
         <label for="file">CSV File:</label>
         <input type="file" id="file" name="file" accept=".csv,.txt,text/csv,text/plain"/>
