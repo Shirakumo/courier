@@ -34,9 +34,19 @@
       <i class="fas fa-plus-circle"></i>
       Import Subscribers
     </a>
-    <a class="button" href="#" lquery="(attr :href (** :next-page))">
-      <i class="fas fa-arrow-right"></i>
-      Next page
-    </a>
   </c:using>
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
 </article>

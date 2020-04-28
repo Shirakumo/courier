@@ -96,6 +96,10 @@
                  (@template "mail-list.ctml")
                  :mails (list-mails campaign :amount 100 :skip (* 100 page) :query query)
                  :campaign campaign
+                 :prev-page (when (< 0 page)
+                              (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
+                                    :query `(("page" . ,(princ-to-string (1+ page)))
+                                             ("query" . ,query))))
                  :next-page (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
                                   :query `(("page" . ,(princ-to-string (1+ page)))
                                            ("query" . ,query))))))
@@ -158,6 +162,9 @@
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (list-subscribers tag :amount 100 :skip (* 100 page))
+                 :prev-page (when (< 0 page)
+                              (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
+                                    :query `(("page" . ,(princ-to-string (1+ page))))))
                  :next-page (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
                                   :query `(("page" . ,(princ-to-string (1+ page))))))))
 
@@ -198,6 +205,10 @@
                  (@template "subscriber-list.ctml")
                  :campaign campaign
                  :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page) :query query)
+                 :prev-page (when (< 0 page)
+                              (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
+                                    :query `(("page" . ,(princ-to-string (1+ page)))
+                                             ("query" . ,query))))
                  :next-page (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
                                   :query `(("page" . ,(princ-to-string (1+ page)))
                                            ("query" . ,query))))))
@@ -265,6 +276,9 @@
                  (@template "file-list.ctml")
                  :campaign campaign
                  :files (list-files campaign :amount 100 :skip (* 100 page))
+                 :prev-page (when (< 0 page)
+                              (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
+                                    :query `(("page" . ,(princ-to-string (1+ page))))))
                  :next-page (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
                                   :query `(("page" . ,(princ-to-string (1+ page))))))))
 
