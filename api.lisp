@@ -95,14 +95,10 @@
 
 (define-api courier/host/test (host) (:access (perm courier host test))
   (let ((host (check-accessible (ensure-host (db:ensure-id host)))))
-    (send-system-mail (@template "email/confirm-host.mess")
+    (send-system-mail (@template "email/test-host.mess")
                       (dm:field host "address") host NIL
                       :subject "Courier host test"
-                      :recipient (dm:field host "display-name")
-                      :link (url> "courier/api/courier/host/confirm"
-                                  :query `(("host" . ,(princ-to-string (dm:id host)))
-                                           ("token" . ,(hash (dm:id host)))
-                                           ("browser" . "true"))))
+                      :recipient (dm:field host "display-name"))
     (output NIL "Test email sent." "courier/host")))
 
 (define-api courier/campaign (campaign) (:access (perm courier user))
