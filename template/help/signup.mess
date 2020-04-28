@@ -1,0 +1,53 @@
+## Custom Signup Forms
+In order to integrate a signup form for your mailing list from another webpage, you should design an HTML form similar to this:
+
+:: HTML
+<form action="REPLACE ME" method="post">
+  <div class="row _">
+    <label for="username">Leave this empty</label>
+    <input autocomplete="off" type="text" id="username" name="username" />
+  </div>
+  <div class="row _">
+    <label for="email">Leave this as is</label>
+    <input autocomplete="off" type="text" id="email" name="email" value="REPLACE ME" />
+  </div>
+  <div class="row">
+    <label for="name">Your name</label>
+    <input type="text" name="name" id="name" autofocus />
+  </div>
+  <div class="row">
+    <label for="address">Email address</label>
+    <input type="email" name="address" id="address" placeholder="email@example.com" required />
+  </div>
+  <input type="hidden" name="browser" value="true" />
+  <input type="hidden" name="campaign" value="CAMPAIGN-ID" />
+  <input type="submit" value="Subscribe"/>
+</form>
+::
+
+The ``action`` field in the ``form`` should be replaced with an URL to your subscription API endpoint:
+
+:: HTML, inline
+<div lquery='(text (courier::url> "courier/api/courier/subscription/new"))'></div>
+::
+
+Furthermore, you should replace the ``value`` of the field named ``email`` with
+
+:: HTML, inline
+<div lquery='(text (courier::hash (mconfig :courier :salt)))'></div>
+::
+
+Finally, you should replace the ``value`` of the ``campaign`` input field with the ID of the campaign you want to write this subscription form for.
+
+The first two rows are spam traps that exist to try and catch automated spammers and prevent them from subscribing to your mailing list. These rows are tagged with a ``_`` CSS class that you should hide. If you cannot modify the CSS of the page you're embedding into, add ``style="display:none"`` to the two rows to hide them instead.
+
+If you have additional attributes defined on your "campaign"(link campaigns), you should include them as fields in your signup form as well. Each of those attributes should have the following HTML structure:
+
+:: HTML
+<div class="row">
+  <label for="MY-ATTRIBUTE">My attribute</label>
+  <input type="text" name="MY-ATTRIBUTE" id="MY-ATTRIBUTE" type="ATTRIBUTE-TYPE">
+</div>
+::
+
+Replacing ``MY-ATTRIBUTE`` for the ``title`` of the attribute, and ``ATTRIBUTE-TYPE`` for the HTML5 input field type corresponding to the type you defined for the attribute in Courier.

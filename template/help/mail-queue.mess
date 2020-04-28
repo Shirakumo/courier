@@ -1,0 +1,11 @@
+## Email Send Queue
+When you send an email out from courier, it is not sent out immediately. Instead, the mail is instantiated for each subscriber and then put onto an internal queue. This queue is then processed gradually in batches, as you define them in your mail host.
+
+This is done for two reasons:
+
+1. Sending out a large volume of mail at once is bad behaviour and can get your mail host blocked for flood or spam. For this reason queueing things up and processing them in batches is a much safer choice. Depending on the limits of your mail host, you might need to adjust the settings in courier to lower the batch size, or increase the delay between batches.
+2. If the sending fails due to a temporary connection issue, the mail can be re-queued to try again later. Courier by default tries again in increasing intervals before dropping the mail. You can see the status of mail sends and failures in the campaign's mail log.
+
+Note that the queueing is only done on the Courier side and your mail host may have additional queues and delays that prevent mails from being sent out to all subscribers immediately. Furthermore, Courier cannot verify whether an email will ultimately reach its target destination, so even if Courier's mail log shows a successful send, it can happen that the email did not reach its target.
+
+Often in case of an unreachable target your mail host will send you an email to your inbox about an undelivered mail being returned. Since Courier only sends emails but does not read them, it won't know about this happening. It is therefore recommended that you check your host's inbox for mail delivery reports regularly and remove offending subscribers that cannot be reached.

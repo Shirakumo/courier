@@ -1,8 +1,11 @@
 <article class="page help">
   <nav class="help">
     <label>Help Index</label>
-    <a @href="courier/help/mail">Email Writing</a>
+    <a @href="courier/help/campaigns">Campaigns</a>
+    <a @href="courier/help/signup">Custom Signup Forms</a>
+    <a @href="courier/help/send-queue">Email Send Queue</a>
     <a @href="courier/help/template">Email Templating</a>
+    <a @href="courier/help/mail">Email Writing</a>
     <a @href="courier/help/import">Importing Subscribers</a>
     <a @href="courier/help/feed">RSS/Atom Feeds</a>
     <a @href="courier/help/sequences">Sequences</a>
