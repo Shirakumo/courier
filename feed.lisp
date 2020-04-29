@@ -139,10 +139,12 @@
 
 (defun update-all-feeds ()
   (let ((feeds (dm:get 'feed (db:query :all) :sort '((last-update :desc)))))
-    (loop for feed in feeds
-          do (maybe-update-feed feed)
-          minimize (+ (dm:field feed "last-update")
-                      (* 60 (dm:field feed "frequency"))))))
+    (if feeds
+        (loop for feed in feeds
+              do (maybe-update-feed feed)
+              minimize (+ (dm:field feed "last-update")
+                          (* 60 (dm:field feed "frequency"))))
+        (+ (get-universal-time) (* 60 60 24)))))
 
 (define-task update-all-feeds ()
   (setf (due-time task) (update-all-feeds)))
