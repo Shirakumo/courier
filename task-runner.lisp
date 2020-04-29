@@ -67,11 +67,9 @@
                                             (maybe-invoke-debugger e 'continue))))
                       (with-simple-restart (continue "Ignore the task failure.")
                         (run-task task))))
-           (when (loop for task in *tasks*
-                       never (task-ready-p task))
-             (bt:with-lock-held (*task-lock*)
-               (bt:condition-wait *task-condition* *task-lock*
-                                  :timeout (max 1 (- (nearest-task *tasks*) (get-universal-time))))))))
+           (bt:with-lock-held (*task-lock*)
+             (bt:condition-wait *task-condition* *task-lock*
+                                :timeout (max 1 (- (nearest-task *tasks*) (get-universal-time)))))))
 
 (defun start-task-runner ()
   (when (and *task-runner*
