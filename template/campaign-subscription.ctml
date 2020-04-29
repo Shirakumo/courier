@@ -23,9 +23,7 @@
         <c:splice iterate="(** :fields)">
           <div class="row">
             <label for="#" lquery="(attr :for title) (text title)">#</label>
-            <input type="hidden"  name="fields[]" lquery="(attr :value _id)" />
-            <input type="text"  name="values[]" id="#"
-                   lquery="(attr :type (second (nth type courier::*attribute-types*)) :id title :required required)" />
+            <input lquery="(attr :type (second (nth type courier::*attribute-types*)) :name title :required required)" />
           </div>
         </c:splice>
         <input type="hidden" name="browser" value="true" />

@@ -336,26 +336,27 @@
   (let ((subscriber (check-accessible (ensure-subscriber subscriber))))
     (api-output (list-tags subscriber :amount (int* amount) :skip (int* skip 0)))))
 
-(define-api courier/subscriber/new (campaign name address &optional tag[] fields[] values[]) (:access (perm courier user))
+(defun gather-api-attributes (campaign)
+  (loop for attribute in (list-attributes campaign)
+        for value = (post/get (dm:field attribute "title"))
+        if (or* value)
+        collect (cons attribute value)
+        else
+        do (when (dm:field attribute "required")
+             (error 'api-argument-missing :argument (dm:field attribute "title")
+                                          :message (format NIL "The attribute ~s is required but missing."
+                                                           (dm:field attribute "title"))))))
+
+(define-api courier/subscriber/new (campaign name address &optional tag[]) (:access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
-         (attributes (loop for field in fields[]
-                           for value in values[]
-                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
-                           do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
-                                (error 'api-argument-invalid :argument 'field[] :message "Invalid attribute."))
-                           collect (cons attribute value)))
+         (attributes (gather-api-attributes campaign))
          (tags (mapcar #'ensure-tag tag[]))
          (subscriber (make-subscriber campaign name address :attributes attributes :tags tags :status :active)))
     (output subscriber "Subscriber added." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
-(define-api courier/subscriber/edit (subscriber &optional name tag[] fields[] values[]) (:access (perm courier user))
+(define-api courier/subscriber/edit (subscriber &optional name tag[]) (:access (perm courier user))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
-         (attributes (loop for field in fields[]
-                           for value in values[]
-                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
-                           do (unless (equal (dm:field subscriber "campaign") (dm:field attribute "campaign"))
-                                (error 'api-argument-invalid :argument 'field[] :message "Invalid attribute."))
-                           collect (cons attribute value)))
+         (attributes (gather-api-attributes campaign))
          (tags (mapcar #'ensure-tag tag[])))
     (edit-subscriber subscriber :name name :tags tags :attributes attributes)
     (output subscriber "Subscriber edited." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
@@ -526,19 +527,14 @@
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
-(define-api courier/subscription/new (campaign name address &optional fields[] values[] username email) ()
+(define-api courier/subscription/new (campaign name address &optional username email) ()
   ;; Honeypot
   (when (or username
             (string/= email (hash (config :salt))))
     (error 'api-argument-invalid :argument 'username :message "Invalid email address."))
   (check-address-valid address)
   (let* ((campaign (ensure-campaign campaign))
-         (attributes (loop for field in fields[]
-                           for value in values[]
-                           for attribute = (dm:get-one 'attribute (db:query (:= '_id (db:ensure-id field))))
-                           do (unless (equal (dm:id campaign) (dm:field attribute "campaign"))
-                                (error 'api-argument-invalid :argument fields[] :message "Invalid attribute."))
-                           collect (cons attribute value))))
+         (attributes (gather-api-attributes campaign)))
     (handler-case ;; Try to add normally
         (let ((subscriber (make-subscriber campaign name address :attributes attributes)))
           (send-system-mail (@template "email/confirm-subscription.mess") address
