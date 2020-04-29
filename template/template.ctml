@@ -13,7 +13,12 @@
   <body>
     <header>
       <h1><a href="#" @href="courier/" lquery="(text title)">Courier Mailing</a></h1>
-      <h2 lquery="(text page)">Page</h2>
+      <h2>
+        <c:when test="up">
+          <a lquery="(attr :href up) (text up-text)"></a>
+        </c:when>
+        <c:splice lquery="(text page)"/>
+      </h2>
       <c:if test="logged-in">
         <c:then>
           <div class="profile menu">

@@ -356,6 +356,7 @@
 
 (define-api courier/subscriber/edit (subscriber &optional name tag[]) (:access (perm courier user))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
+         (campaign (ensure-campaign (dm:field subscriber "campaign")))
          (attributes (gather-api-attributes campaign))
          (tags (mapcar #'ensure-tag tag[])))
     (edit-subscriber subscriber :name name :tags tags :attributes attributes)

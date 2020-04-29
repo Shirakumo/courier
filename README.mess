@@ -61,8 +61,4 @@ The signup form already includes some honeypot fields in order to try and catch 
 ; TODO: triggers for count of opened mail
 ;       Triggers should be able to fire after a user has opened a certain number of
 ;       emails.
-; TODO: Change the way attributes are submitted to submit them using the attribute title
-;       as the input field name, or using an additional field?
-; TODO: breadcrumb navigation
-;       Right now it can be annoying to navigate around the campaign
 ; TODO: Don't show next-page when there's no further elements
