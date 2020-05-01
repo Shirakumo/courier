@@ -378,11 +378,12 @@
     (edit-subscriber subscriber :status :deactivated)
     (output subscriber "Subscriber deactivated." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
 
-(define-api courier/subscriber/import (campaign &optional content file if-exists) (:access (perm courier user))
+(define-api courier/subscriber/import (campaign &optional content file if-exists tag[]) (:access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
          (subs (import-subscribers campaign (if file
                                                 (first file)
                                                 content)
+                                   :tags (mapcar #'ensure-tag tag[])
                                    :if-exists (cond ((or (null if-exists) (string-equal "abort" if-exists)) :abort)
                                                     ((string-equal "ignore" if-exists) :ignore)
                                                     ((string-equal "overwrite" if-exists) :overwrite)

@@ -7,21 +7,44 @@
       </p>
       <div class="row" title="What to do if a subscriber that should be imported already exists.">
         <label for="if-exists">If subscriber exists</label>
-        <option name="if-exists" id="if-exists">
-          <select value="abort">abort</select>
-          <select value="ignore">ignore</select>
-          <select value="overwrite">overwrite</select>
-        </option>
+        <select name="if-exists" id="if-exists">
+          <option value="abort">abort</option>
+          <option value="ignore">ignore</option>
+          <option value="overwrite">overwrite</option>
+        </select>
+      </div>
+      <div class="row" title="Which tags to assign to the imported subscribers">
+        <label>Tag with</label>
+        <div class="tag-list">
+          <ul class="tags">
+            <li class="tag template">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
+              </a>
+              <input type="hidden" data-name="tag[]"/>
+              <span class="title">Tag</span>
+            </li>
+          </ul>
+          <select iterate="(courier::list-tags *)">
+            <option lquery="(val _id) (text title)">Tag</option>
+          </select>
+          <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> Add Tag</a>
+        </div>
       </div>
       <div class="row">
-        <label for="file">CSV File:</label>
+        <label for="file">CSV file</label>
         <input type="file" id="file" name="file" accept=".csv,.txt,text/csv,text/plain"/>
       </div>
       <div class="row big">
-        <label for="content">CSV:</label>
+        <label for="content">CSV</label>
         <div class="editor" data-type="csv">
+          <nav>
+            <a @href="courier/help/import" title="Email help" target="_blank">
+              <i class="fas fa-info-circle"></i>
+            </a>
+          </nav>
           <textarea id="content" name="content">Email Address, Name, Tags
-          </textarea>
+</textarea>
         </div>
         <input type="hidden" name="browser" value="true" />
         <div class="row">

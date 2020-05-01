@@ -257,6 +257,7 @@
   ((:and .page (:or .edit .list .send .import .frontpage .access))
    :max-width 800px
    :margin 1em auto)
+  
   (.page.list
    :max-width 1024px
    (>ul
@@ -277,6 +278,21 @@
                (.dropdown :display none))))
    (.pageination
     :float right))
+
+  ((:and .page (:or .edit .import))
+   (.tag-list
+    (ul.tags
+     :margin 0
+     :padding 0
+     :list-style none
+     (.tag
+      :display inline-block
+      :border 1px solid (hex E0E0E0)
+      :background (hex F0F0F0)
+      :color (hex 000000)
+      :padding 0.1em 0.2em
+      :margin 0 0.1em
+      :border-radius 0.3em))))
   
   (.page.subscriber.list
    (time :margin 0 0.2em)
@@ -358,21 +374,6 @@
     :padding 0
     :margin 0))
   
-  (.page.subscriber.edit
-   (.tag-list
-    (ul.tags
-     :margin 0
-     :padding 0
-     :list-style none
-     (.tag
-      :display inline-block
-      :border 1px solid (hex E0E0E0)
-      :background (hex F0F0F0)
-      :color (hex 000000)
-      :padding 0.1em 0.2em
-      :margin 0 0.1em
-      :border-radius 0.3em))))
-  
   (.page.sequence.edit
    (.trigger
     :display flex
@@ -387,7 +388,7 @@
    (.panel
     :background (hex F0F0F0)
     :border-bottom 0.2em solid (hex E0E0E0)
-    :margin 1em 1em 0 1em
+    :margin 1em 0.5em 0 0.5em
     :padding 1em
     (h2 :margin 0 0 0.2em 0)
     (label
@@ -398,7 +399,7 @@
     :flex-direction column
     :justify-content center
     :align-items center
-    :width (calc (- 50% 4em))
+    :width (calc (- 50% 3em))
     :text-align center
     (.count
      :display block
@@ -415,7 +416,7 @@
     (a
      :display inline-block
      :padding 0.2em
-     :min-width 3em
+     :min-width 2.5em
      :text-align center
      (i
       :display block
