@@ -299,12 +299,13 @@
    (.tags :flex-grow 1))
   
   (.page.file.list
+   (li>* :vertical-align middle)
    (.image
     :width 10em
     :height 5em
     :object-fit contain)
    (.author :min-width 5em)
-   (.filename :flex-grow 1))
+   (.filename :width 100%))
   
   (.page.sequence.list
    (.title :flex-grow 1))

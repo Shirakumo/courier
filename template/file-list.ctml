@@ -19,7 +19,9 @@
   </form>
   <ul class="file" iterate="list">
     <li class="file">
-      <img class="image" lquery="(attr :src (courier::file-url *))"/>
+      <a lquery="(attr :href (courier::file-url *))">
+        <img class="image" lquery="(attr :src (courier::file-url *))"/>
+      </a>
       <span class="author" lquery="(text (user:username author))">Author</span>
       <span class="filename" lquery="(text filename)">Filename</span>
       <nav class="actions">
