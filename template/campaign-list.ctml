@@ -4,6 +4,9 @@
       <a class="title" @href="courier/campaign/{0} title" lquery="(text title)">Campaign</a>
       <span class="description" lquery="(text description)">Description</span>
       <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
         <a class="button" href="#" @href="courier/campaign/{0}/mail title">
           <i class="fas fa-envelope"></i>
           Mails

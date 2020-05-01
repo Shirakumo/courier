@@ -5,6 +5,9 @@
       <span class="address" lquery="(text address)">Address</span>
       <i class="fas status" lquery="(add-class (if confirmed :fa-check-circle :fa-question-circle))"></i>
       <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
         <a class="button" href="#" @href="courier/api/courier/host/test?host={0}&browser=true _id">
           <i class="fas fa-paper-plane"></i>
           Test

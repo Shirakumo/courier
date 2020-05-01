@@ -3,6 +3,9 @@
     <li class="sequence">
       <a class="title" @href="courier/campaign/{0}/sequence/{1}/edit campaign _id" lquery="(text title)">Sequence</a>
       <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
         <a class="button" href="#" @href="courier/campaign/{0}/sequence/{1}/edit campaign _id">
           <i class="fas fa-edit"></i>
           Edit

@@ -4,6 +4,9 @@
       <a class="title" @href="courier/campaign/{0}/tag/{1}/edit campaign _id" lquery="(text title)">Tag</a>
       <span class="description" lquery="(text description)">Description</span>
       <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
         <a class="button" href="#" @href="courier/campaign/{0}/tag/{1}/members campaign _id">
           <i class="fas fa-paper-plane"></i>
           Members

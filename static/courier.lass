@@ -273,7 +273,8 @@
      ((:or .address .description .subject .tags .url) :width 100%)
      (.status :padding 0 1em)
      (time :white-space nowrap)
-     (.actions :white-space nowrap :text-align right))))
+     (.actions :white-space nowrap :text-align right
+               (.dropdown :display none)))))
   
   (.page.subscriber.list
    (time :margin 0 0.2em)
@@ -572,7 +573,7 @@
 
 (:media "(max-width: 800px)"
         (body
-         :font-size 12pt
+         :font-size 11pt
          (>header
           (h1 :display none))
          (>main
@@ -588,9 +589,32 @@
             :width 19em)
            (nav.panel
             (.button :margin 0.2em)))
+          (.page.list
+           (.actions
+            :display flex
+            :flex-direction column
+            :align-items stretch
+            :border 1px solid (hex E0E0E0)
+            :background (hex F0F0F0)
+            :border-radius 0.3em
+            :overflow hidden
+            (.dropdown
+             :display block
+             :padding 0.1em 0.2em
+             :cursor pointer)
+            (>.button
+             :text-align left
+             :border-radius 0
+             :border none
+             :display none))
+           ((:and .actions :hover)
+            (>.button
+             :display block)))
           (.page.help
            :position relative
            :top auto :right auto)
+          (.page.list.subscriber
+           (time :display none))
           (.page.campaign.subscription
            (h1 :padding-top 1em)
            (form

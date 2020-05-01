@@ -4,6 +4,9 @@
       <a class="title" @href="courier/campaign/{0}/feed/{1} campaign _id" lquery="(text title)">Feed</a>
       <span class="url" lquery="(text url)">url</span>
       <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
         <a class="button" href="#" @href="courier/campaign/{0}/feed/{1}/edit campaign _id">
           <i class="fas fa-edit"></i>
           Edit
