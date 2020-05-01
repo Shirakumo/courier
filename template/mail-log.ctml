@@ -10,7 +10,7 @@
       <tr class="receipt">
         <td><a class="mail" lquery="(text title)" @href="courier/campaign/{0}/mail/{1} campaign mail">mail</a></td>
         <td><a class="subscriber" lquery="(text address)" @href="courier/campaign/{0}/subscriber/{1} campaign subscriber">Subscriber</a></td>
-        <td lquery='(text (case status (0 "Sent") (1 "Unlocked") (10 "Failed") (11 "Send failed") (12 "Compile failed")))'><i class="fas status" lquery="(add-class (case status ((0 1) :fa-check-circle) (T :fa-exclamation-triangle)))"></i></td>
+        <td class="status" lquery='(text (case status (0 "Sent") (1 "Unlocked") (10 "Failed") (11 "Send failed") (12 "Compile failed")))'><i class="fas" lquery="(add-class (case status ((0 1) :fa-check-circle) (T :fa-exclamation-triangle)))"></i></td>
         <td><time class="time" lquery="(time send-time)">2020</time></td>
       </tr>
     </tbody>

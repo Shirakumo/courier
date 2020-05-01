@@ -25,25 +25,9 @@
         <span class="dropdown">
           Actions <i class="fas fa-caret-down"></i>
         </span>
-        <a class="button" href="#" @href="courier/campaign/{0}/mail title">
-          <i class="fas fa-envelope"></i>
-          Mails
-        </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/subscriber title">
-          <i class="fas fa-user"></i>
-          Subscribers
-        </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/trigger title">
-          <i class="fas fa-bolt"></i>
-          Triggers
-        </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/tag title">
-          <i class="fas fa-tag"></i>
-          Tags
-        </a>
-        <a class="button" href="#" @href="courier/campaign/{0}/sequence title">
-          <i class="fas fa-list-ol"></i>
-          Sequences
+        <a class="button" href="#" @href="courier/campaign/{0} title">
+          <i class="fas fa-home"></i>
+          Overview
         </a>
         <a class="button" href="#" @href="courier/campaign/{0}/edit title">
           <i class="fas fa-edit"></i>
