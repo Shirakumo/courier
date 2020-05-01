@@ -115,7 +115,8 @@
                                            ("query" . ,query))))))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier user))
-  (let ((mail (check-accessible (ensure-mail mail) :target 0)))
+  (let ((mail (check-accessible (ensure-mail mail) :target 0))
+        (campaign (ensure-campaign campaign)))
     (render-page (dm:field mail "title")
                  (@template "mail-overview.ctml")
                  :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
@@ -141,7 +142,8 @@
                  :mail mail)))
 
 (define-page mail-send "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier user))
-  (let ((mail (check-accessible (ensure-mail mail))))
+  (let ((mail (check-accessible (ensure-mail mail)))
+        (campaign (ensure-campaign campaign)))
     (render-page "Send"
                  (@template "mail-send.ctml")
                  :up (url> (format NIL "courier/campaign/~a/mail/~a" (dm:field campaign "title") (dm:id mail)))
@@ -227,7 +229,8 @@
                  :trigger (make-trigger campaign source target :save NIL))))
 
 (define-page trigger-edit "courier/^campaign/([^/]+)/trigger/([^/]+)/edit$" (:uri-groups (campaign trigger) :access (perm courier user))
-  (let ((trigger (check-accessible (ensure-trigger trigger))))
+  (let ((trigger (check-accessible (ensure-trigger trigger)))
+        (campaign (ensure-campaign campaign)))
     (render-page (format NIL "Edit ~a" (dm:id trigger))
                  (@template "trigger-edit.ctml")
                  :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
