@@ -79,13 +79,7 @@
     (dm:delete subscriber)))
 
 (defun list-subscribers (thing &key amount (skip 0) query)
-  (macrolet ((query (clause)
-               `(if query
-                    (let ((query (prepare-query query)))
-                      (db:query (:and ,clause
-                                      (:or (:matches 'name query)
-                                           (:matches 'address query)))))
-                    (db:query ,clause))))
+  (with-query (query name address)
     (ecase (dm:collection thing)
       (campaign
        (dm:get 'subscriber (query (:= 'campaign (dm:id thing)))

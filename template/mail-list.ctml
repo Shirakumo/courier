@@ -17,7 +17,7 @@
     <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
     <input type="submit" value="Go" />
   </form>
-  <ul class="mail" iterate="mails">
+  <ul class="mail" iterate="list">
     <li class="mail">
       <a class="title" @href="courier/campaign/{0}/mail/{1} campaign _id" lquery="(text title)">Mail</a>
       <span class="subject" lquery="(text subject)">Subject</span>

@@ -14,20 +14,21 @@
      (T (ensure-trigger (db:ensure-id trigger-ish))))
    (error 'request-not-found :message "No such trigger.")))
 
-(defun list-triggers (thing &key amount (skip 0) (type (collection-type thing)))
-  (ecase (dm:collection thing)
-    (campaign
-     (dm:get 'trigger (db:query (:= 'campaign (dm:id thing)))
-             :amount amount :skip skip))
-    (sequence
-     (fixup-ids (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
-                        (db:query (:= 'sequence (dm:id thing)))
-                        :amount amount :skip skip :hull 'trigger)
-                "trigger"))
-    ((link mail tag)
-     (dm:get 'trigger (db:query (:and (:= 'target-id (dm:id thing))
-                                      (:= 'target-type type)))
-             :amount amount :skip skip))))
+(defun list-triggers (thing &key amount (skip 0) (type (collection-type thing)) query)
+  (with-query (query description)
+    (ecase (dm:collection thing)
+      (campaign
+       (dm:get 'trigger (query (:= 'campaign (dm:id thing)))
+               :amount amount :skip skip))
+      (sequence
+       (fixup-ids (dm:get (rdb:join (trigger _id) (sequence-trigger trigger))
+                          (query (:= 'sequence (dm:id thing)))
+                          :amount amount :skip skip :hull 'trigger)
+                  "trigger"))
+      ((link mail tag)
+       (dm:get 'trigger (query (:and (:= 'target-id (dm:id thing))
+                                     (:= 'target-type type)))
+               :amount amount :skip skip)))))
 
 (defun list-source-triggers (thing &key amount (skip 0) (type (collection-type thing)))
   (dm:get 'trigger (db:query (:and (:= 'source-id (dm:id thing))

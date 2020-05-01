@@ -14,9 +14,10 @@
      (T (ensure-link (db:ensure-id link-ish))))
    (error 'request-not-found :message "No such link.")))
 
-(defun list-links (campaign &key amount (skip 0))
-  (dm:get 'link (db:query (:= 'campaign (dm:id campaign)))
-          :sort '((url :asc)) :amount amount :skip skip))
+(defun list-links (campaign &key amount (skip 0) query)
+  (with-query (query hash url)
+    (dm:get 'link (query (:= 'campaign (dm:id campaign)))
+            :sort '((url :asc)) :amount amount :skip skip)))
 
 (defun make-link (campaign &key url (save T))
   (let ((hash (cryptos:sha256 url :to :base64)))

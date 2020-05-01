@@ -1,5 +1,23 @@
 <article class="page campaign list">
-  <ul class="campaign" iterate="campaigns">
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
+  <form class="search" @action="courier/campaign/">
+    <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
+    <input type="submit" value="Go" />
+  </form>
+  <ul class="campaign" iterate="list">
     <li class="campaign">
       <a class="title" @href="courier/campaign/{0} title" lquery="(text title)">Campaign</a>
       <span class="description" lquery="(text description)">Description</span>

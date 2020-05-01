@@ -35,15 +35,16 @@
     (delete-triggers-for tag)
     (dm:delete tag)))
 
-(defun list-tags (thing &key amount (skip 0))
-  (ecase (dm:collection thing)
-    (campaign
-     (dm:get 'tag (db:query (:= 'campaign (dm:id thing)))
-             :sort '((title :asc)) :amount amount :skip skip))
-    (subscriber
-     (fixup-ids (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
-                        :sort '((title :asc)) :amount amount :skip skip :hull 'tag)
-                "tag"))))
+(defun list-tags (thing &key amount (skip 0) query)
+  (with-query (query title description)
+    (ecase (dm:collection thing)
+      (campaign
+       (dm:get 'tag (query (:= 'campaign (dm:id thing)))
+               :sort '((title :asc)) :amount amount :skip skip))
+      (subscriber
+       (fixup-ids (dm:get (rdb:join (tag _id) (tag-table tag)) (query (:= 'subscriber (dm:id thing)))
+                          :sort '((title :asc)) :amount amount :skip skip :hull 'tag)
+                  "tag")))))
 
 (defun tagged-p (tag subscriber)
   (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))

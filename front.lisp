@@ -28,6 +28,18 @@
            :version (asdf:component-version (asdf:find-system :courier))
            args)))
 
+(defun pageinated-args (uri list-fun arg &key (amount 100))
+  (let ((page (int* (post/get "page") 0))
+        (query (or* (post/get "query"))))
+    (list :list (funcall list-fun arg :amount amount :skip (* amount page) :query query)
+          :prev-page (when (< 0 page)
+                       (url> uri
+                             :query `(("page" . ,(princ-to-string (1- page)))
+                                      ("query" . ,query))))
+          :next-page (url> uri
+                           :query `(("page" . ,(princ-to-string (1+ page)))
+                                    ("query" . ,query))))))
+
 (define-page frontpage "courier/^$" ()
   (if (user:check (auth:current "anonymous") (perm courier))
       (render-page "Dashboard"
@@ -37,9 +49,9 @@
       (render-page "Frontpage" (@template "frontpage.ctml"))))
 
 (define-page host-list "courier/^host/?$" (:access (perm courier user))
-  (render-page "Configured Hosts"
-               (@template "host-list.ctml")
-               :hosts (list-hosts (auth:current))))
+  (apply #'render-page "Configured Hosts"
+         (@template "host-list.ctml")
+         (pageinated-args "courier/host/" #'list-hosts (auth:current))))
 
 (define-page host-new ("courier/^host/new$" 1) (:uri-groups () :access (perm courier host new))
   (render-page "New Host"
@@ -55,9 +67,9 @@
                  :host host)))
 
 (define-page campaign-list "courier/^campaign/?$" (:access (perm courier user))
-  (render-page "Campaigns"
-               (@template "campaign-list.ctml")
-               :campaigns (list-campaigns (auth:current))))
+  (apply #'render-page "Campaigns"
+         (@template "campaign-list.ctml")
+         (pageinated-args "courier/campaign/" #'list-campaigns (auth:current))))
 
 (define-page campaign-overview "courier/^campaign/([^/]+)/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
@@ -97,22 +109,13 @@
                  :access (list-access campaign))))
 
 (define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier user))
-  (let ((campaign (check-accessible (ensure-campaign campaign) :target 0))
-        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
-        (query (or* (post/get "query"))))
-    (render-page "Mails"
-                 (@template "mail-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :mails (list-mails campaign :amount 100 :skip (* 100 page) :query query)
-                 :campaign campaign
-                 :prev-page (when (< 0 page)
-                              (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
-                                    :query `(("page" . ,(princ-to-string (1- page)))
-                                             ("query" . ,query))))
-                 :next-page (url> (format NIL "courier/campaign/~a/mail" (dm:field campaign "title"))
-                                  :query `(("page" . ,(princ-to-string (1+ page)))
-                                           ("query" . ,query))))))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
+    (apply #'render-page "Mails"
+           (@template "mail-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a" (dm:field campaign "title")) #'list-mails campaign))))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail) :target 0))
@@ -152,12 +155,12 @@
 
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Tags"
+    (apply #'render-page "Tags"
                  (@template "tag-list.ctml")
                  :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
                  :up-text (dm:field campaign "title")
-                 :tags (list-tags campaign)
-                 :campaign campaign)))
+                 :campaign campaign
+                 (pageinated-args (format NIL "courier/campaign/~a/tag" (dm:field campaign "title")) #'list-tags campaign))))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier user))
   (let ((campaign (ensure-campaign campaign))
@@ -187,28 +190,22 @@
 
 (define-page tag-members "courier/^campaign/([^/]+)/tag/([^/]+)/members$" (:uri-groups (campaign tag) :access (perm courier user))
   (let ((campaign (ensure-campaign campaign))
-        (tag (check-accessible (ensure-tag tag) :target 0))
-        (page (or (ignore-errors (parse-integer (post/get "page"))) 0)))
-    (render-page "Members"
-                 (@template "subscriber-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a/tag/~a" (dm:field campaign "title") (dm:id tag)))
-                 :up-text (dm:field tag "title")
-                 :campaign campaign
-                 :subscribers (list-subscribers tag :amount 100 :skip (* 100 page))
-                 :prev-page (when (< 0 page)
-                              (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
-                                    :query `(("page" . ,(princ-to-string (1- page))))))
-                 :next-page (url> (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag))
-                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
+        (tag (check-accessible (ensure-tag tag) :target 0)))
+    (apply #'render-page "Members"
+           (@template "subscriber-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a/tag/~a" (dm:field campaign "title") (dm:id tag)))
+           :up-text (dm:field tag "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/tag/~a/members" (dm:field campaign "title") (dm:id tag)) #'list-subscribers tag))))
 
 (define-page trigger-list "courier/^campaign/([^/]+)/trigger/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Triggers"
-                 (@template "trigger-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :triggers (list-triggers campaign)
-                 :campaign campaign)))
+    (apply #'render-page "Triggers"
+           (@template "trigger-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/trigger" (dm:field campaign "title")) #'list-triggers campaign))))
 
 (define-page trigger-new ("courier/^campaign/([^/]+)/trigger/new" 1) (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'trigger))
@@ -238,22 +235,13 @@
                  :trigger trigger)))
 
 (define-page subscriber-list "courier/^campaign/([^/]+)/subscriber/?$" (:uri-groups (campaign) :access (perm courier user))
-  (let ((campaign (check-accessible (ensure-campaign campaign) :target 0))
-        (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
-        (query (or* (post/get "query"))))
-    (render-page "Subscribers"
-                 (@template "subscriber-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 :subscribers (list-subscribers campaign :amount 100 :skip (* 100 page) :query query)
-                 :prev-page (when (< 0 page)
-                              (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
-                                    :query `(("page" . ,(princ-to-string (1- page)))
-                                             ("query" . ,query))))
-                 :next-page (url> (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title"))
-                                  :query `(("page" . ,(princ-to-string (1+ page)))
-                                           ("query" . ,query))))))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
+    (apply #'render-page "Subscribers"
+           (@template "subscriber-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/subscriber" (dm:field campaign "title")) #'list-subscribers campaign))))
 
 (define-page subscriber-overview "courier/^campaign/([^/]+)/subscriber/([^/]+)/?$" (:uri-groups (campaign subscriber) :access (perm courier user))
   (let* ((campaign (ensure-campaign campaign))
@@ -305,12 +293,12 @@
 
 (define-page sequence-list "courier/^campaign/([^/]+)/sequence/?" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
-    (render-page "Sequences"
-                 (@template "sequence-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 :sequences (list-sequences campaign))))
+    (apply #'render-page "Sequences"
+           (@template "sequence-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/sequence" (dm:field campaign "title")) #'list-sequences campaign))))
 
 (define-page sequence-new "courier/^campaign/([^/]+)/sequence/new" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'sequence)))
@@ -331,28 +319,22 @@
                  :triggers (list-triggers sequence))))
 
 (define-page file-list "courier/^campaign/([^/]+)/file/?" (:uri-groups (campaign) :access (perm courier user))
-  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'file))
-         (page (or (ignore-errors  (parse-integer (post/get "page"))) 0)))
-    (render-page "Files"
-                 (@template "file-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 :files (list-files campaign :amount 100 :skip (* 100 page))
-                 :prev-page (when (< 0 page)
-                              (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
-                                    :query `(("page" . ,(princ-to-string (1- page))))))
-                 :next-page (url> (format NIL "courier/campaign/~a/file" (dm:field campaign "title"))
-                                  :query `(("page" . ,(princ-to-string (1+ page))))))))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'file)))
+    (apply #'render-page "Files"
+           (@template "file-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/file" (dm:field campaign "title")) #'list-files campaign))))
 
 (define-page feed-list "courier/^campaign/([^/]+)/feed/?" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed)))
-    (render-page "Feeds"
-                 (@template "feed-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 :feeds (list-feeds campaign))))
+    (apply #'render-page "Feeds"
+           (@template "feed-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/feed" (dm:field campaign "title")) #'list-feeds campaign))))
 
 (define-page feed-new "courier/^campaign/([^/]+)/feed/new" (:uri-groups (campaign) :access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
@@ -456,7 +438,7 @@
   (destructuring-bind (subscriber) (decode-id id)
     (let* ((subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field subscriber "campaign")))
-           (page (or (ignore-errors  (parse-integer (post/get "page"))) 0))
+           (page (int* (post/get "page") 0))
            (query (or* (post/get "query"))))
       (render-public-page (dm:field campaign "title")
                           (@template "mail-archive.ctml")

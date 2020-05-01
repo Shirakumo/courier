@@ -140,3 +140,16 @@
 (defun fixup-ids (dms field)
   (dolist (dm dms dms)
     (setf (dm:field dm "_id") (dm:field dm field))))
+
+(defmacro with-query ((query &rest fields) &body body)
+  `(macrolet ((query (clause)
+                `(if ,',query
+                     (let ((,',query (prepare-query ,',query)))
+                       ,(if (eql clause :all)
+                            `(db:query (:or ,@',(loop for field in fields
+                                                      collect `(:matches ',field ,query))))
+                            `(db:query (:and ,clause
+                                             (:or ,@',(loop for field in fields
+                                                            collect `(:matches ',field ,query)))))))
+                     (db:query ,clause))))
+     ,@body))

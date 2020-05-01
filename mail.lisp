@@ -15,14 +15,7 @@
    (error 'request-not-found :message "No such mail.")))
 
 (defun list-mails (thing &key amount (skip 0) query)
-  (macrolet ((query (clause)
-               `(if query
-                    (let ((query (prepare-query query)))
-                      (db:query (:and ,clause
-                                      (:or (:matches 'title query)
-                                           (:matches 'subject query)
-                                           (:matches 'body query)))))
-                    (db:query ,clause))))
+  (with-query (query title subject body)
     (ecase (dm:collection thing)
       (campaign
        (dm:get 'mail (query (:= 'campaign (dm:id thing)))

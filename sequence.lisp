@@ -13,9 +13,10 @@
      (T (dm:get-one 'sequence (db:query (:= '_id (db:ensure-id sequence-ish))))))
    (error 'request-not-found :message "No such sequence.")))
 
-(defun list-sequences (campaign &key amount (skip 0))
-  (dm:get 'sequence (db:query (:= 'campaign (ensure-id campaign)))
-          :amount amount :skip skip))
+(defun list-sequences (campaign &key amount (skip 0) query)
+  (with-query (query title)
+    (dm:get 'sequence (query (:= 'campaign (ensure-id campaign)))
+            :amount amount :skip skip)))
 
 (defun make-sequence (campaign title &key triggers (save T))
   (let ((sequence (dm:hull 'sequence)))

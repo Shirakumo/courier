@@ -41,6 +41,7 @@
       (cl:delete-file (file-pathname file))
       (dm:delete file))))
 
-(defun list-files (campaign &key amount (skip 0))
-  (dm:get 'file (db:query (:= 'campaign (dm:id campaign)))
-          :amount amount :skip skip))
+(defun list-files (campaign &key amount (skip 0) query)
+  (with-query (query filename)
+    (dm:get 'file (query (:= 'campaign (dm:id campaign)))
+            :amount amount :skip skip)))

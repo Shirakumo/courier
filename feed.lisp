@@ -13,9 +13,10 @@
      (T (dm:get-one 'feed (db:query (:= '_id (db:ensure-id feed-ish))))))
    (error 'request-not-found :message "No such feed.")))
 
-(defun list-feeds (campaign &key amount (skip 0))
-  (dm:get 'feed (db:query (:= 'campaign (ensure-id campaign)))
-          :sort '((title :asc)) :skip skip :amount amount))
+(defun list-feeds (campaign &key amount (skip 0) query)
+  (with-query (query title url)
+    (dm:get 'feed (query (:= 'campaign (ensure-id campaign)))
+            :sort '((title :asc)) :skip skip :amount amount)))
 
 (defun make-feed (campaign url &key title (frequency 10) template (send-new T) backfill (save T))
   (let* ((data (when save (fetch-feed url)))

@@ -17,7 +17,7 @@
     <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
     <input type="submit" value="Go" />
   </form>
-  <ul class="subscribers" iterate="subscribers">
+  <ul class="subscribers" iterate="list">
     <li class="subscriber">
       <a class="title" @href="courier/campaign/{0}/subscriber/{1} campaign _id" lquery="(text address)">Subscriber</a>
       <ul class="tags" iterate="(courier::list-tags *)">

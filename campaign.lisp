@@ -24,17 +24,18 @@
                  (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign-ish)))))))
    (error 'request-not-found :message "No such campaign.")))
 
-(defun list-campaigns (&optional user &key amount (skip 0))
-  (if user
-      (append ;; KLUDGE: workaround for JOIN thrashing _id when not inner join
-       (dm:get 'campaign (db:query (:= 'author (user:id user)))
-               :sort '((title :asc)) :amount amount :skip skip)
-       (fixup-ids (dm:get (rdb:join (campaign _id) (campaign-access campaign))
-                          (db:query (:= 'user (user:id user)))
-                          :sort '((title :asc)) :amount amount :skip skip :hull 'campaign)
-                  "campaign"))
-      (dm:get 'campaign (db:query :all)
-              :sort '((title :asc)) :amount amount :skip skip)))
+(defun list-campaigns (&optional user &key amount (skip 0) query)
+  (with-query (query title description)
+    (if user
+        (append ;; KLUDGE: workaround for JOIN thrashing _id when not inner join
+         (dm:get 'campaign (query (:= 'author (user:id user)))
+                 :sort '((title :asc)) :amount amount :skip skip)
+         (fixup-ids (dm:get (rdb:join (campaign _id) (campaign-access campaign))
+                            (query (:= 'user (user:id user)))
+                            :sort '((title :asc)) :amount amount :skip skip :hull 'campaign)
+                    "campaign"))
+        (dm:get 'campaign (query :all)
+                :sort '((title :asc)) :amount amount :skip skip))))
 
 (defun make-campaign (author host title &key description reply-to template attributes address (report-interval (* 60 60 24)) (save T))
   (check-title-exists 'campaign title (db:query (:and (:= 'author author)

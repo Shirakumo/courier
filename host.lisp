@@ -43,9 +43,10 @@
     (dm:delete host)
     host))
 
-(defun list-hosts (&optional user &key amount (skip 0))
-  (if user
-      (dm:get 'host (db:query (:= 'author (user:id user)))
-              :sort '((title :asc)) :amount amount :skip skip)
-      (dm:get 'host (db:query :all)
-              :sort '((title :asc)) :amount amount :skip skip)))
+(defun list-hosts (&optional user &key amount (skip 0) query)
+  (with-query (query title display-name address hostname)
+    (if user
+        (dm:get 'host (query (:= 'author (user:id user)))
+                :sort '((title :asc)) :amount amount :skip skip)
+        (dm:get 'host (query :all)
+                :sort '((title :asc)) :amount amount :skip skip))))

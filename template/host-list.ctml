@@ -1,5 +1,23 @@
 <article class="page host list">
-  <ul class="host" iterate="hosts">
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
+  <form class="search" @action="courier/host/">
+    <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
+    <input type="submit" value="Go" />
+  </form>
+  <ul class="host" iterate="list">
     <li class="host">
       <span class="title" lquery="(text title)">Host</span>
       <span class="address" lquery="(text address)">Address</span>
