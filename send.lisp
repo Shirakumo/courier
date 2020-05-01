@@ -68,7 +68,7 @@
        :display-name (dm:field host "display-name")))))
 
 (defun mail-template-vars (campaign mail subscriber)
-  (list* :mail-receipt-image (mail-receipt-url mail subscriber)
+  (list* :mail-receipt-image (mail-receipt-url subscriber mail)
          :mail-url (mail-url mail subscriber)
          :archive-url (archive-url subscriber)
          :unsubscribe-url (unsubscribe-url subscriber)

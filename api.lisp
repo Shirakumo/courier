@@ -593,8 +593,9 @@
                  ("browser" . "true"))))
 
 (define-api courier/mail/receipt (id) ()
-  (destructuring-bind (subscriber mail) (decode-id id)
-    (mark-mail-received (ensure-mail mail) (ensure-subscriber subscriber)))
+  (destructuring-bind (subscriber &optional mail) (decode-id id)
+    (when mail
+      (mark-mail-received (ensure-mail mail) (ensure-subscriber subscriber))))
   (setf (content-type *response*) "image/gif")
   (setf (header "Cache-Control") "public, max-age=31536000")
   *tracker*)

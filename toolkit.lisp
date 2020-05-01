@@ -65,7 +65,7 @@
 (defun generate-id (subscriber &rest ids)
   (let* ((id (ensure-id subscriber))
          (hash (subseq (cryptos:sha1 (princ-to-string id)) 0 8)))
-    (encrypt (format NIL "~a/~a~{ ~a~}" hash id ids))))
+    (encrypt (format NIL "~a/~a~{~@[ ~a~]~}" hash id ids))))
 
 (defun decode-id (thing)
   (let* ((string (decrypt thing))
