@@ -218,6 +218,7 @@
          (campaign (ensure-campaign (dm:field mail "campaign"))))
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (setf-dm-fields mail title subject body)
+    (setf (dm:field mail "subject") (or* (dm:field mail "subject") "-"))
     (try-compile-content campaign mail (campaign-author campaign))))
 
 (define-api courier/mail/trend (campaign) (:access (perm courier user))
