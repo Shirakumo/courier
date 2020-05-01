@@ -1,0 +1,12 @@
+## Email Send Queue
+Whenever you send out an email from Courier, it is not actually delivered immediately. Instead, it first arrives on a queue that is processed in the background. How this queue is processed is defined in each "host"(link hosts) separately.
+
+The host's batch size determines how many emails are sent to the host at once, and the batch delay determines the minimum amount of time to wait between sending batches. Note that this does not necessarily determine when the emails are actually delivered from the host MTA. The MTA may perform queueing and delaying of its own.
+
+When an email is in the send queue and fails to be sent out, it will be rescheduled for later delivery. The factors that control this behaviour are the configuration variables ``:send-queue :retry-backoff-exponent`` and ``:send-queue :retry-attempts``.
+
+The retry-attempts determines the maximum number of send attempts that are made before the email is removed from the send queue and simply marked as "failed" in the mail log.
+
+The retry-backoff-exponent determines the time step between each send attempt of a particular email. Specifically, the number of minutes to wait before sending again is determined by ``i^e`` where ``i`` is the current attempt number, and ``e`` is the configured exponent. For example, this means with the default exponent of 3, after the 5th attempt it will wait 125 minutes, or a little over two hours.
+
+Note that unless the queue is full and batching requires delays, due emails should always be delivered immediately and exactly on time.
