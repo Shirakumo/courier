@@ -46,7 +46,7 @@
     (when save
       (db:with-transaction ()
         (dm:insert campaign)
-        (loop for (attribute type required) in attributes
+        (loop for (attribute type qualifier) in attributes
               do (setf type (etypecase type
                               (string (parse-integer type))
                               (integer type)))
@@ -55,7 +55,7 @@
                  (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
                                          ("title" . ,attribute)
                                          ("type" . ,type)
-                                         ("required" . ,required))))
+                                         ("qualifier" . ,(attribute-qualifier-id qualifier)))))
         (make-subscriber campaign
                          (or (user:field "name" author) (user:username author))
                          reply-to
@@ -70,7 +70,7 @@
       (db:with-transaction ()
         (dm:save campaign)
         (let ((existing (list-attributes campaign)))
-          (loop for (attribute type required) in attributes
+          (loop for (attribute type qualifier) in attributes
                 for previous = (find attribute existing :key (lambda (dm) (dm:field dm "name")) :test #'string=)
                 do (setf type (etypecase type
                                 (string (parse-integer type))
@@ -81,13 +81,13 @@
                           (setf existing (delete previous existing))
                           (setf (dm:field previous "title") attribute)
                           (setf (dm:field previous "type") type)
-                          (setf (dm:field previous "required") required)
+                          (setf (dm:field previous "qualifier") (attribute-qualifier-id qualifier))
                           (dm:save previous))
                          (T
                           (db:insert 'attribute `(("campaign" . ,(dm:id campaign))
                                                   ("title" . ,attribute)
                                                   ("type" . ,type)
-                                                  ("required" . ,required))))))
+                                                  ("qualifier" . ,(attribute-qualifier-id qualifier)))))))
           (dolist (attribute existing)
             (db:remove 'attribute-value (db:query (:= 'attribute (dm:id attribute))))
             (dm:delete attribute))))
@@ -171,3 +171,19 @@
 
 (define-task report-subscribers ()
   (setf (due-time task) (report-subscribers)))
+
+(defun attribute-qualifier-id (qualifier)
+  (ecase qualifier
+    (:optional 0)
+    (:required 1)
+    (:hidden 2)
+    ((0 1 2) qualifier)))
+
+(defun id-attribute-qualifier (id)
+  (ecase id
+    (0 :optional)
+    (1 :required)
+    (2 :hidden)))
+
+(defun id-attribute-type (id)
+  (find id *attribute-types* :key #'first))

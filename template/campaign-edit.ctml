@@ -44,9 +44,10 @@
               <select data-name="attribute-type[]" iterate="(symbol-value 'courier::*attribute-types*)">
                 <option lquery="(val (first *)) (text (third *))">Name</option>
               </select>
-              <select data-name="attribute-required[]">
-                <option value="false">optional</option>
-                <option value="true">required</option>
+              <select data-name="attribute-qualifier[]">
+                <option value="0">optional</option>
+                <option value="1">required</option>
+                <option value="2">hidden</option>
               </select>
             </li>
             <c:splice iterate="(courier::list-attributes *)">
@@ -59,9 +60,10 @@
                 <select name="attribute-type[]" iterate="(symbol-value 'courier::*attribute-types*)" lquery="(select type)">
                   <option lquery="(val (first *)) (text (third *))">Name</option>
                 </select>
-                <select name="attribute-required[]" lquery="(select (if required :false :true))">
-                  <option value="false">optional</option>
-                  <option value="true">required</option>
+                <select name="attribute-qualifier[]" lquery="(select qualifier)">
+                  <option value="0">optional</option>
+                  <option value="1">required</option>
+                  <option value="2">hidden</option>
                 </select>
               </li>
             </c:splice>

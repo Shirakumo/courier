@@ -21,10 +21,12 @@
           <input type="email" name="address" id="address" placeholder="email@example.com" required />
         </div>
         <c:splice iterate="(** :fields)">
-          <div class="row">
-            <label for="#" lquery="(attr :for title) (text title)">#</label>
-            <input lquery="(attr :type (second (nth type courier::*attribute-types*)) :name title :required required)" />
-          </div>
+          <c:when test="(/= 2 qualifier)">
+            <div class="row">
+              <label for="#" lquery="(attr :for title) (text title)">#</label>
+              <input lquery="(attr :type (second (courier::id-attribute-type type)) :name title :required (= 1 qualifier))" />
+            </div>
+          </c:when>
         </c:splice>
         <input type="hidden" name="browser" value="true" />
         <input type="hidden" name="campaign" lquery="(attr :value _id)" />

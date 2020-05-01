@@ -54,7 +54,7 @@
              '((campaign (:id campaign))
                (title (:varchar 32))
                (type (:integer 1))
-               (required :boolean))
+               (qualifier (:integer 1)))
              :indices '(campaign))
 
   (db:create 'attribute-value

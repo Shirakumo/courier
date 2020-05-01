@@ -15,7 +15,7 @@ In case you would not like subscribers to reply directly to the host's sending m
 If you would like to be notified of updates about new subscribers to your campaign, you can set a desired report interval here. Within those report times then you will be sent an email to your reply-to address detailing the changes to your campaign.
 
 ### Attributes
-By default Courier only requires two attributes from people when signing up: their name and their email address. If you would like them to be able to, or would like to require them to enter additional information, you can do so with attributes. Each attribute needs a title that is displayed to the user, an type that is used to verify validity, and whether the attribute is required or not. Additional attributes like this will appear on the default signup page.
+By default Courier only requires two attributes from people when signing up: their name and their email address. If you would like them to be able to, or would like to require them to enter additional information, you can do so with attributes. Each attribute needs a title that is displayed to the user, a type that is used to verify validity, and qualifier for the attribute. Additional attributes like this that aren't hidden will appear on the default signup page. Attributes with a hidden qualifier can be used to keep information about a subscriber internally.
 
 ### Company Address
 Many countries require email marketing to include a physical address of the entity sending the emails to ensure accountability. Courier therefore requires you to fill in this field. If you are a private entity, you should fill in your office or home address. If you are a company, you should fill in your standard contact address. A telephone number is not required.

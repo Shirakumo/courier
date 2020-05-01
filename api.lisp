@@ -107,7 +107,7 @@
 (define-api courier/campaign/list (&optional amount skip) (:access (perm courier user))
   (api-output (list-campaigns (auth:current) :amount (int* amount) :skip (int* skip 0))))
 
-(define-api courier/campaign/new (host title &optional address description reply-to template report-interval attribute[] attribute-type[] attribute-required[]) (:access (perm courier campaign new))
+(define-api courier/campaign/new (host title &optional address description reply-to template report-interval attribute[] attribute-type[] attribute-qualifier[]) (:access (perm courier campaign new))
   (check-title title)
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
@@ -117,13 +117,13 @@
                                       :report-interval (int* report-interval 0)
                                       :attributes (loop for title in attribute[]
                                                         for type in attribute-type[]
-                                                        for required in attribute-required[]
-                                                        collect (list title type required)))))
+                                                        for qualifier in attribute-qualifier[]
+                                                        collect (list title type (int* qualifier 2))))))
         ;; Compile template once to check for validity
         (compile-mail-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign created." "courier/campaign/")))))
 
-(define-api courier/campaign/edit (campaign &optional title host address description reply-to template report-interval attribute[] attribute-type[] attribute-required[]) :access (perm courier user)
+(define-api courier/campaign/edit (campaign &optional title host address description reply-to template report-interval attribute[] attribute-type[] attribute-qualifier[]) :access (perm courier user)
   (when title (check-title title))
   (ratify:with-parsed-forms ((:email reply-to))
     (db:with-transaction ()
@@ -132,8 +132,8 @@
                                 :report-interval (int* report-interval)
                                 :attributes (loop for title in attribute[]
                                                   for type in attribute-type[]
-                                                  for required in attribute-required[]
-                                                  collect (list title type required)))
+                                                  for qualifier in attribute-qualifier[]
+                                                  collect (list title type (int* qualifier 2))))
         ;; Compile template once to check for validity
         (try-compile-content campaign (test-mail campaign) (campaign-author campaign))
         (output campaign "Campaign edited." "courier/campaign/")))))

@@ -19,8 +19,7 @@
       <c:splice iterate="(** :fields)">
         <div class="row">
           <label for="#" lquery="(attr :for title) (text title)">#</label>
-          <input lquery="(attr :type (second (nth type courier::*attribute-types*)) :name title :required required)
-                         (val (clip (*** :field-values) title))" />
+          <input lquery="(attr :type (second (courier::id-attribute-type type)) :name title :required (= 1 qualifier)) (val value)" />
         </div>
       </c:splice>
       <div class="row" title="The tags the subscriber has been assigned. Typically this is not visible to the subscriber.">

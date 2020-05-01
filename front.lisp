@@ -286,8 +286,12 @@
                  :up-text (dm:field subscriber "address")
                  :campaign campaign
                  :subscriber subscriber
-                 :fields (dm:get (rdb:join (attribute-value attribute) (attribute _id))
-                                 (db:query (:= 'subscriber (dm:id subscriber))) :sort '(("title" :desc)))
+                 ;; KLUDGE: Can't do this with a simple join since fields can be optional, so manually join here.
+                 :fields (loop for attribute in (list-attributes campaign)
+                               for val = (dm:get-one 'attribute-value (db:query (:and (:= 'attribute (dm:id attribute))
+                                                                                      (:= 'subscriber (dm:id subscriber)))))
+                               do (when val (setf (dm:field attribute "value") (dm:field val "value")))
+                               collect attribute)
                  :tags (list-tags subscriber)
                  :all-tags (list-tags campaign))))
 
