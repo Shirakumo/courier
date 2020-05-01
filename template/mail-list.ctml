@@ -1,4 +1,18 @@
 <article class="page mail list">
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
   <form class="search" @action="courier/campaign/{0}/mail/ (clip campaign :title)">
     <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
     <input type="submit" value="Go" />
@@ -34,18 +48,4 @@
     <i class="fas fa-plus-circle"></i>
     New Mail
   </a>
-  <nav class="pageination">
-    <c:when test="prev-page">
-      <a class="button" href="#" lquery="(attr :href prev-page)">
-        <i class="fas fa-arrow-left"></i>
-        Prev page
-      </a>
-    </c:when>
-    <c:when test="next-page">
-      <a class="button" href="#" lquery="(attr :href next-page)">
-        <i class="fas fa-arrow-right"></i>
-        Next page
-      </a>
-    </c:when>
-  </nav>
 </article>

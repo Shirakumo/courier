@@ -274,7 +274,9 @@
      (.status :padding 0 1em)
      (time :white-space nowrap)
      (.actions :white-space nowrap :text-align right
-               (.dropdown :display none)))))
+               (.dropdown :display none))))
+   (.pageination
+    :float right))
   
   (.page.subscriber.list
    (time :margin 0 0.2em)

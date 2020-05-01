@@ -1,4 +1,18 @@
 <article class="page file list">
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
   <ul class="file" iterate="files">
     <li class="file">
       <img class="image" lquery="(attr :src (courier::file-url *))"/>
@@ -15,18 +29,4 @@
       </nav>
     </li>
   </ul>
-  <nav class="pageination">
-    <c:when test="prev-page">
-      <a class="button" href="#" lquery="(attr :href prev-page)">
-        <i class="fas fa-arrow-left"></i>
-        Prev page
-      </a>
-    </c:when>
-    <c:when test="next-page">
-      <a class="button" href="#" lquery="(attr :href next-page)">
-        <i class="fas fa-arrow-right"></i>
-        Next page
-      </a>
-    </c:when>
-  </nav>
 </article>
