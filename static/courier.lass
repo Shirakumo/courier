@@ -614,7 +614,13 @@
              :display block)))
           (.page.help
            :position relative
-           :top auto :right auto)
+           :top auto :right auto
+           :display flex
+           (nav.help
+            :background (hex F0F0F0)
+            :position relative
+            :min-width 12em
+            :margin 0 1em 0 0))
           (.page.list.subscriber
            (time :display none))
           (.page.campaign.subscription

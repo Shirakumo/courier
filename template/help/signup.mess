@@ -28,13 +28,17 @@ In order to integrate a signup form for your mailing list from another webpage, 
 The ``action`` field in the ``form`` should be replaced with an URL to your subscription API endpoint:
 
 :: HTML, inline
-<div lquery='(text (courier::url> "courier/api/courier/subscription/new"))'></div>
+<code>
+  <div lquery='(text (courier::url> "courier/api/courier/subscription/new"))'></div>
+</code>
 ::
 
 Furthermore, you should replace the ``value`` of the field named ``email`` with
 
 :: HTML, inline
-<div lquery='(text (courier::hash (mconfig :courier :salt)))'></div>
+<code>
+  <div lquery='(text (courier::hash (mconfig :courier :salt)))'></div>
+</code>
 ::
 
 Finally, you should replace the ``value`` of the ``campaign`` input field with the ID of the campaign you want to write this subscription form for.
