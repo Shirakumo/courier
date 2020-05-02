@@ -22,6 +22,9 @@
           font-size: 10pt;
           color: #505050;
       }
+      .header img.logo{
+          max-height: 160px;
+      }
       .img.track{
           width: 1px;
           height: 1px;

@@ -7,6 +7,7 @@
       html{
           background: #F0F0F0;
           font-size: 14pt;
+          font-family: sans-serif;
       }
       body{
           max-width: 700px;
@@ -20,6 +21,9 @@
           text-align: center;
           font-size: 10pt;
           color: #505050;
+      }
+      .header img.logo{
+          max-height: 160px;
       }
       .img.track{
           width: 1px;
@@ -60,10 +64,13 @@
       .footer .address{
           margin: 10px;
       }
+      .main img{
+          margin: 10px auto;
+      }
       img{
           max-width: 100%;
       }
-      .button{
+      a.button{
           display: block;
           border-radius: 5px;
           margin: 10px;
@@ -71,19 +78,22 @@
           font-size: 16pt;
           text-align: center;
           font-weight: bold;
-          color: white;
-          background: #FF8800;
           text-decoration: none;
           cursor: pointer;
+          color: #F0F0F0 !important;
+          background: #FF8800 !important;
+          -webkit-text-stroke: 1px #FF8800;
+          -moz-text-stroke: 1px #FF8800;
+          text-stroke: 1px #FF8800;
       }
-      .button:hover{
-          background: #AA5500;
+      a.button:hover{
+          background: #AA5500 !important;
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <img @src="courier/static/logo.png" alt="Courier" />
+      <img @src="courier/static/courier/logo.png" alt="Courier" class="logo" />
     </div>
     <div class="main" lquery="(html body)">
       Body
