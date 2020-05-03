@@ -22,7 +22,9 @@
       </c:let>
     </c:elseif>
     <c:else>
-      <c:import file='(template-file "campaign-list.ctml" "COURIER")'/>
+      <c:let list="campaigns">
+        <c:import file='(template-file "campaign-list.ctml" "COURIER")'/>
+      </c:let>
     </c:else>
   </c:fi>
 </article>
