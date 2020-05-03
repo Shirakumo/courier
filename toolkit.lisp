@@ -147,9 +147,9 @@
                      (let ((,',query (prepare-query ,',query)))
                        ,(if (eql clause :all)
                             `(db:query (:or ,@',(loop for field in fields
-                                                      collect `(:matches ',field ,query))))
+                                                      collect `(:matches* ',field ,query))))
                             `(db:query (:and ,clause
                                              (:or ,@',(loop for field in fields
-                                                            collect `(:matches ',field ,query)))))))
+                                                            collect `(:matches* ',field ,query)))))))
                      (db:query ,clause))))
      ,@body))
