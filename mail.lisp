@@ -26,7 +26,7 @@
                   "mail"))
       (feed
        (fixup-ids (dm:get (rdb:join (mail _id) (feed-entry mail)) (query (:= 'feed (dm:id thing)))
-                          :sort '(("send-time" :desc)) :hull 'mail)
+                          :sort '(("time" :desc)) :hull 'mail)
                   "mail")))))
 
 (defun make-mail (campaign &key title subject body (type :markless) (save T))
