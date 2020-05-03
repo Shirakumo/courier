@@ -346,7 +346,7 @@
                  :campaign campaign
                  (pageinated-args (format NIL "courier/campaign/~a/feed/~a" (dm:field campaign "title") (dm:id feed)) #'list-mails feed))))
 
-(define-page feed-new "courier/^campaign/([^/]+)/feed/new" (:uri-groups (campaign) :access (perm courier user))
+(define-page feed-new ("courier/^campaign/([^/]+)/feed/new" 1) (:uri-groups (campaign) :access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
          (feed (make-feed campaign "" :save NIL)))
     (render-page "Create Feed"
