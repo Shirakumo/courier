@@ -339,12 +339,12 @@
 (define-page feed-overview "courier/^campaign/([^/]+)/feed/([^/]+)/?" (:uri-groups (campaign feed) :access (perm courier user))
   (let ((campaign (ensure-campaign campaign))
         (feed (check-accessible (ensure-feed feed))))
-    (render-page (dm:field feed "title")
-                 (@template "mail-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 (pageinated-args (format NIL "courier/campaign/~a/feed/~a" (dm:field campaign "title") (dm:id feed)) #'list-mails feed))))
+    (apply #'render-page (dm:field feed "title")
+           (@template "mail-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/feed/~a" (dm:field campaign "title") (dm:id feed)) #'list-mails feed))))
 
 (define-page feed-new ("courier/^campaign/([^/]+)/feed/new" 1) (:uri-groups (campaign) :access (perm courier user))
   (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
