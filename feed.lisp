@@ -122,8 +122,9 @@
 (defun update-feed (feed)
   (l:debug :courier.feed "Updating ~a" feed)
   (let* ((feed (ensure-feed feed))
-         (data (fetch-feed (dm:field feed "url"))))
-    (loop for entry in (feeder:content data)
+         (data (fetch-feed (dm:field feed "url")))
+         (entries (sort (copy-seq (feeder:content data)) #'local-time:timestamp< :key #'feeder:published-on)))
+    (loop for entry in entries
           for guid = (feed-guid entry)
           do (unless (< 0 (db:count 'feed-entry (db:query (:and (:= 'feed (dm:id feed))
                                                                 (:= 'guid guid)))))
