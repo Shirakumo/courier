@@ -402,6 +402,7 @@
                    for tmin = (- tmax step)
                    do (push (aref y-labels d) labels)
                       (push (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
+                                                                  (:= 'status (user-status-id :active))
                                                                   (:<= 'signup-time tmax)
                                                                   (:< tmin 'signup-time))))
                             data))))

@@ -101,7 +101,8 @@
 
 (defun subscriber-count (thing)
   (ecase (dm:collection thing)
-    (campaign (db:count 'subscriber (db:query (:= 'campaign (dm:id thing)))))
+    (campaign (db:count 'subscriber (db:query (:and (:= 'campaign (dm:id thing))
+                                                    (:= 'status (user-status-id :active))))))
     (tag (db:count 'tag-table (db:query (:= 'tag (dm:id thing)))))))
 
 (defun new-subscribers-since (campaign time)
