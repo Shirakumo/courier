@@ -65,7 +65,7 @@
 
   (db:create 'mail
              '((campaign (:id campaign))
-               (title (:varchar 32))
+               (title (:varchar 128))
                (subject (:varchar 128))
                (body :text)
                (type (:integer 1))

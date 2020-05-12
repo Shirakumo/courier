@@ -496,7 +496,7 @@
 (define-api courier/feed/new (campaign url &optional title frequency template send-new backfill) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'feed))
         (feed (make-feed campaign url :title title :frequency (int* frequency 10) :template template
-                                      :send-new (if send-new T NIL) :backfill backfill)))
+                                      :send-new (string= send-new "true") :backfill (string= backfill "true"))))
     (output feed "Feed created." "courier/campaign/~a/feed" (dm:id campaign))))
 
 (define-api courier/feed/edit (feed &optional url title frequency template send-new) (:access (perm courier user))
