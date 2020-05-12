@@ -570,7 +570,7 @@ class Courier{
 
     setElementValue(element, value){
         switch(element.tagName){
-        case "input":
+        case "input": if(element.getAttribute("type") == "file") break;
         case "textarea": element.value = value; break;
         case "select": [].forEach.call(element.querySelectorAll("option"), (el)=>{
             if(el.getAttribute("value") == value) el.setAttribute("checked", "checked");
