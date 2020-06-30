@@ -101,3 +101,12 @@ Check out this "earlier email"(mail secrets revealed!)
 Note that if the title contains commas, you need to escape the commas with a backslash (``\\``), as otherwise Markless will interpret them as multiple options.
 
 You can also refer to an email by its unique ID instead of its title. The ID is usually displayed in the address bar when editing or viewing the details on an email.
+
+### Inviting to Tags
+You can give subscribers the option to add themselves to a specific tag by sending them a personalised invite link. To do so you can use the ``tag`` compound option. For this example, we're going to assume you have a tag titled ``secret guild``. To send out an invite:
+
+:: markless
+You are hereby cordially invited to "join the guild"(tag secret guild)!
+::
+
+Same as for email links, commas must be escaped with a backslash (``\\``), and you can use a tag's ID instead of its title, too.

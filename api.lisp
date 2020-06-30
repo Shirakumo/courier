@@ -588,6 +588,17 @@
                         :query `(("id" . ,(princ-to-string (dm:id subscriber))))))
         (api-output NIL))))
 
+(define-api courier/invite/accept (id) ()
+  (destructuring-bind (subscriber tag) (decode-id id)
+    (let* ((tag (ensure-tag tag))
+           (subscriber (ensure-subscriber subscriber))
+           (campaign (ensure-campaign (dm:field tag "campaign"))))
+      (tag subscriber tag)
+      (if (string= "true" (post/get "browser"))
+          (redirect (url> (format NIL "courier/invite/~a/confirmed" (dm:field campaign "title"))
+                          :query `(("id" . ,id))))
+          (api-output NIL)))))
+
 (defun unsubscribe-url (subscriber)
   (url> "courier/api/courier/subscription/delete" 
         :query `(("id" . ,(generate-id subscriber))

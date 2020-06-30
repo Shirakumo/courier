@@ -113,6 +113,26 @@
                   (ensure-mail (mail option)))))
     (markless:output-component (format NIL "link ~a" (mail-url mail (subscriber f))) target f)))
 
+(defclass tag-option (components:compound-option)
+  ((tag-name :initarg :tag-name :reader tag-name)))
+
+(defmethod markless:parse-compound-option-type ((proto tag-option) option)
+  (make-instance (class-of proto) :tag-name (subseq option (length "tag "))))
+
+(defmethod markless:output-component ((option tag-option) (target plump:nesting-node) (f html-format))
+  (let ((tag (or (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:id (campaign f)))
+                                                  (:= 'title (tag-name option)))))
+                 (ensure-tag (tag-name option)))))
+    (setf (plump-dom:tag-name target) "a")
+    (setf (plump-dom:attribute target "class") "external-link tag-link")
+    (setf (plump-dom:attribute target "href") (tag-invite-url tag (subscriber f)))))
+
+(defmethod markless:output-component ((option tag-option) (target stream) (f plain-format))
+  (let ((tag (or (dm:get-one 'tag (db:query (:and (:= 'campaign (dm:id (campaign f)))
+                                                  (:= 'title (tag-name option)))))
+                 (ensure-tag (tag-name option)))))
+    (markless:output-component (format NIL "link ~a" (tag-invite-url tag (subscriber f))) target f)))
+
 (defclass button-option (components:compound-option)
   ())
 

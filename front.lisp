@@ -420,9 +420,27 @@
                         :fields (list-attributes campaign)
                         :action (or action "subscribe"))))
 
+(define-page tag-invite "courier/^invite/(.+)(?:/(.+))?" (:uri-groups (tag action))
+  (declare (ignore tag))
+  (destructuring-bind (subscriber tag) (decode-id id)
+    (let* ((tag (ensure-tag tag))
+           (campaign (ensure-campaign (dm:field tag "campaign")))
+           (subscriber (ensure-subscriber subscriber)))
+      (render-public-page (format NIL "Join ~a" (dm:field tag "title"))
+                          (@template "tag-invite.ctml")
+                          :action (or* action "join")
+                          :tag tag
+                          :campaign campaign
+                          :subscriber subscriber))))
+
+(defun tag-invite-url (tag subscriber)
+  (uri-to-url (format NIL "courier/invite/~a" (dm:field tag "title"))
+              :query `(("id" . ,(generate-id subscriber (ensure-id tag))))
+              :representation :external))
+
 (define-page mail-view "courier/^view/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber mail) (decode-id id)
-    (let* ((mail (dm:get-one 'mail (db:query (:= '_id mail))))
+    (let* ((mail (ensure-mail mail))
            (subscriber (ensure-subscriber subscriber))
            (campaign (ensure-campaign (dm:field mail "campaign")))
            (content (compile-mail-body (dm:field mail "body")
