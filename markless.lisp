@@ -113,6 +113,17 @@
                   (ensure-mail (mail option)))))
     (markless:output-component (format NIL "link ~a" (mail-url mail (subscriber f))) target f)))
 
+(defclass button-option (components:compound-option)
+  ())
+
+(defmethod markless:parse-compound-option-type ((proto button-option) option)
+  (make-instance (class-of proto)))
+
+(defmethod markless:output-component ((option button-option) (target plump:nesting-node) (f html-format))
+  (setf (plump-dom:attribute target "class") (format NIL "button~@[ ~a~]" (plump-dom:attribute target "class"))))
+
+(defmethod markless:output-component ((option button-option) (target stream) (f plain-format)))
+
 (defclass template-var (markless:inline-directive)
   ())
 

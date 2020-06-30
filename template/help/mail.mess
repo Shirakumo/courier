@@ -83,10 +83,16 @@ The target of the button can also be a variable expression:
 [ button {archive-url}, caption Take me to the archive ]
 ::
 
+Alternatively you can also use the ``button`` compound option to turn a standard compound option into a button like this:
+
+:: markless
+"Take me here"(link https://example.com, button)
+::
+
 The styling of the button is dependent on your template.
 
 ### Referring to Other Emails
-In order to include a subscriber-specific link to another email and give them access to it, you can use the ``mail`` compound option. Let's pretend  you have an email with the title ``secrets revealed!``. You can hand out a link to it like this:
+In order to include a subscriber-specific link to another email and give them access to it, you can use the ``mail`` compound option. Let's pretend you have an email with the title ``secrets revealed!``. You can hand out a link to it like this:
 
 :: markless
 Check out this "earlier email"(mail secrets revealed!)
