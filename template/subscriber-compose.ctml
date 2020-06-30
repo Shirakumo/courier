@@ -1,0 +1,42 @@
+<article class="page mail edit">
+  <c:using value="mail">
+    <form method="post">
+      <input type="hidden" name="campaign" lquery="(val campaign)" />
+      <div class="row">
+        <label for="subscriber">Subscriber:</label>
+        <input type="hidden" name="subscriber" lquery="(val (clip (** :subscriber) :_id))" />
+        <input type="text" readonly
+               id="subscriber" lquery="(val (clip (** :subscriber) :address))" />
+      </div>
+      <div class="row" title="The subject line that will be used in the email.">
+        <label for="subject">Subject:</label>
+        <input type="text" minlength="3" maxlength="128" autocomplete="none"
+               id="subject" name="subject" lquery="(val subject)" />
+      </div>
+      <div class="row big">
+        <label for="body">Body:</label>
+        <div class="editor" data-preview-endpoint="mail/preview" lquery="(data :type (courier::id-mail-type type))">
+          <nav>
+            <a @href="courier/help/mail" title="Email help" target="_blank">
+              <i class="fas fa-info-circle"></i>
+            </a>
+            <a href="#" title="Upload an Image" class="upload">
+              <i class="fas fa-file-upload"></i>
+            </a>
+            <a href="#" title="Preview" class="preview" style="float: right">
+              <i class="fas fa-eye"></i>
+            </a>
+          </nav>
+          <textarea id="body" name="body" lquery="(text body)" />
+        </div>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <input type="submit" value="Send Immediately" @formaction="courier/api/courier/subscriber/compose" />
+      </div>
+      <p class="note">
+        Note that this email will <em>not</em> be saved in the mail list and won't show up in the mail log. It is a one-time email for <span lquery="(text (clip (** :subscriber) :name))"></span>.
+      </p>
+    </form>
+  </c:using>
+</article>

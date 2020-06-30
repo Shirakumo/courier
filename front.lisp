@@ -291,6 +291,16 @@
                  :up-text (dm:field campaign "title")
                  :campaign campaign)))
 
+(define-page subscriber-compose "courier/^campaign/([^/]+)/subscriber/([^/]+)/compose$" (:uri-groups (campaign subscriber) :access (perm courier user))
+  (let* ((campaign (ensure-campaign campaign))
+         (subscriber (check-accessible (ensure-subscriber subscriber))))
+    (render-page "Compose"
+                 (@template "subscriber-compose.ctml")
+                 :up (url> (format NIL "courier/campaign/~a/subscriber/~a" (dm:field campaign "title") (dm:id subscriber)))
+                 :up-text (dm:field subscriber "address")
+                 :subscriber subscriber
+                 :mail (make-mail campaign :save NIL))))
+
 (define-page sequence-list "courier/^campaign/([^/]+)/sequence/?" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
     (apply #'render-page "Sequences"
@@ -459,8 +469,9 @@
                           :mail-content content))))
 
 (defun mail-url (mail subscriber)
-  (uri-to-url (format NIL "courier/view/~a" (generate-id subscriber (ensure-id mail)))
-              :representation :external))
+  (when (or (typep mail 'db:id) (not (null (dm:id mail))))
+    (uri-to-url (format NIL "courier/view/~a" (generate-id subscriber (ensure-id mail)))
+                :representation :external)))
 
 (define-page mail-archive "courier/^archive/(.+)" (:uri-groups (id))
   (destructuring-bind (subscriber) (decode-id id)

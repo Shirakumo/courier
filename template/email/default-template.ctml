@@ -93,8 +93,10 @@
   </head>
   <body>
     <div class="header">
-      <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
-      <a href="#" class="in-browser" target="_blank" lquery="(attr :href mail-url)">View this email in your browser</a>
+      <c:when test="mail-url">
+        <img class="track" src="#" alt="" lquery="(attr :src mail-receipt-image)">
+        <a href="#" class="in-browser" target="_blank" lquery="(attr :href mail-url)">View this email in your browser</a>
+      </c:when>
     </div>
     <div class="main" id="main" lquery="(html body)">
       Body

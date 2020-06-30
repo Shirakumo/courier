@@ -391,6 +391,16 @@
                                                     (T (error 'api-argument-invalid :argument 'if-exists))))))
     (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
 
+(define-api courier/subscriber/compose (subscriber subject body) (:access (perm courier user))
+  (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
+         (mail (make-mail (ensure-campaign (dm:field subscriber "campaign"))
+                          :title subject
+                          :subject subject
+                          :body body
+                          :save NIL)))
+    (send-mail mail subscriber)
+    (output mail "Mail sent." "courier/campaign/~a/subscriber/~a/" (dm:field subscriber "campaign") (dm:id subscriber))))
+
 (define-api courier/subscriber/trend (campaign &optional (scale "week")) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
         (labels ())
@@ -613,8 +623,9 @@
   *tracker*)
 
 (defun mail-receipt-url (subscriber mail)
-  (url> "courier/api/courier/mail/receipt"
-        :query `(("id" . ,(generate-id subscriber (ensure-id mail))))))
+  (when (or (typep mail 'db:id) (not (null (dm:id mail))))
+    (url> "courier/api/courier/mail/receipt"
+          :query `(("id" . ,(generate-id subscriber (ensure-id mail)))))))
 
 (define-api courier/link/resolve (id) ()
   (destructuring-bind (subscriber link &optional mail) (decode-id id)

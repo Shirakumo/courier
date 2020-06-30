@@ -52,7 +52,7 @@
                               ("X-campaignid" ,(princ-to-string campaign))
                               ("List-ID" ,(princ-to-string campaign))
                               ("Message-ID" ,(format NIL "<~a@courier.~a>"
-                                                     (hash (format NIL "~a-~a" message-id campaign))
+                                                     (hash (format NIL "~a-~a" (or message-id (get-universal-time)) campaign))
                                                      (dm:field host "hostname")))))
                         ,@(when unsubscribe
                             `(("List-Unsubscribe" ,unsubscribe)
@@ -72,6 +72,7 @@
          :mail-url (mail-url mail subscriber)
          :archive-url (archive-url subscriber)
          :unsubscribe-url (unsubscribe-url subscriber)
+         :id (dm:id mail)
          :title (dm:field mail "title")
          :subject (dm:field mail "subject")
          :campaign (dm:field campaign "title")
@@ -132,7 +133,8 @@
             :message-id (dm:id mail)
             :campaign (dm:field mail "campaign")
             :unsubscribe (unsubscribe-url subscriber)))
-    (mark-mail-sent mail subscriber)))
+    (when (dm:id mail)
+      (mark-mail-sent mail subscriber))))
 
 (defun send-system-mail (body address host campaign &rest vars)
   (let ((html (apply #'compile-mail #p"email/system-template.ctml"

@@ -10,6 +10,10 @@
       <canvas></canvas>
     </form>
     <nav class="panel wide">
+      <a class="button" href="#" @href="courier/campaign/{0}/subscriber/{1}/compose campaign _id">
+        <i class="fas fa-fw fa-paper-plane"></i>
+        Compose
+      </a>
       <a class="button" href="#" @href="courier/log/subscriber/{0} _id">
         <i class="fas fa-fw fa-clipboard"></i>
         Log
