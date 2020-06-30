@@ -23,7 +23,10 @@
 
 (defclass parser (markless:parser)
   ()
-  (:default-initargs :directives (list* 'template-var markless:*default-directives*)))
+  (:default-initargs
+   :directives (list* 'template-var markless:*default-directives*)
+   :embed-types (list* 'button markless:*default-embed-types*)
+   :compound-options (list* 'mail-option 'tag-option 'button-option markless:*default-compound-options*)))
 
 (defun make-link* (f url)
   ;; Do not encode links that are already pointing to Courier.
