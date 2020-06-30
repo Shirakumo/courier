@@ -605,7 +605,7 @@
            (campaign (ensure-campaign (dm:field tag "campaign"))))
       (tag subscriber tag)
       (if (string= "true" (post/get "browser"))
-          (redirect (url> (format NIL "courier/invite/~a/confirmed" (dm:field campaign "title"))
+          (redirect (url> (format NIL "courier/invite/~a/joined" (dm:field campaign "title"))
                           :query `(("id" . ,id))))
           (api-output NIL)))))
 

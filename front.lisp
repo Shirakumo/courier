@@ -430,9 +430,9 @@
                         :fields (list-attributes campaign)
                         :action (or action "subscribe"))))
 
-(define-page tag-invite "courier/^invite/(.+)(?:/(.+))?" (:uri-groups (tag action))
+(define-page tag-invite "courier/^invite/([^/]+)(?:/(.+))?" (:uri-groups (tag action))
   (declare (ignore tag))
-  (destructuring-bind (subscriber tag) (decode-id id)
+  (destructuring-bind (subscriber tag) (decode-id (post/get "id"))
     (let* ((tag (ensure-tag tag))
            (campaign (ensure-campaign (dm:field tag "campaign")))
            (subscriber (ensure-subscriber subscriber)))

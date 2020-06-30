@@ -10,14 +10,14 @@
   <c:when test='(equalp "join" action)'>
     <form>
       <p>
-        You have been invited to join <span class="tag" lquery='(text (clip tag :title))'>Tag</span>! Please click the link below to confirm.
+        You have been invited to join <span class="tag" lquery='(text (clip tag :title))'>Tag</span>! Please click the button below to confirm.
       </p>
-      <a class="button" @href="courier/api/courier/invite/accept?id={0} (courier::generate-id (clip subscriber :_id) (clip tag :_id))">
+      <a class="button" @href="courier/api/courier/invite/accept?browser=true&id={0} (courier::generate-id (clip subscriber :_id) (clip tag :_id))">
         Join <span class="tag" lquery='(text (clip tag :title))'>Tag</span>
       </a>
     </form>
   </c:when>
-  <c:when test='(equalp "confirmed" action)'>
+  <c:when test='(equalp "joined" action)'>
     <form>
       <p>
         Thanks! You have successfully joined <span class="tag" lquery='(text (clip tag :title))'>Tag</span>.
