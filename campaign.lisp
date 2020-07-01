@@ -151,8 +151,8 @@
      :count (length new)
      :subscribers new)
     (db:with-transaction ()
-      ;; FIXME: rejigger this so that reports always happen at specified times of the day
-      (setf (dm:field campaign "last-report") (get-universal-time))
+      ;; Try to send out news at 6 in the morning, server-time.
+      (setf (dm:field campaign "last-report") (closest-time :time (* 60 60 6)))
       (dm:save campaign))))
 
 (defun report-subscribers (&optional campaign)

@@ -153,3 +153,9 @@
                                                             collect `(:matches* ',field ,query)))))))
                      (db:query ,clause))))
      ,@body))
+
+(defun closest-time (&key (date (get-universal-time)) (time 0))
+  (multiple-value-bind (s m h) (decode-universal-time time 0)
+    (multiple-value-bind (_s _m _h dd mm yy) (decode-universal-time date 0)
+      (declare (ignore _s _m _h))
+      (encode-universal-time s m h dd mm yy 0))))
