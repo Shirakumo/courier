@@ -224,7 +224,7 @@
                              (symbol (logbitp (collection-type target) access-field))
                              (integer (< target (access-level access-field)))))
                  (error 'radiance:request-denied :message (format NIL "You do not have permission to access ~as." target))))))
-    ;; FIXME: extended author intent checks
+    ;; TODO: extended author intent checks
     (ecase (dm:collection dm)
       (host
        (check (dm:field dm "author")))

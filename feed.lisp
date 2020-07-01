@@ -109,7 +109,7 @@
            (plump:*tag-dispatchers* plump:*html-tags*)
            (mail (make-mail (dm:field feed "campaign")
                             :title (enlength (feeder:title entry) 32)
-                            ;; FIXME: allow customising this
+                            ;; TODO: allow customising this
                             :subject (enlength (feeder:title entry) 128)
                             :body (plump:serialize content NIL)
                             :type :ctml)))
