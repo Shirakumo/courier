@@ -57,8 +57,11 @@
                        (tag subscriber tag)))
           (loop for tag in existing
                 do (untag subscriber tag)))
-        (when (eql :active status)
-          (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign")))))
+        (case status
+          (:active
+           (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign"))))
+          (:decativated
+           (db:remove 'mail-queue (db:query (:= 'subscriber (dm:id subscriber)))))))
       subscriber)))
 
 (defun ensure-subscriber (subscriber-ish)
