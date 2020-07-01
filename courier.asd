@@ -48,7 +48,6 @@
                :alexandria
                :crypto-shortcuts
                :bordeaux-threads
-               :softdrink
                :dns-client
                :cl-markless-plump
                :cl-smtp

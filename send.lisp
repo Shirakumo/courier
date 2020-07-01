@@ -7,7 +7,6 @@
 (in-package #:courier)
 
 (defun compile-mail (template &rest args)
-  ;; FIXME: softdrink apply stylesheet
   (apply #'r-clip:process
          (etypecase template
            (string template)
