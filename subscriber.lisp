@@ -30,7 +30,7 @@
           (process-triggers subscriber campaign)))
       subscriber)))
 
-(defun edit-subscriber (subscriber &key name address attributes tags status (save T))
+(defun edit-subscriber (subscriber &key name address (attributes NIL attributes-p) (tags NIL tags-p) status (save T))
   (db:with-transaction ()
     (let ((subscriber (ensure-subscriber subscriber)))
       (setf-dm-fields subscriber name address)
@@ -38,25 +38,27 @@
         (setf (dm:field subscriber "status") (user-status-id status)))
       (when save
         (dm:save subscriber)
-        (loop for (attribute . value) in attributes
-              do (let ((attribute-value (or (dm:get-one 'attribute-value (db:query (:and (:= 'attribute (ensure-id attribute))
-                                                                                         (:= 'subscriber (dm:id subscriber)))))
-                                            (dm:hull 'attribute-value))))
-                   (setf (dm:field attribute-value "attribute") (ensure-id attribute))
-                   (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
-                   (setf (dm:field attribute-value "value") value)
-                   (if (dm:hull-p attribute-value)
-                       (dm:insert attribute-value)
-                       (dm:save attribute-value))))
-        (let ((existing (list-tags subscriber)))
-          (loop for tag-ish in tags
-                for tag = (ensure-tag tag-ish)
-                for found = (find (dm:id tag) existing :key #'dm:id :test #'equal)
-                do (if found
-                       (setf existing (delete found existing))
-                       (tag subscriber tag)))
-          (loop for tag in existing
-                do (untag subscriber tag)))
+        (when attributes-p
+          (loop for (attribute . value) in attributes
+                do (let ((attribute-value (or (dm:get-one 'attribute-value (db:query (:and (:= 'attribute (ensure-id attribute))
+                                                                                           (:= 'subscriber (dm:id subscriber)))))
+                                              (dm:hull 'attribute-value))))
+                     (setf (dm:field attribute-value "attribute") (ensure-id attribute))
+                     (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
+                     (setf (dm:field attribute-value "value") value)
+                     (if (dm:hull-p attribute-value)
+                         (dm:insert attribute-value)
+                         (dm:save attribute-value)))))
+        (when tags-p
+          (let ((existing (list-tags subscriber)))
+            (loop for tag-ish in tags
+                  for tag = (ensure-tag tag-ish)
+                  for found = (find (dm:id tag) existing :key #'dm:id :test #'equal)
+                  do (if found
+                         (setf existing (delete found existing))
+                         (tag subscriber tag)))
+            (loop for tag in existing
+                  do (untag subscriber tag))))
         (case status
           (:active
            (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign"))))
