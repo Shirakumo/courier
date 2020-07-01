@@ -65,19 +65,23 @@
                                (:port port)
                                (:integer encryption batch-size batch-cooldown))
       (db:with-transaction ()
-        ;; TODO: Actually check if things are different at all.
-        (edit-host host :title title :display-name display-name :address address
-                        :hostname hostname :port port :username username :password password
-                        :encryption encryption :batch-size batch-size :batch-cooldown batch-cooldown
-                        :confirmed NIL)
-        (send-system-mail (@template "email/confirm-host.mess")
-                          (dm:field host "address") host NIL
-                          :subject "Confirm your Courier host"
-                          :recipient (dm:field host "display-name")
-                          :link (url> "courier/api/courier/host/confirm"
-                                      :query `(("host" . ,(princ-to-string (dm:id host)))
-                                               ("token" . ,(hash (dm:id host)))
-                                               ("browser" . "true")))))
+        ;; Only unconfirm the host if relevant settings about it changed.
+        (let ((same (macrolet ((same (field) `(string= ,field (dm:field host ,(string field)))))
+                      (and (same address) (same hostname) (same port)
+                           (same username) (same password) (same encryption)))))
+          (edit-host host :title title :display-name display-name :address address
+                          :hostname hostname :port port :username username :password password
+                          :encryption encryption :batch-size batch-size :batch-cooldown batch-cooldown
+                          :confirmed (when (dm:field host "confirmed") same))
+          (unless same
+            (send-system-mail (@template "email/confirm-host.mess")
+                              (dm:field host "address") host NIL
+                              :subject "Confirm your Courier host"
+                              :recipient (dm:field host "display-name")
+                              :link (url> "courier/api/courier/host/confirm"
+                                          :query `(("host" . ,(princ-to-string (dm:id host)))
+                                                   ("token" . ,(hash (dm:id host)))
+                                                   ("browser" . "true")))))))
       (output host "Host edited." "courier/host"))))
 
 (define-api courier/host/delete (host) (:access (perm courier host delete))
