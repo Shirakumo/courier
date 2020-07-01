@@ -19,7 +19,6 @@
         (dm:insert subscriber)
         (loop for (attribute . value) in attributes
               do (dm:with-model attribute-value ('attribute-value NIL)
-                   ;; FIXME: check attributes for validity
                    (setf (dm:field attribute-value "attribute") (ensure-id attribute))
                    (setf (dm:field attribute-value "subscriber") (dm:id subscriber))
                    (setf (dm:field attribute-value "value") value)
