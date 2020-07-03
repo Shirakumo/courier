@@ -291,6 +291,14 @@
                  :up-text (dm:field campaign "title")
                  :campaign campaign)))
 
+(define-page subscriber-export ("courier/^campaign/([^/]+)/subscriber/export" 1) (:uri-groups (campaign) :access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber)))
+    (render-page "Export"
+                 (@template "subscriber-export.ctml")
+                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+                 :up-text (dm:field campaign "title")
+                 :campaign campaign)))
+
 (define-page subscriber-compose "courier/^campaign/([^/]+)/subscriber/([^/]+)/compose$" (:uri-groups (campaign subscriber) :access (perm courier user))
   (let* ((campaign (ensure-campaign campaign))
          (subscriber (check-accessible (ensure-subscriber subscriber))))
