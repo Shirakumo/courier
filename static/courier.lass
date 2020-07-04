@@ -254,7 +254,7 @@
    (input[type=submit]
     :width auto))
   
-  ((:and .page (:or .edit .list .send .import .frontpage .access))
+  ((:and .page (:or .edit .list .send .import .export .frontpage .access))
    :max-width 800px
    :margin 1em auto)
   
@@ -279,7 +279,7 @@
    (.pageination
     :float right))
 
-  ((:and .page (:or .edit .import))
+  ((:and .page (:or .edit .import .export))
    (.tag-list
     (ul.tags
      :margin 0

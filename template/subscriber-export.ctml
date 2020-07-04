@@ -10,46 +10,46 @@
       </div>
       <div class="row" title="What character to use to separate columns in an entry.">
         <label for="col-separator">Column Separator</label>
-        <serect name="col-separator" id="col-separator">
+        <select name="col-separator" id="col-separator">
           <option value="comma">Comma</option>
           <option value="tab">Tab</option>
-        </serect>
+        </select>
       </div>
       <div class="row" title="What line separator to use.">
         <label for="row-separator">Row Separator</label>
-        <serect name="row-separator" id="row-separator">
+        <select name="row-separator" id="row-separator">
           <option value="crlf">CRLF</option>
           <option value="lf">LF</option>
-        </serect>
+        </select>
       </div>
       <div class="row" title="When to quote field values.">
         <label for="quotation-use">Quote Use</label>
-        <serect name="quotation-use" id="quotation-use">
+        <select name="quotation-use" id="quotation-use">
           <option value="as-needed">As Needed</option>
           <option value="always">Always</option>
-        </serect>
+        </select>
       </div>
       <div class="row" title="How to quote field values.">
         <label for="quotation-mark">Quote Mark</label>
-        <serect name="quotation-mark" id="quotation-mark">
+        <select name="quotation-mark" id="quotation-mark">
           <option value="double-quote">Double Quote</option>
           <option value="single-quote">Single Quote</option>
-        </serect>
+        </select>
       </div>
       <div class="row" title="How to escape the quote mark within quoted values.">
         <label for="quotation-escape">Quote Escape</label>
-        <serect name="quotation-escape" id="quotation-escape">
+        <select name="quotation-escape" id="quotation-escape">
           <option value="quote">Quote</option>
           <option value="backslash">Backslash</option>
-        </serect>
+        </select>
       </div>
       <div class="row" title="What format to use to write out time values.">
         <label for="time-format">Time Format</label>
-        <serect name="time-format" id="time-format">
+        <select name="time-format" id="time-format">
           <option value="iso-8601">ISO 8601</option>
           <option value="rfc-1123">RFC 1123</option>
           <option value="timestamp">Unix Timestamp</option>
-        </serect>
+        </select>
       </div>
       <input type="hidden" name="browser" value="true" />
       <div class="row">

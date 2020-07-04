@@ -395,51 +395,54 @@
                                                     (T (error 'api-argument-invalid :argument 'if-exists))))))
     (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
 
-(define-api courier/subscriber/export (campaign &optional (header "include") (col-separator "comma") (row-separator "crlf") (quotation-use "as-needed") (quotation-mark "double-quote") (quotation-escape "quote") (time-format "iso-8601"))
-  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
-        (subscribers (list-subscribers campaign)))
+(define-api courier/subscriber/export (campaign &optional (header "include") (col-separator "comma") (row-separator "crlf") (quotation-use "as-needed") (quotation-mark "double-quote") (quotation-escape "quote") (time-format "iso-8601")) ()
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
+         (subscribers (list-subscribers campaign)))
     (setf (header "Content-Disposition") (format NIL "inline; filename=\"~a\"" (dm:field campaign "title")))
     (setf (header "Content-Type") "text/csv;charset=utf-8")
-    (let* ((header (cond ((string= header "include") T)
-                         ((string= header "exclude") NIL)
-                         (T (error 'api-argument-invalid :argument 'header))))
-           (col-separator (cond ((string= col-separator "comma") #\,)
-                                ((string= col-separator "tab") #\Tab)
-                                (T (error 'api-argument-invalid :argument 'col-separator))))
-           (row-separator (cond ((string= row-separator "crlf") (coerce 'string '(#\Return #\Linefeed)))
-                                ((string= row-separator "lf") (coerce 'string '(#\Linefeed)))
-                                (T (error 'api-argument-invalid :argument 'row-separator))))
-           (quotation-use (cond ((string= quotation-use "as-needed") NIL)
-                                ((string= quotation-use "always") T)
-                                (T (error 'api-argument-invalid :argument 'quotation-use))))
-           (quotation-mark (cond ((string= quotation-mark "double-quote") #\")
-                                 ((string= quotation-mark "single-quote") #\')
-                                 (T (error 'api-argument-invalid :argument 'quotation-mark))))
-           (quotation-escape (cond ((string= quotation-escape "quote") quotation-mark)
-                                   ((string= quotation-escape "backslash") #\\)
-                                   (T (error 'api-argument-invalid :argument 'qoutation-escape))))
-           (time-format (cond ((string= time-format "iso-8601") (lambda (x) (local-time:format-timestring NIL x :format local-time:+iso-8601-format+)))
-                              ((string= time-format "rfc-1123") (lambda (x) (local-time:format-timestring NIL x :format local-time:+rfc-1123-format+)))
-                              ((string= time-format "timestamp") #'identity)
-                              (T (error 'api-argument-invalid :argument 'time-format))))
-           (rows (loop for subscriber in subscribers
-                       collect (list (dm:field subscriber "name")
-                                     (dm:field subscriber "address")
-                                     (funcall time-format (dm:field subscriber "signup-time"))
-                                     (string (id-user-status (dm:field subscriber "status"))))))))
-    ;; FIXME: attributes and tags
-    (with-output-to-string (out)
-      (cl-csv:write-csv
-       (if header
-           (list* (list "Name" "Email Address" "Signup Time" "Status")
-                  rows)
-           rows)
-       :stream out
-       :separator col-separator
-       :quote quotation-mark
-       :escape quotation-escape
-       :newline row-separator
-       :always-quote quotation-use))))
+    (flet ((timestamp-formatter (format)
+             (lambda (x)
+               (local-time:format-timestring NIL (local-time:universal-to-timestamp x) :format format))))
+      (let* ((header (cond ((string= header "include") T)
+                           ((string= header "exclude") NIL)
+                           (T (error 'api-argument-invalid :argument 'header))))
+             (col-separator (cond ((string= col-separator "comma") #\,)
+                                  ((string= col-separator "tab") #\Tab)
+                                  (T (error 'api-argument-invalid :argument 'col-separator))))
+             (row-separator (cond ((string= row-separator "crlf") (coerce '(#\Return #\Linefeed) 'string))
+                                  ((string= row-separator "lf") (coerce '(#\Linefeed) 'string))
+                                  (T (error 'api-argument-invalid :argument 'row-separator))))
+             (quotation-use (cond ((string= quotation-use "as-needed") NIL)
+                                  ((string= quotation-use "always") T)
+                                  (T (error 'api-argument-invalid :argument 'quotation-use))))
+             (quotation-mark (cond ((string= quotation-mark "double-quote") #\")
+                                   ((string= quotation-mark "single-quote") #\')
+                                   (T (error 'api-argument-invalid :argument 'quotation-mark))))
+             (quotation-escape (cond ((string= quotation-escape "quote") quotation-mark)
+                                     ((string= quotation-escape "backslash") #\\)
+                                     (T (error 'api-argument-invalid :argument 'qoutation-escape))))
+             (time-format (cond ((string= time-format "iso-8601") (timestamp-formatter local-time:+iso-8601-format+))
+                                ((string= time-format "rfc-1123") (timestamp-formatter local-time:+rfc-1123-format+))
+                                ((string= time-format "timestamp") #'identity)
+                                (T (error 'api-argument-invalid :argument 'time-format))))
+             (rows (loop for subscriber in subscribers
+                         collect (list (dm:field subscriber "name")
+                                       (dm:field subscriber "address")
+                                       (funcall time-format (dm:field subscriber "signup-time"))
+                                       (string (id-user-status (dm:field subscriber "status")))))))
+        ;; FIXME: attributes and tags
+        (with-output-to-string (out)
+          (cl-csv:write-csv
+           (if header
+               (list* (list "Name" "Email Address" "Signup Time" "Status")
+                      rows)
+               rows)
+           :stream out
+           :separator col-separator
+           :quote quotation-mark
+           :escape quotation-escape
+           :newline row-separator
+           :always-quote quotation-use))))))
 
 (define-api courier/subscriber/compose (subscriber subject body) (:access (perm courier user))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))
