@@ -29,11 +29,11 @@
                           :sort '(("time" :desc)) :hull 'mail)
                   "mail")))))
 
-(defun make-mail (campaign &key title subject body (type :markless) (save T))
+(defun make-mail (campaign &key title subject body (time (get-universal-time)) (type :markless) (save T))
   (let ((campaign (ensure-campaign campaign)))
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body campaign)
-      (setf (dm:field mail "time") (get-universal-time))
+      (setf (dm:field mail "time") time)
       (setf (dm:field mail "type") (mail-type-id type))
       (when save
         (dm:insert mail))

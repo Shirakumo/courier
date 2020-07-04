@@ -6,7 +6,21 @@
 
 (in-package #:courier)
 
-(defun normalize-field-names (field)
+(defun normalize-fields (field-names fields)
+  (loop for name in field-names
+        for value in fields
+        when (and name (or* value))
+        collect (cons name value)))
+
+(defun maybe-parse-date (date)
+  (or (local-time:parse-timestring date :fail-on-error NIL :date-separator #\- :date-time-separator #\T)
+      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\_ :date-time-separator #\T)
+      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\/ :date-time-separator #\T)
+      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\- :date-time-separator #\ )
+      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\_ :date-time-separator #\ )
+      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\/ :date-time-separator #\ )))
+
+(defun normalize-subscriber-field-names (field)
   (let ((normalized (cl-ppcre:regex-replace-all "[_-]" field " ")))
     (loop for (standard . matches) in
           '((:email "email" "mail" "email address" "mail address")
@@ -27,20 +41,6 @@
             (:tags "tags"))
           do (when (find normalized matches :test #'string-equal)
                (return standard)))))
-
-(defun normalize-fields (field-names fields)
-  (loop for name in field-names
-        for value in fields
-        when (and name (or* value))
-        collect (cons name value)))
-
-(defun maybe-parse-date (date)
-  (or (local-time:parse-timestring date :fail-on-error NIL :date-separator #\- :date-time-separator #\T)
-      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\_ :date-time-separator #\T)
-      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\/ :date-time-separator #\T)
-      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\- :date-time-separator #\ )
-      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\_ :date-time-separator #\ )
-      (local-time:parse-timestring date :fail-on-error NIL :date-separator #\/ :date-time-separator #\ )))
 
 (defun import-subscriber (campaign fields &key (if-exists :abort) tags)
   (flet ((value (key &optional default)
@@ -63,30 +63,76 @@
           (ecase if-exists
             (:ignore)
             (:abort
-             (error 'api-argument-invalid :argument 'csv :message "Subscriber"))
+             (error 'api-argument-invalid :argument 'csv :message "Subscriber already exists."))
             (:overwrite
              (edit-subscriber existing :name name :status :active)))
           (make-subscriber campaign name address :signup-time signup-time :status :active :tags tags)))))
 
 (defun import-subscribers (campaign csv &key (if-exists :abort) tags)
+  (destructuring-bind (fields . entries) csv
+    (let ((field-names (mapcar #'normalize-subscriber-field-names fields)))
+      (loop for entry in entries
+            for fields = (normalize-fields field-names entry)
+            collect (import-subscriber campaign fields :if-exists if-exists :tags tags)))))
+
+(defun normalize-mail-field-names (field)
+  (let ((normalized (cl-ppcre:regex-replace-all "[_-]" field " ")))
+    (loop for (standard . matches) in
+          '((:title "title" "name")
+            (:subject "subject" "subject line")
+            (:type "type" "content type" "markup")
+            (:time "time" "creation time" "created")
+            (:body "body" "content" "text" "mail" "email"))
+          do (when (find normalized matches :test #'string-equal)
+               (return standard)))))
+
+(defun import-mail (campaign fields &key (if-exists :abort))
+  (flet ((value (key &optional default)
+           (let ((cell (assoc key fields)))
+             (if cell (cdr cell) default))))
+    (let* ((title (or (value :title)
+                      (value :subject)
+                      (error "No title found.")))
+           (subject (or (value :subject)
+                        (value :title)
+                        (error "No subject found.")))
+           (body (or (value :body)
+                     (error "No email body found.")))
+           (type (or (value :type) "text"))
+           (type (cond ((string= type "markless") :markless)
+                       ((string= type "ctml") :ctml)
+                       ((string= type "html") :ctml)
+                       (T :text)))
+           (time (or (when (value :time)
+                       (maybe-parse-date (value :time)))
+                     (get-universal-time)))
+           (existing (dm:get-one 'mail (db:query (:and (:= 'campaign (dm:id campaign))
+                                                       (:= 'title title))))))
+      (if existing
+          (ecase if-exists
+            (:ignore)
+            (:abort
+             (error 'api-argument-invalid :argument 'csv :message "Mail already exists."))
+            (:overwrite
+             (edit-mail existing :title title :subject subject :body body :type type)))
+          (make-mail campaign :title title :subject subject :body body :type type :time time)))))
+
+(defun import-mails (campaign csv &key (if-exists :abort))
+  (destructuring-bind (fields . entries) csv
+    (let ((field-names (mapcar #'normalize-mail-field-names fields)))
+      (loop for entry in entries
+            for fields = (normalize-fields field-names entry)
+            collect (import-mail campaign fields :if-exists if-exists)))))
+
+(defun import-csv (campaign csv &key (if-exists :abort) tags (dataset :subscribers))
   (db:with-transaction ()
     (flet ((process (csv)
-             (destructuring-bind (fields . entries) csv
-               (let ((field-names (mapcar #'normalize-field-names fields)))
-                 (loop for entry in entries
-                       for fields = (normalize-fields field-names entry)
-                       collect (import-subscriber campaign fields :if-exists if-exists :tags tags))))))
+             (ecase dataset
+               (:subscribers (import-subscribers campaign csv :if-exists if-exists :tags tags))
+               (:mails (import-mails campaign csv :if-exists if-exists)))))
       (etypecase csv
         (pathname
          (with-open-file (s csv)
            (process (cl-csv:read-csv s))))
         (string
          (process (cl-csv:read-csv csv)))))))
-
-(defun import-mails (campaign csv &key (if-exists :abort))
-  )
-
-(defun import-csv (campaign csv &key (if-exists :abort) tags (dataset :subscribers))
-  (ecase dataset
-    (:subscribers (import-subscribers campaign csv :if-exists if-exists :tags tags))
-    (:mails (import-mails campaign csv :if-exists if-exists))))
