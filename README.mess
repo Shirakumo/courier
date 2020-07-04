@@ -62,5 +62,3 @@ The signup form already includes some honeypot fields in order to try and catch 
 ;       Triggers should be able to fire after a user has opened a certain number of
 ;       emails.
 ; TODO: Don't show next-page when there's no further elements
-; TODO: Export/Import of mails
-; TODO: Filesystem interface for mails?
