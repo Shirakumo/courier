@@ -163,6 +163,88 @@
     (setf-dm-fields campaign template title description reply-to)
     (try-compile-content campaign (test-mail campaign) (campaign-author campaign))))
 
+(define-api courier/campaign/import (campaign &optional content file (dataset "subscribers") (if-exists "abort") tag[]) (:access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
+         (subs (import-csv campaign (if file (first file) content)
+                           :tags (mapcar #'ensure-tag tag[])
+                           :dataset (cond ((string= dataset "subscribers") :subscribers)
+                                          ((string= dataset "mails") :mails)
+                                          (T (error 'api-argument-invalid :argument 'dataset)))
+                           :if-exists (cond ((string= if-exists "abort") :abort)
+                                            ((string= if-exists "ignore") :ignore)
+                                            ((string= if-exists "overwrite") :overwrite)
+                                            (T (error 'api-argument-invalid :argument 'if-exists))))))
+    (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
+
+(define-api courier/campaign/export (campaign &optional (dataset "subscribers") (header "include") (col-separator "comma") (row-separator "crlf") (quotation-use "as-needed") (quotation-mark "double-quote") (quotation-escape "quote") (time-format "iso-8601")) ()
+  (flet ((timestamp-formatter (format)
+           (lambda (x)
+             (local-time:format-timestring NIL (local-time:universal-to-timestamp x) :format format))))
+    (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
+           (header (cond ((string= header "include") T)
+                         ((string= header "exclude") NIL)
+                         (T (error 'api-argument-invalid :argument 'header))))
+           (col-separator (cond ((string= col-separator "comma") #\,)
+                                ((string= col-separator "tab") #\Tab)
+                                (T (error 'api-argument-invalid :argument 'col-separator))))
+           (row-separator (cond ((string= row-separator "crlf") (coerce '(#\Return #\Linefeed) 'string))
+                                ((string= row-separator "lf") (coerce '(#\Linefeed) 'string))
+                                (T (error 'api-argument-invalid :argument 'row-separator))))
+           (quotation-use (cond ((string= quotation-use "as-needed") NIL)
+                                ((string= quotation-use "always") T)
+                                (T (error 'api-argument-invalid :argument 'quotation-use))))
+           (quotation-mark (cond ((string= quotation-mark "double-quote") #\")
+                                 ((string= quotation-mark "single-quote") #\')
+                                 (T (error 'api-argument-invalid :argument 'quotation-mark))))
+           (quotation-escape (cond ((string= quotation-escape "quote") (list quotation-mark quotation-mark))
+                                   ((string= quotation-escape "backslash") (list #\\ quotation-mark))
+                                   (T (error 'api-argument-invalid :argument 'qoutation-escape))))
+           (time-format (cond ((string= time-format "iso-8601") (timestamp-formatter local-time:+iso-8601-format+))
+                              ((string= time-format "rfc-1123") (timestamp-formatter local-time:+rfc-1123-format+))
+                              ((string= time-format "timestamp") #'identity)
+                              (T (error 'api-argument-invalid :argument 'time-format))))
+           (rows (cond ((string= dataset "subscribers")
+                        (let ((attributes (list-attributes campaign)))
+                          (when header
+                            (setf header (list* "Name" "Email Address" "Signup Time" "Status" "Tags"
+                                                (loop for attribute in attributes collect (dm:field attribute "title")))))
+                          (loop for subscriber in (list-subscribers campaign)
+                                for tags = (list-tags subscriber)
+                                collect (list* (dm:field subscriber "name")
+                                               (dm:field subscriber "address")
+                                               (funcall time-format (dm:field subscriber "signup-time"))
+                                               (string (id-user-status (dm:field subscriber "status")))
+                                               (with-output-to-string (out)
+                                                 (loop for tag in tags do
+                                                       (format out "~a," (dm:field tag "title"))))
+                                               (loop for attribute in attributes
+                                                     for value = (db:select 'attribute-value (db:query (:and (:= 'attribute (dm:id attribute))
+                                                                                                             (:= 'subscriber (dm:id subscriber)))))
+                                                     collect (if value (gethash "value" (first value)) ""))))))
+                       ((string= dataset "mails")
+                        (when header
+                          (setf header (list "Title" "Subject" "Body" "Markup Type" "Time")))
+                        (loop for mail in (list-mails campaign)
+                              collect (list (dm:field mail "title")
+                                            (dm:field mail "subject")
+                                            (dm:field mail "body")
+                                            (string (id-mail-type (dm:field mail "type")))
+                                            (funcall time-format (dm:field mail "time")))))
+                       (T (error 'api-argument-invalid :argument 'dataset)))))
+      (setf (header "Content-Disposition") (format NIL "inline; filename=~s" (format NIL "~a ~a.csv" (dm:field campaign "title") dataset)))
+      (setf (header "Content-Type") "text/csv;charset=utf-8")
+      (with-output-to-string (out)
+        (cl-csv:write-csv
+         (if header
+             (list* header rows)
+             rows)
+         :stream out
+         :separator col-separator
+         :quote quotation-mark
+         :escape quotation-escape
+         :newline row-separator
+         :always-quote quotation-use)))))
+
 (define-api courier/mail (mail) (:access (perm courier user))
   (api-output (check-accessible (ensure-mail mail))))
 
@@ -382,67 +464,6 @@
       (error 'api-argument-invalid :argument "subscriber" :message "Cannot unsubscribe yourself."))
     (edit-subscriber subscriber :status :deactivated)
     (output subscriber "Subscriber deactivated." "courier/campaign/~a/subscriber" (dm:field subscriber "campaign"))))
-
-(define-api courier/subscriber/import (campaign &optional content file if-exists tag[]) (:access (perm courier user))
-  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
-         (subs (import-subscribers campaign (if file
-                                                (first file)
-                                                content)
-                                   :tags (mapcar #'ensure-tag tag[])
-                                   :if-exists (cond ((or (null if-exists) (string-equal "abort" if-exists)) :abort)
-                                                    ((string-equal "ignore" if-exists) :ignore)
-                                                    ((string-equal "overwrite" if-exists) :overwrite)
-                                                    (T (error 'api-argument-invalid :argument 'if-exists))))))
-    (output subs (format NIL "~d subscriber~:p imported." (length subs)) "courier/campaign/~a/subscriber" (dm:id campaign))))
-
-(define-api courier/subscriber/export (campaign &optional (header "include") (col-separator "comma") (row-separator "crlf") (quotation-use "as-needed") (quotation-mark "double-quote") (quotation-escape "quote") (time-format "iso-8601")) ()
-  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber))
-         (subscribers (list-subscribers campaign)))
-    (setf (header "Content-Disposition") (format NIL "inline; filename=\"~a\"" (dm:field campaign "title")))
-    (setf (header "Content-Type") "text/csv;charset=utf-8")
-    (flet ((timestamp-formatter (format)
-             (lambda (x)
-               (local-time:format-timestring NIL (local-time:universal-to-timestamp x) :format format))))
-      (let* ((header (cond ((string= header "include") T)
-                           ((string= header "exclude") NIL)
-                           (T (error 'api-argument-invalid :argument 'header))))
-             (col-separator (cond ((string= col-separator "comma") #\,)
-                                  ((string= col-separator "tab") #\Tab)
-                                  (T (error 'api-argument-invalid :argument 'col-separator))))
-             (row-separator (cond ((string= row-separator "crlf") (coerce '(#\Return #\Linefeed) 'string))
-                                  ((string= row-separator "lf") (coerce '(#\Linefeed) 'string))
-                                  (T (error 'api-argument-invalid :argument 'row-separator))))
-             (quotation-use (cond ((string= quotation-use "as-needed") NIL)
-                                  ((string= quotation-use "always") T)
-                                  (T (error 'api-argument-invalid :argument 'quotation-use))))
-             (quotation-mark (cond ((string= quotation-mark "double-quote") #\")
-                                   ((string= quotation-mark "single-quote") #\')
-                                   (T (error 'api-argument-invalid :argument 'quotation-mark))))
-             (quotation-escape (cond ((string= quotation-escape "quote") quotation-mark)
-                                     ((string= quotation-escape "backslash") #\\)
-                                     (T (error 'api-argument-invalid :argument 'qoutation-escape))))
-             (time-format (cond ((string= time-format "iso-8601") (timestamp-formatter local-time:+iso-8601-format+))
-                                ((string= time-format "rfc-1123") (timestamp-formatter local-time:+rfc-1123-format+))
-                                ((string= time-format "timestamp") #'identity)
-                                (T (error 'api-argument-invalid :argument 'time-format))))
-             (rows (loop for subscriber in subscribers
-                         collect (list (dm:field subscriber "name")
-                                       (dm:field subscriber "address")
-                                       (funcall time-format (dm:field subscriber "signup-time"))
-                                       (string (id-user-status (dm:field subscriber "status")))))))
-        ;; FIXME: attributes and tags
-        (with-output-to-string (out)
-          (cl-csv:write-csv
-           (if header
-               (list* (list "Name" "Email Address" "Signup Time" "Status")
-                      rows)
-               rows)
-           :stream out
-           :separator col-separator
-           :quote quotation-mark
-           :escape quotation-escape
-           :newline row-separator
-           :always-quote quotation-use))))))
 
 (define-api courier/subscriber/compose (subscriber subject body) (:access (perm courier user))
   (let* ((subscriber (check-accessible (ensure-subscriber subscriber)))

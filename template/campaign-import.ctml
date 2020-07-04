@@ -5,8 +5,15 @@
         Note that the first line of the CSV <em>must</em> be a row that describes the field names.
         <a @href="courier/help/import" target="_blank"><i class="fas fa-question-circle"/></a>
       </p>
-      <div class="row" title="What to do if a subscriber that should be imported already exists.">
-        <label for="if-exists">If subscriber exists</label>
+      <div class="row" title="Which dataset to import.">
+        <label for="dataset">Dataset</label>
+        <select name="dataset" id="dataset">
+          <option value="subscribers">subscribers</option>
+          <option value="mails">mails</option>
+        </select>
+      </div>
+      <div class="row" title="What to do if an object that should be imported already exists.">
+        <label for="if-exists">If exists</label>
         <select name="if-exists" id="if-exists">
           <option value="abort">abort</option>
           <option value="ignore">ignore</option>
@@ -49,7 +56,7 @@
         <input type="hidden" name="browser" value="true" />
         <div class="row">
           <input type="hidden" name="campaign" lquery="(val _id)" />
-          <input type="submit" value="Import Subscribers" @formaction="courier/api/courier/subscriber/import" />
+          <input type="submit" value="Import" @formaction="courier/api/courier/campaign/import" />
         </div>
     </form>
   </c:using>

@@ -245,7 +245,7 @@ class Courier{
     registerForm(element){
         var self = this;
         var save = element.querySelector("input[type=submit]");
-        if(!save) return;
+        if(!save || save.dataset.nofetch) return;
         if(element.classList.contains("search")) return;
         save.addEventListener("click", (ev)=>{
             var target = save.getAttribute("formaction") || element.getAttribute("action");

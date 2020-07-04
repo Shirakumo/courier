@@ -82,3 +82,11 @@
            (process (cl-csv:read-csv s))))
         (string
          (process (cl-csv:read-csv csv)))))))
+
+(defun import-mails (campaign csv &key (if-exists :abort))
+  )
+
+(defun import-csv (campaign csv &key (if-exists :abort) tags (dataset :subscribers))
+  (ecase dataset
+    (:subscribers (import-subscribers campaign csv :if-exists if-exists :tags tags))
+    (:mails (import-mails campaign csv :if-exists if-exists))))

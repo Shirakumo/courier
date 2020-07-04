@@ -47,11 +47,11 @@
       <i class="fas fa-plus-circle"></i>
       Add Subscriber
     </a>
-    <a class="button" href="#" @href="courier/campaign/{0}/subscriber/import _id">
+    <a class="button" href="#" @href="courier/campaign/{0}/import _id">
       <i class="fas fa-file-upload"></i>
       Import Subscribers
     </a>
-    <a class="button" href="#" @href="courier/campaign/{0}/subscriber/export _id">
+    <a class="button" href="#" @href="courier/campaign/{0}/export _id">
       <i class="fas fa-file-download"></i>
       Export Subscribers
     </a>

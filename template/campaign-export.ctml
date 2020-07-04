@@ -1,18 +1,25 @@
 <article class="page subscriber export">
   <c:using value="campaign">
     <form method="post" enctype="multipart/form-data">
+      <div class="row" title="Which dataset to export.">
+        <label for="dataset">Dataset</label>
+        <select name="dataset" id="dataset">
+          <option value="subscribers">subscribers</option>
+          <option value="mails">mails</option>
+        </select>
+      </div>
       <div class="row" title="Whether to include the field description header line">
         <label for="header">CSV Header</label>
         <select name="header" id="header">
-          <option value="include">Include</option>
-          <option value="exclude">Exclude</option>
+          <option value="include">include</option>
+          <option value="exclude">exclude</option>
         </select>
       </div>
       <div class="row" title="What character to use to separate columns in an entry.">
         <label for="col-separator">Column Separator</label>
         <select name="col-separator" id="col-separator">
-          <option value="comma">Comma</option>
-          <option value="tab">Tab</option>
+          <option value="comma">comma</option>
+          <option value="tab">tab</option>
         </select>
       </div>
       <div class="row" title="What line separator to use.">
@@ -25,22 +32,22 @@
       <div class="row" title="When to quote field values.">
         <label for="quotation-use">Quote Use</label>
         <select name="quotation-use" id="quotation-use">
-          <option value="as-needed">As Needed</option>
-          <option value="always">Always</option>
+          <option value="as-needed">as needed</option>
+          <option value="always">always</option>
         </select>
       </div>
       <div class="row" title="How to quote field values.">
         <label for="quotation-mark">Quote Mark</label>
         <select name="quotation-mark" id="quotation-mark">
-          <option value="double-quote">Double Quote</option>
-          <option value="single-quote">Single Quote</option>
+          <option value="double-quote">double quote</option>
+          <option value="single-quote">single quote</option>
         </select>
       </div>
       <div class="row" title="How to escape the quote mark within quoted values.">
         <label for="quotation-escape">Quote Escape</label>
         <select name="quotation-escape" id="quotation-escape">
-          <option value="quote">Quote</option>
-          <option value="backslash">Backslash</option>
+          <option value="quote">quote</option>
+          <option value="backslash">backslash</option>
         </select>
       </div>
       <div class="row" title="What format to use to write out time values.">
@@ -48,13 +55,13 @@
         <select name="time-format" id="time-format">
           <option value="iso-8601">ISO 8601</option>
           <option value="rfc-1123">RFC 1123</option>
-          <option value="timestamp">Unix Timestamp</option>
+          <option value="timestamp">Unix timestamp</option>
         </select>
       </div>
       <input type="hidden" name="browser" value="true" />
       <div class="row">
         <input type="hidden" name="campaign" lquery="(val _id)" />
-        <input type="submit" value="Export Subscribers" @formaction="courier/api/courier/subscriber/export" />
+        <input type="submit" value="Export" @formaction="courier/api/courier/campaign/export" data-nofetch="true" />
       </div>
     </form>
   </c:using>

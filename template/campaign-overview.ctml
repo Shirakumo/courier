@@ -21,9 +21,13 @@
         <i class="fas fa-link"></i>
         Link
       </a>
-      <a class="button" href="#" @href="courier/campaign/{0}/subscriber/import title">
+      <a class="button" href="#" @href="courier/campaign/{0}/import title">
         <i class="fas fa-file-upload"></i>
         Import
+      </a>
+      <a class="button" href="#" @href="courier/campaign/{0}/export title">
+        <i class="fas fa-file-download"></i>
+        Export
       </a>
       <a class="button" href="#" @href="courier/campaign/{0}/trigger title">
         <i class="fas fa-bolt"></i>

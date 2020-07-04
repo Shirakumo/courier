@@ -108,6 +108,22 @@
                  :campaign campaign
                  :access (list-access campaign))))
 
+(define-page campaign-import ("courier/^campaign/([^/]+)/import$" 1) (:uri-groups (campaign) :access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'campaign)))
+    (render-page "CSV Import"
+                 (@template "campaign-import.ctml")
+                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+                 :up-text (dm:field campaign "title")
+                 :campaign campaign)))
+
+(define-page campaign-export ("courier/^campaign/([^/]+)/export$" 1) (:uri-groups (campaign) :access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'campaign)))
+    (render-page "CSV Export"
+                 (@template "campaign-export.ctml")
+                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+                 :up-text (dm:field campaign "title")
+                 :campaign campaign)))
+
 (define-page mail-list "courier/^campaign/([^/]+)/mail/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
     (apply #'render-page "Mails"
@@ -282,22 +298,6 @@
                                collect attribute)
                  :tags (list-tags subscriber)
                  :all-tags (list-tags campaign))))
-
-(define-page subscriber-import ("courier/^campaign/([^/]+)/subscriber/import" 1) (:uri-groups (campaign) :access (perm courier user))
-  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber)))
-    (render-page "Import"
-                 (@template "subscriber-import.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign)))
-
-(define-page subscriber-export ("courier/^campaign/([^/]+)/subscriber/export" 1) (:uri-groups (campaign) :access (perm courier user))
-  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'subscriber)))
-    (render-page "Export"
-                 (@template "subscriber-export.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign)))
 
 (define-page subscriber-compose "courier/^campaign/([^/]+)/subscriber/([^/]+)/compose$" (:uri-groups (campaign subscriber) :access (perm courier user))
   (let* ((campaign (ensure-campaign campaign))
