@@ -91,6 +91,13 @@ Alternatively you can also use the ``button`` compound option to turn a standard
 
 The styling of the button is dependent on your template.
 
+### Embedding YouTube Videos
+Courier can automatically embed the preview thumbnail of a video with the video link for you if you use the ``youtube`` embed.
+
+:: markless
+[ youtube https://www.youtube.com/watch?v=p43Zl84RSck ]
+::
+
 ### Referring to Other Emails
 In order to include a subscriber-specific link to another email and give them access to it, you can use the ``mail`` compound option. Let's pretend you have an email with the title ``secrets revealed!``. You can hand out a link to it like this:
 

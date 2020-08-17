@@ -25,7 +25,7 @@
   ()
   (:default-initargs
    :directives (list* 'template-var markless:*default-directives*)
-   :embed-types (list* 'button markless:*default-embed-types*)
+   :embed-types (list* 'button 'youtube markless:*default-embed-types*)
    :compound-options (list* 'mail-option 'tag-option 'button-option markless:*default-compound-options*)))
 
 (defun make-link* (f url)
@@ -95,6 +95,28 @@
 
 (defmethod markless:output-component ((c button) (target stream) (f plain-format))
   (markless:output-component (format NIL "~%[  ~a  ]~%" (make-link* f (components:target c))) target f))
+
+(defclass youtube (components:embed)
+  ())
+
+(defun extract-youtube-id (link)
+  (or (cl-ppcre:register-groups-bind (id) (".*(?:youtu\\.be/|v/|u/\\w/|embed/|watch\\?v=|\\&v=)([^#&?]*).*" link)
+        id)
+      (error "This is not a valid YouTube URL: ~a" link)))
+
+(defmethod markless:output-component ((youtube youtube) (target plump-dom:nesting-node) (f html-format))
+  (let ((id (extract-youtube-id (components:target youtube)))
+        (element (plump-dom:make-element target "a")))
+    (setf (plump-dom:attribute element "class") "youtube")
+    (setf (plump-dom:attribute element "href") (format NIL "https://www.youtube.com/watch?v=~a" id))
+    (transform-link element f)
+    (let ((image (plump-dom:make-element element "img")))
+      (setf (plump-dom:attribute image "src") (format NIL "https://i.ytimg.com/vi/~a/hqdefault.jpg" id))
+      (setf (plump-dom:attribute image "alt") "YouTube")
+      (cl-markless-plump::set-plump-embed-options image (components:options youtube) f))))
+
+(defmethod markless:output-component ((youtube youtube) (target stream) (f plain-format))
+  (markless:output-component (format NIL "~%  ~a~%" (make-link* f (components:target youtube))) target f))
 
 (defclass mail-option (components:compound-option)
   ((mail :initarg :mail :reader mail)))
