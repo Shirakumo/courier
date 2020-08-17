@@ -64,8 +64,8 @@
         do (loop for task in *tasks*
                  when (task-ready-p task)
                  do (handler-bind ((error (lambda (e)
-                                            (maybe-invoke-debugger e 'continue))))
-                      (with-simple-restart (continue "Ignore the task failure.")
+                                            (maybe-invoke-debugger e 'ignore-task))))
+                      (with-simple-restart (ignore-task "Ignore the task failure.")
                         (run-task task))))
            (bt:with-lock-held (*task-lock*)
              (bt:condition-wait *task-condition* *task-lock*
