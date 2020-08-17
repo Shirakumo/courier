@@ -25,12 +25,12 @@
     (when save (dm:save host))
     host))
 
-(defun ensure-host (host-ish &optional (user (auth:current)))
+(defun ensure-host (host-ish &optional (user NIL user-p))
   (or
    (etypecase host-ish
      (dm:data-model host-ish)
      (db:id (dm:get-one 'host (db:query (:= '_id host-ish))))
-     (T (or (dm:get-one 'host (db:query (:and (:= 'author (user:id user))
+     (T (or (dm:get-one 'host (db:query (:and (:= 'author (user:id (if user-p user (auth:current))))
                                               (:= 'title host-ish))))
             (dm:get-one 'host (db:query (:= '_id (db:ensure-id host-ish)))))))
    (error 'request-not-found :message "No such host.")))

@@ -14,12 +14,12 @@
     (4 "color" "Color")
     (5 "tel" "Telephone Number")))
 
-(defun ensure-campaign (campaign-ish &optional user)
+(defun ensure-campaign (campaign-ish &optional (user NIL user-p))
   (or
    (etypecase campaign-ish
      (dm:data-model campaign-ish)
      (db:id (dm:get-one 'campaign (db:query (:= '_id campaign-ish))))
-     (string (or (dm:get-one 'campaign (db:query (:and (:= 'author (user:id (or user (auth:current))))
+     (string (or (dm:get-one 'campaign (db:query (:and (:= 'author (user:id (if user-p user (auth:current))))
                                                        (:= 'title campaign-ish))))
                  (dm:get-one 'campaign (db:query (:= '_id (db:ensure-id campaign-ish)))))))
    (error 'request-not-found :message "No such campaign.")))
