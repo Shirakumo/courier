@@ -73,9 +73,9 @@
                     (send-queue queue))
                 (ignore ()
                   :report "Ignore the send and retry later."
-                  (setf (dm:field queued "time") (expt (dm:field queued "attempts") (config :send-queue :retry-backoff-exponent)))
-                  (incf (dm:field queued "attempts"))
-                  (dm:save queued))
+                  (setf (dm:field queue "send-time") (expt (dm:field queue "attempts") (config :send-queue :retry-backoff-exponent)))
+                  (incf (dm:field queue "attempts"))
+                  (dm:save queue))
                 (forget ()
                   :report "Give up trying to send the queued mail."
                   (dm:delete queue))))
