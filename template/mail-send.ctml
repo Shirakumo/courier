@@ -19,7 +19,7 @@
       <div class="row">
         <label for="time">At</label>
         <input type="datetime-local" id="time" name="time" 
-               lquery="(attr :min (format-machine-date (get-universal-time))) (val (format-machine-date (get-universal-time)))"
+               lquery="(val (format-machine-date (get-universal-time)))"
                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?" />
         <span>UTC</span>
       </div>
