@@ -30,7 +30,7 @@
 
 (defun make-link* (f url)
   ;; Do not encode links that are already pointing to Courier.
-  (if (or (search #.(url> "courier/") url)
+  (if (or (search (url> "courier/") url)
           (null (campaign f))
           (null (subscriber f)))
       url
