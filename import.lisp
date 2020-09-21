@@ -52,11 +52,12 @@
                        (format NIL "~a~@[ ~a~]" (value :first-name) (value :last-name)))
                      (value :last-name)
                      ""))
-           (signup-time (or (when (value :signup-time)
-                              (maybe-parse-date (value :signup-time)))
-                            (when (value :confirm-time)
-                              (maybe-parse-date (value :confirm-time)))
-                            (get-universal-time)))
+           (signup-time (local-time:timestamp-to-universal
+                         (or (when (value :signup-time)
+                               (maybe-parse-date (value :signup-time)))
+                             (when (value :confirm-time)
+                               (maybe-parse-date (value :confirm-time)))
+                             (local-time:now))))
            (existing (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                              (:= 'address address))))))
       (if existing
