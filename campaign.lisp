@@ -141,15 +141,16 @@
   (let* ((campaign (ensure-campaign campaign))
          (since (or since (dm:field campaign "last-report")))
          (new (new-subscribers-since campaign since)))
-    (send-system-mail
-     (@template "email/subscriber-report.mess")
-     (dm:field campaign "reply-to")
-     (dm:field campaign "host")
-     campaign
-     :subject (format NIL "Mailing list subscription report for ~a" (dm:field campaign "title"))
-     :campaign (dm:field campaign "title")
-     :count (length new)
-     :subscribers new)
+    (when new
+      (send-system-mail
+       (@template "email/subscriber-report.mess")
+       (dm:field campaign "reply-to")
+       (dm:field campaign "host")
+       campaign
+       :subject (format NIL "Mailing list subscription report for ~a" (dm:field campaign "title"))
+       :campaign (dm:field campaign "title")
+       :count (length new)
+       :subscribers new))
     (db:with-transaction ()
       ;; Try to send out news at 6 in the morning, server-time.
       (setf (dm:field campaign "last-report") (closest-time :time (* 60 60 6)))
