@@ -40,7 +40,7 @@
                                        (lambda (r) (gethash "_id" r)) :fields '("_id") :accumulate T)))))
         (db:id
          (send target))))
-    (notify-task 'send-queue time)))
+    (notify-task 'send-queue (1+ time))))
 
 (defun send-queue (queue)
   (send-mail (dm:get-one 'mail (db:query (:= '_id (dm:field queue "mail"))))

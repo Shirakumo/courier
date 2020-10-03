@@ -262,7 +262,9 @@
            (mail (make-mail campaign :title title :subject subject :body body :type type)))
       ;; Compile template once to check for validity
       (compile-mail-content campaign mail (campaign-author campaign))
-      (when send (enqueue-mail mail))
+      ;; Make sure we wake up the task in a bit from now to account for
+      ;; the transaction completing.
+      (when send (enqueue-mail mail :time (+ (get-universal-time) 10)))
       (output mail "Mail created." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
 (define-api courier/mail/edit (mail &optional title subject body type) (:access (perm courier user))
