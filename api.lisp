@@ -617,14 +617,15 @@
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 
-(define-api courier/subscription/new (campaign name address &optional username email) ()
+(define-api courier/subscription/new (campaign address &optional name username email) ()
   ;; Honeypot
   (when (or username
             (string/= email (hash (config :salt))))
     (error 'api-argument-invalid :argument 'username :message "Invalid email address."))
   (check-address-valid address)
   (let* ((campaign (ensure-campaign campaign))
-         (attributes (gather-api-attributes campaign)))
+         (attributes (gather-api-attributes campaign))
+         (name (or* name)))
     (handler-case ;; Try to add normally
         (let ((subscriber (make-subscriber campaign name address :attributes attributes)))
           (send-system-mail (@template "email/confirm-subscription.mess") address
