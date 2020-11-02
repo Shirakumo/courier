@@ -64,7 +64,7 @@
           (ecase if-exists
             (:ignore)
             (:abort
-             (error 'api-argument-invalid :argument 'csv :message "Subscriber already exists."))
+             (error 'api-argument-invalid :argument 'csv :message (format NIL "Subscriber ~s already exists." address)))
             (:overwrite
              (edit-subscriber existing :name name :status :active)))
           (make-subscriber campaign name address :signup-time signup-time :status :active :tags tags)))))
