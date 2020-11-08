@@ -381,7 +381,8 @@
 (define-api courier/trigger/new (campaign source-type source-id target-type target-id &optional description delay tag-constraint rule) (:access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'trigger))
         (source (check-accessible (resolve-typed source-type source-id)))
-        (target (check-accessible (resolve-typed target-type target-id))))
+        (target (check-accessible (resolve-typed target-type target-id)))
+        (rule (not (or (null rule) (string= "" rule) (string-equal "false" rule)))))
     (let ((trigger (make-trigger campaign source target
                                  :description description :delay (parse-integer delay)
                                  :tag-constraint tag-constraint :rule rule)))
