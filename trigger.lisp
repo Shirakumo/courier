@@ -236,7 +236,8 @@
           (process-trigger trigger target :force T)))
        (campaign
         (dolist (subscriber (list-subscribers target))
-          (process-rule trigger subscriber)))))))
+          (when (eql :active (id-user-status (dm:field subscriber "status")))
+            (process-rule trigger subscriber))))))))
 
 (defun process-rules (subscriber)
   (let* ((subscriber (ensure-subscriber subscriber))
