@@ -61,7 +61,7 @@
         (case status
           (:active
            (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign"))))
-          (:decativated
+          (:deactivated
            (db:remove 'mail-queue (db:query (:= 'subscriber (dm:id subscriber)))))))
       subscriber)))
 
