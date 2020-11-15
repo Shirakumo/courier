@@ -645,10 +645,21 @@
         (cond ((eql (slot-value e 'radiance::argument) 'address)
                (let ((subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                                          (:= 'address address))))))
-                 (edit-subscriber subscriber :name name :attributes attributes :status :active)
-                 (if (string= "true" (post/get "browser"))
-                     (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:id campaign))))
-                     (api-output subscriber))))
+                 (case (id-user-status (dm:get subscriber "status"))
+                   (:unconfirmed
+                    (if (string= "true" (post/get "browser"))
+                        (redirect (url> (format NIL "courier/subscription/~a/subscribed" (dm:id campaign))
+                                        :query `(("address" . ,address))))
+                        (api-output subscriber)))
+                   (:active
+                    (if (string= "true" (post/get "browser"))
+                        (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:id campaign))))
+                        (api-output subscriber)))
+                   (:deactivated
+                    (edit-subscriber subscriber :name name :attributes attributes :status :active)
+                    (if (string= "true" (post/get "browser"))
+                        (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:id campaign))))
+                        (api-output subscriber))))))
               (T (error e)))))))
 
 (define-api courier/subscription/confirm (id) ()
