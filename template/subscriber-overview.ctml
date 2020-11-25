@@ -22,7 +22,7 @@
         <i class="fas fa-fw fa-edit"></i>
         Edit
       </a>
-      <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0} _id">
+      <a class="button confirm" href="#" @href="courier/api/courier/subscriber/delete?subscriber={0} _id&browser=true">
         <i class="fas fa-fw fa-trash"></i>
         Delete
       </a>

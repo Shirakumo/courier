@@ -79,7 +79,8 @@
     (db:remove 'mail-log (db:query (:= 'subscriber (dm:id subscriber))))
     (db:remove 'mail-queue (db:query (:= 'subscriber (dm:id subscriber))))
     (db:remove 'tag-table (db:query (:= 'subscriber (dm:id subscriber))))
-    (db:remove 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'link-receipt (db:query (:= 'subscriber (dm:id subscriber))))
+    (db:remove 'trigger-receipt (db:query (:= 'subscriber (dm:id subscriber))))
     (dm:delete subscriber)))
 
 (defun list-subscribers (thing &key amount (skip 0) query)
