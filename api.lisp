@@ -663,9 +663,7 @@
               (T (error e)))))))
 
 (define-api courier/subscription/confirm (id) ()
-  (let ((subscriber (ensure-subscriber (first (decode-id id)))))
-    (setf (dm:field subscriber "status") (user-status-id :active))
-    (dm:save subscriber)
+  (let ((subscriber (edit-subscriber (first (decode-id id)) :status :active)))
     (if (string= "true" (post/get "browser"))
         (redirect (url> (format NIL "courier/subscription/~a/confirmed" (dm:field subscriber "campaign"))))
         (api-output NIL))))
