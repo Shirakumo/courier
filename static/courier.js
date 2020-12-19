@@ -528,18 +528,24 @@ class Courier{
         });
         submit.addEventListener("click", (ev)=>{
             ev.preventDefault();
-            // Create temp canvas at full res
-            var tmpCanvas = document.createElement('canvas');
-            tmpCanvas.width = parseInt(width.value);
-            tmpCanvas.height = parseInt(height.value);
-            
-            var ctx = tmpCanvas.getContext('2d');
-            ctx.drawImage(img,0,0,canvas.width,canvas.height);
-            tmpCanvas.toBlob((blob)=>{
+            if(input.files[0].type == "image/gif"){
                 var formdata = new FormData();
-                formdata.append("file", blob, input.files[0].name);
+                formdata.append("file", input.files[0], input.files[0].name);
                 onSubmit(formdata);
-            });
+            }else{
+                // Create temp canvas at full res
+                var tmpCanvas = document.createElement('canvas');
+                tmpCanvas.width = parseInt(width.value);
+                tmpCanvas.height = parseInt(height.value);
+                
+                var ctx = tmpCanvas.getContext('2d');
+                ctx.drawImage(img,0,0,canvas.width,canvas.height);
+                tmpCanvas.toBlob((blob)=>{
+                    var formdata = new FormData();
+                    formdata.append("file", blob, input.files[0].name);
+                    onSubmit(formdata);
+                });
+            }
             return false;
         });
     }
