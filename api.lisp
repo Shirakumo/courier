@@ -645,7 +645,7 @@
         (cond ((eql (slot-value e 'radiance::argument) 'address)
                (let ((subscriber (dm:get-one 'subscriber (db:query (:and (:= 'campaign (dm:id campaign))
                                                                          (:= 'address address))))))
-                 (case (id-user-status (dm:get subscriber "status"))
+                 (case (id-user-status (dm:field subscriber "status"))
                    (:unconfirmed
                     (if (string= "true" (post/get "browser"))
                         (redirect (url> (format NIL "courier/subscription/~a/subscribed" (dm:id campaign))
