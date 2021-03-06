@@ -77,13 +77,20 @@
 (defun start-task-runner ()
   (when (and *task-runner*
              (bt:thread-alive-p *task-runner*))
-    (error "The task runner is already running.")) 
+    (error "The task runner is already running."))
   (flet ((task-runner-thunk ()
            (l:info :courier.task-runner "Starting task runner.")
-           (unwind-protect (run-tasks)
-             (l:info :courier.task-runner "Stopping task runner.")
-             (setf *task-runner* NIL))))
+           (with-simple-restart (kill "Kill the task runner")
+             (unwind-protect (run-tasks)
+               (l:info :courier.task-runner "Stopping task runner.")
+               (setf *task-runner* NIL)))))
     (setf *task-runner* (bt:make-thread #'task-runner-thunk :name "courier task runner"))))
+
+(defun kill-task-runner ()
+  (unless (and *task-runner*
+             (bt:thread-alive-p *task-runner*))
+    (error "The task runner is not running."))
+  (bt:interrupt-thread *task-runner* (lambda () (invoke-restart 'kill))))
 
 (define-trigger (server-start start-task-runner) ()
   (unless (and *task-runner*
