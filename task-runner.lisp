@@ -10,6 +10,7 @@
 (defvar *task-condition* (bt:make-condition-variable :name "task runner condition"))
 (defvar *task-lock* (bt:make-lock "task runner lock"))
 (defvar *tasks* NIL)
+(defvar *task-runner-timeout* (* 60 60))
 
 (defclass task ()
   ((due-time :initarg :due-time :initform 0 :accessor due-time)))
@@ -66,7 +67,9 @@
                  do (handler-bind ((error (lambda (e)
                                             (maybe-invoke-debugger e 'ignore-task))))
                       (with-simple-restart (ignore-task "Ignore the task failure.")
-                        (run-task task))))
+                        (#+sbcl sb-ext:with-timeout
+                         #-sbcl progn *task-runner-timeout*
+                          (run-task task)))))
            (bt:with-lock-held (*task-lock*)
              (bt:condition-wait *task-condition* *task-lock*
                                 :timeout (max 1 (- (nearest-task *tasks*) (get-universal-time)))))))
