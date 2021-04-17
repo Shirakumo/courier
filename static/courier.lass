@@ -394,7 +394,10 @@
     (h2 :margin 0 0 0.2em 0)
     (label
      :display inline-block
-     :min-width 8em))
+     :min-width 8em)
+    (iframe
+     :width 100%
+     :border none))
    (.panel.single
     :display flex
     :flex-direction column
@@ -412,6 +415,8 @@
      :font-size 1.2em))
    (.panel.wide
     :width 100%)
+   (.panel.mail-preview
+    (iframe :min-height 50em))
    (nav.panel
     :text-align center
     (a

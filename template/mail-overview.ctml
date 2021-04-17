@@ -23,5 +23,8 @@
         Edit
       </a>
     </nav>
+    <div class="panel wide mail-preview">
+      <iframe @src="courier/api/courier/mail/preview?mail={0} _id"></iframe>
+    </div>
   </c:using>
 </article>
