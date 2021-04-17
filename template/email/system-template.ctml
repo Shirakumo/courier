@@ -102,10 +102,12 @@
       <hr>
       <div class="address">
         <div class="line">Our mailing address is:</div>
-        Example<br>
-        Somestreet 33<br>
-        Anytown<br>
-        Country
+        <c:splice lquery="(text address)">
+          Example<br>
+          Somestreet 33<br>
+          Anytown<br>
+          Country
+        </c:splice>
       </div>
       <div class="copy">
         Copyright © <span lquery="(time T :year)">20XX</span> <c:splice lquery="(text copyright)">Shirakumo</c:splice>

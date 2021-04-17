@@ -66,23 +66,29 @@
                                (decrypt (dm:field host "password"))))
        :display-name (dm:field host "display-name")))))
 
-(defun mail-template-vars (campaign mail subscriber)
-  (list* :mail-receipt-image (mail-receipt-url subscriber mail)
-         :mail-url (mail-url mail subscriber)
-         :archive-url (archive-url subscriber)
+(defun mail-subscriber-vars (subscriber)
+  (list* :archive-url (archive-url subscriber)
          :unsubscribe-url (unsubscribe-url subscriber)
-         :id (dm:id mail)
-         :title (dm:field mail "title")
-         :subject (dm:field mail "subject")
-         :campaign (dm:field campaign "title")
-         :description (dm:field campaign "description")
-         :reply-to (dm:field campaign "reply-to")
          :to (dm:field subscriber "address")
          :name (dm:field subscriber "name")
          :tags (list-tags subscriber)
-         :time (get-universal-time)
-         :address (dm:field campaign "address")
          (subscriber-attributes subscriber)))
+
+(defun mail-campaign-vars (campaign)
+  (list :campaign (dm:field campaign "title")
+        :description (dm:field campaign "description")
+        :reply-to (dm:field campaign "reply-to")
+        :address (dm:field campaign "address")
+        :time (get-universal-time)))
+
+(defun mail-template-vars (campaign mail subscriber)
+  (list* :mail-receipt-image (mail-receipt-url subscriber mail)
+         :mail-url (mail-url mail subscriber)
+         :id (dm:id mail)
+         :title (dm:field mail "title")
+         :subject (dm:field mail "subject")
+         (append (mail-campaign-vars campaign)
+                 (mail-subscriber-vars subscriber))))
 
 (defgeneric compile-mail-body (body source-type target-type &key &allow-other-keys))
 
@@ -138,7 +144,7 @@
 (defun send-system-mail (body address host campaign &rest vars)
   (let ((html (apply #'compile-mail #p"email/system-template.ctml"
                      (list* :body (compile-mail-body body :markless :html :vars vars)
-                            vars)))
+                            (append vars (when campaign (mail-campaign-vars campaign))))))
         (host (ensure-host host)))
     (handler-case
         (send host address
