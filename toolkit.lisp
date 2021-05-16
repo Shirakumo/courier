@@ -68,7 +68,7 @@
     (encrypt (format NIL "~a/~a~{~@[ ~a~]~}" hash id ids))))
 
 (defun decode-id (thing)
-  (let* ((string (decrypt thing))
+  (let* ((string (decrypt (cl-ppcre:regex-replace-all " " thing "+")))
          (slashpos (position #\/ string))
          (buffer (make-string-output-stream))
          (results ()))
