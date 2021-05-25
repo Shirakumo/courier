@@ -22,7 +22,7 @@
                :sort '((time :desc)) :amount amount :skip skip))
       (subscriber
        (fixup-ids (dm:get (rdb:join (mail _id) (mail-log mail)) (query (:= 'subscriber (dm:id thing)))
-                          :sort '(("send-time" :desc)) :hull 'mail)
+                          :sort '(("time" :desc)) :hull 'mail)
                   "mail"))
       (feed
        (fixup-ids (dm:get (rdb:join (mail _id) (feed-entry mail)) (query (:= 'feed (dm:id thing)))
