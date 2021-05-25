@@ -66,9 +66,18 @@
       }
       .main img{
           margin: 10px auto;
+          display: block;
       }
       img{
           max-width: 100%;
+      }
+      .youtube{
+          position: relative;
+          display: block;
+      }
+      .youtube .overlay{
+          position: absolute;
+          left: 0; right: 0; bottom: 0; top: 0;
       }
       a.button{
           display: block;
