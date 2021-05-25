@@ -23,6 +23,16 @@
         Edit
       </a>
     </nav>
+    <div class="panel wide mail-info">
+      <div class="row">
+        <label>Tags:</label>
+        <ul class="tags" iterate="(** :tags)">
+          <li class="tag">
+            <a @href="courier/campaign/{0}/tag/{1} (** :campaign) _id" lquery="(text title)">Tag</a>
+          </li>
+        </ul>
+      </div>
+    </div>
     <div class="panel wide mail-preview">
       <iframe @src="courier/api/courier/mail/preview?mail={0} _id"></iframe>
     </div>

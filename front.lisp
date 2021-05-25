@@ -141,7 +141,8 @@
                  :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
                  :up-text (dm:field campaign "title")
                  :campaign (ensure-campaign (dm:field mail "campaign"))
-                 :mail mail)))
+                 :mail mail
+                 :tags (list-tags mail))))
 
 (define-page mail-new ("courier/^campaign/([^/]+)/mail/new$" 1) (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
