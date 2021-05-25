@@ -32,6 +32,7 @@
 (defun delete-tag (tag)
   (db:with-transaction ()
     (db:remove 'tag-table (db:query (:= 'tag (dm:id tag))))
+    (db:remove 'mail-tag-table (db:query (:= 'tag (dm:id tag))))
     (delete-triggers-for tag)
     (dm:delete tag)))
 
@@ -42,26 +43,58 @@
        (dm:get 'tag (query (:= 'campaign (dm:id thing)))
                :sort '((title :asc)) :amount amount :skip skip))
       (subscriber
-       (fixup-ids (dm:get (rdb:join (tag _id) (tag-table tag)) (query (:= 'subscriber (dm:id thing)))
+       (fixup-ids (dm:get (rdb:join (tag _id) (tag-table tag)) (db:query (:= 'subscriber (dm:id thing)))
+                          :sort '((title :asc)) :amount amount :skip skip :hull 'tag)
+                  "tag"))
+      (mail
+       (fixup-ids (dm:get (rdb:join (tag _id) (mail-tag-table tag)) (db:query (:= 'mail (dm:id thing)))
                           :sort '((title :asc)) :amount amount :skip skip :hull 'tag)
                   "tag")))))
 
-(defun tagged-p (tag subscriber)
-  (< 0 (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id subscriber))
-                                            (:= 'tag (ensure-id tag)))))))
+(defun list-tagged (tag type &key amount (skip 0))
+  (ecase type
+    (subscriber
+     (fixup-ids
+      (dm:get (rdb:join (subscriber _id) (tag-table subscriber)) (db:query (:= 'tag (dm:id tag)))
+              :sort '((signup-time :DESC)) :amount amount :skip skip :hull 'subscriber)
+      "subscriber"))
+    (mail
+     (fixup-ids
+      (dm:get (rdb:join (mail _id) (mail-tag-table mail)) (db:query (:= 'tag (dm:id tag)))
+              :sort '((time :DESC)) :amount amount :skip skip :hull 'mail)
+      "mail"))))
 
-(defun tag (subscriber tag)
+(defun tagged-p (tag thing)
+  (< 0 (ecase (dm:collection thing)
+         (subscriber
+          (db:count 'tag-table (db:query (:and (:= 'subscriber (ensure-id thing))
+                                               (:= 'tag (ensure-id tag))))))
+         (mail
+          (db:count 'mail-tag-table (db:query (:and (:= 'mail (ensure-id thing))
+                                                    (:= 'tag (ensure-id tag)))))))))
+
+(defun tag (thing tag)
   (db:with-transaction ()
     (let ((tag (ensure-tag tag)))
-      (unless (tagged-p tag subscriber)
-        (db:insert 'tag-table `(("tag" . ,(ensure-id tag))
-                                ("subscriber" . ,(ensure-id subscriber))))
-        (process-triggers subscriber tag)))))
+      (unless (tagged-p tag thing)
+        (ecase (dm:collection thing)
+          (subscriber
+           (db:insert 'tag-table `(("tag" . ,(ensure-id tag))
+                                   ("subscriber" . ,(ensure-id thing))))
+           (process-triggers thing tag))
+          (mail
+           (db:insert 'mail-tag-table `(("tag" . ,(ensure-id tag))
+                                        ("mail" . ,(ensure-id thing))))))))))
 
-(defun untag (subscriber tag)
+(defun untag (thing tag)
   (db:with-transaction ()
     (let ((tag (ensure-tag tag)))
-      (when (tagged-p tag subscriber)
-        (db:remove 'tag-table (db:query (:and (:= 'tag (ensure-id tag))
-                                              (:= 'subscriber (ensure-id subscriber)))))
-        (process-triggers subscriber (list-source-triggers tag :type 20))))))
+      (when (tagged-p tag thing)
+        (ecase (dm:collection thing)
+          (subscriber
+           (db:remove 'tag-table (db:query (:and (:= 'tag (ensure-id tag))
+                                                 (:= 'subscriber (ensure-id thing)))))
+           (process-triggers thing (list-source-triggers tag :type 20)))
+          (mail
+           (db:remove 'mail-tag-table (db:query (:and (:= 'tag (ensure-id tag))
+                                                      (:= 'mail (ensure-id thing)))))))))))

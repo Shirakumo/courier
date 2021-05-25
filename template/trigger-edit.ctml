@@ -41,6 +41,7 @@
             <option value="10">unlock mail</option>
             <option value="2">assign tag</option>
             <option value="20">remove tag</option>
+            <option value="21">unlock tagged</option>
             <option value="4">unsubscribe</option>
           </select>
           <input type="courier-id" name="target-id" required lquery="(val target-id)" placeholder="id" />

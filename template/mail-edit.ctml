@@ -53,6 +53,33 @@
           </div>
         </c:else>
       </c:if>
+      <div class="row" title="The tags the mail has been assigned.">
+        <label>Tags</label>
+        <div class="tag-list">
+          <ul class="tags">
+            <li class="tag template">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
+              </a>
+              <input type="hidden" data-name="tag[]"/>
+              <span class="title">Tag</span>
+            </li>
+            <c:splice iterate="(** :tags)">
+              <li class="tag">
+                <a class="button remove-self">
+                  <i class="fas fa-trash"></i>
+                </a>
+                <input type="hidden" name="tag[]" lquery="(val _id)"/>
+                <span class="title" lquery="(text title)">Tag</span>
+              </li>
+            </c:splice>
+          </ul>
+          <select iterate="(** :all-tags)">
+            <option lquery="(val _id) (text title)">Tag</option>
+          </select>
+          <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> Add Tag</a>
+        </div>
+      </div>
       <div class="row big">
         <label for="body">Body:</label>
         <div class="editor" data-preview-endpoint="mail/preview" lquery="(data :type (courier::id-mail-type type))">

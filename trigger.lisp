@@ -35,21 +35,21 @@
                                    (:= 'source-type type)))
           :amount amount :skip skip))
 
-(defun make-trigger (campaign source target &key description (delay 0) tag-constraint rule (save T))
+(defun make-trigger (campaign source target &key source-type target-type description (delay 0) tag-constraint rule (save T))
   (dm:with-model trigger ('trigger NIL)
     (setf-dm-fields trigger campaign description delay tag-constraint rule)
     (setf (dm:field trigger "normalized-constraint") (normalize-constraint campaign (or tag-constraint "")))
     (setf (dm:field trigger "source-id") (dm:id source))
-    (setf (dm:field trigger "source-type") (collection-type source))
+    (setf (dm:field trigger "source-type") (or source-type (collection-type source)))
     (setf (dm:field trigger "target-id") (dm:id target))
-    (setf (dm:field trigger "target-type") (collection-type target))
+    (setf (dm:field trigger "target-type") (or target-type (collection-type target)))
     (when save
       (dm:insert trigger)
       (when rule ;; Make sure we process the rule immediately.
         (process-rule trigger campaign)))
     trigger))
 
-(defun edit-trigger (trigger &key description source target delay tag-constraint (rule NIL rule-p) (save T))
+(defun edit-trigger (trigger &key description source target source-type target-type delay tag-constraint (rule NIL rule-p) (save T))
   (db:with-transaction ()
     (setf-dm-fields trigger description delay tag-constraint)
     (when rule-p
@@ -58,10 +58,10 @@
       (setf (dm:field trigger "normalized-constraint") (normalize-constraint (dm:field trigger "campaign") tag-constraint)))
     (when source
       (setf (dm:field trigger "source-id") (dm:id source))
-      (setf (dm:field trigger "source-type") (collection-type source)))
+      (setf (dm:field trigger "source-type") (or source-type (collection-type source))))
     (when target
       (setf (dm:field trigger "target-id") (dm:id target))
-      (setf (dm:field trigger "target-type") (collection-type target))
+      (setf (dm:field trigger "target-type") (or target-type (collection-type target)))
       ;; Our action changed, clear trigger receipt table to ensure the rule stays consistent
       ;; and performs its action again for all applicable. This is fine even if it would cause
       ;; duplicate fires since we prevent double-tagging or double-mailing already anyway.
@@ -205,7 +205,9 @@
           (tag
            (ecase (dm:field trigger "target-type")
              (2 (tag subscriber target))
-             (20 (untag subscriber target))))
+             (20 (untag subscriber target))
+             (21 (dolist (mail (list-tagged target 'mail))
+                   (mark-mail-sent mail subscriber :unlocked)))))
           (campaign
            (edit-subscriber subscriber :status :deactivated))))
       (unless (trigger-triggered-p trigger subscriber)

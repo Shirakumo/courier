@@ -296,7 +296,7 @@ class Courier{
             var typeName =
                  (type.value == "0"||type.value == "10")? "mail"
                 :(type.value == "1")? "link"
-                :(type.value == "2")? "tag"
+                :(["2","20","21"].includes(type.value))? "tag"
                 :(type.value == "3")? "subscriber"
                 :(type.value == "4")? "campaign"
                 :(type.value == "5")? "file"

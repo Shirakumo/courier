@@ -149,7 +149,8 @@
                  (@template "mail-edit.ctml")
                  :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
                  :up-text (dm:field campaign "title")
-                 :mail (make-mail campaign :save NIL))))
+                 :mail (make-mail campaign :save NIL)
+                 :all-tags (list-tags campaign))))
 
 (define-page mail-edit "courier/^campaign/([^/]+)/mail/([^/]+)/edit$" (:uri-groups (campaign mail) :access (perm courier user))
   (let ((campaign (ensure-campaign campaign))
@@ -158,7 +159,9 @@
                  (@template "mail-edit.ctml")
                  :up (url> (format NIL "courier/campaign/~a/mail/~a" (dm:field campaign "title") (dm:id mail)))
                  :up-text (dm:field mail "title")
-                 :mail mail)))
+                 :mail mail
+                 :tags (list-tags mail)
+                 :all-tags (list-tags campaign))))
 
 (define-page mail-send "courier/^campaign/([^/]+)/mail/([^/]+)/send$" (:uri-groups (campaign mail) :access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail)))

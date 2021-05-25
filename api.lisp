@@ -252,14 +252,15 @@
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
     (api-output (list-mails campaign :amount (int* amount) :skip (int* skip 0) :query (or* query)))))
 
-(define-api courier/mail/new (campaign title subject body &optional type send) (:access (perm courier user))
+(define-api courier/mail/new (campaign title subject body &optional type send tag[]) (:access (perm courier user))
   (check-title title)
   (db:with-transaction ()
     (let* ((campaign (check-accessible (ensure-campaign (db:ensure-id campaign)) :target 'mail))
            (type (cond ((or (null type) (string= type "markless")) :markless)
                        ((string= type "text") :text)
                        ((string= type "html") :html)))
-           (mail (make-mail campaign :title title :subject subject :body body :type type)))
+           (tags (mapcar #'ensure-tag tag[]))
+           (mail (make-mail campaign :title title :subject subject :body body :type type :tags tags)))
       ;; Compile template once to check for validity
       (compile-mail-content campaign mail (campaign-author campaign))
       ;; Make sure we wake up the task in a bit from now to account for
@@ -267,15 +268,16 @@
       (when send (enqueue-mail mail :time (+ (get-universal-time) 10)))
       (output mail "Mail created." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
 
-(define-api courier/mail/edit (mail &optional title subject body type) (:access (perm courier user))
+(define-api courier/mail/edit (mail &optional title subject body type tag[]) (:access (perm courier user))
   (check-title title)
   (db:with-transaction ()
     (let* ((mail (check-accessible (ensure-mail mail)))
            (type (cond ((string= type "markless") :markless)
                        ((string= type "text") :text)
                        ((string= type "html") :html)))
-           (campaign (ensure-campaign (dm:field mail "campaign"))))
-      (edit-mail mail :title title :subject subject :body body :type type)
+           (campaign (ensure-campaign (dm:field mail "campaign")))
+           (tags (mapcar #'ensure-tag tag[])))
+      (edit-mail mail :title title :subject subject :body body :type type :tags tags)
       ;; Compile template once to check for validity
       (try-compile-content campaign mail (campaign-author campaign))
       (output mail "Mail edited." "courier/campaign/~a/mail/" (dm:field mail "campaign")))))
@@ -384,6 +386,8 @@
         (target (check-accessible (resolve-typed target-type target-id)))
         (rule (not (or (null rule) (string= "" rule) (string-equal "false" rule)))))
     (let ((trigger (make-trigger campaign source target
+                                 a:source-type (parse-integer source-type)
+                                 :target-type (parse-integer target-type)
                                  :description description :delay (parse-integer delay)
                                  :tag-constraint tag-constraint :rule rule)))
       (output trigger "Trigger created." "courier/campaign/~a/trigger" (dm:field trigger "campaign")))))
@@ -394,9 +398,12 @@
         (target (check-accessible (resolve-typed target-type target-id))))
     (if rule
         (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
-                              :source source :target target :rule (string-equal rule "true"))
+                              :source source :source-type (parse-integer source-type)
+                              :target target :target-type (parse-integer target-type)
+                              :rule (string-equal rule "true"))
         (edit-trigger trigger :description description :delay (when delay (parse-integer delay)) :tag-constraint tag-constraint
-                              :source source :target target))
+                              :source source :source-type (parse-integer source-type)
+                              :target target :target-type (parse-integer target-type)))
     (output trigger "Trigger edited." "courier/campaign/~a/trigger" (dm:field trigger "campaign"))))
 
 (define-api courier/trigger/delete (trigger) (:access (perm courier user))

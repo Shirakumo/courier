@@ -104,6 +104,11 @@
                (subscriber (:id subscriber)))
              :indices '(tag subscriber))
 
+  (db:create 'mail-tag-table
+             '((tag (:id tag))
+               (mail (:id mail)))
+             :indices '(tag mail))
+
   (db:create 'link
              '((campaign (:id campaign))
                (hash (:varchar 44))
@@ -189,7 +194,7 @@
   (ecase type
     ((0 10 mail) 'mail)
     ((1 link) 'link)
-    ((2 20 tag) 'tag)
+    ((2 20 21 tag) 'tag)
     ((3 subscriber) 'subscriber)
     ((4 campaign) 'campaign)
     ((5 file) 'file)

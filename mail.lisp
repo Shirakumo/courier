@@ -29,22 +29,35 @@
                           :sort '(("time" :desc)) :hull 'mail)
                   "mail")))))
 
-(defun make-mail (campaign &key title subject body (time (get-universal-time)) (type :markless) (save T))
+(defun make-mail (campaign &key title subject body (time (get-universal-time)) tags (type :markless) (save T))
   (let ((campaign (ensure-campaign campaign)))
     (dm:with-model mail ('mail NIL)
       (setf-dm-fields mail title subject body campaign)
       (setf (dm:field mail "time") time)
       (setf (dm:field mail "type") (mail-type-id type))
       (when save
-        (dm:insert mail))
+        (dm:insert mail)
+        (loop for tag in tags
+              do (tag mail tag)))
       mail)))
 
-(defun edit-mail (mail &key title subject body type (save T))
+(defun edit-mail (mail &key title subject body type (tags NIL tags-p) (save T))
   (let ((mail (ensure-mail mail)))
     (setf-dm-fields mail title subject body)
     (when type
       (setf (dm:field mail "type") (mail-type-id type)))
-    (when save (dm:save mail))
+    (when save
+      (dm:save mail)
+      (when tags-p
+        (let ((existing (list-tags mail)))
+          (loop for tag-ish in tags
+                for tag = (ensure-tag tag-ish)
+                for found = (find (dm:id tag) existing :key #'dm:id :test #'equal)
+                do (if found
+                       (setf existing (delete found existing))
+                       (tag mail tag)))
+          (loop for tag in existing
+                do (untag mail tag)))))
     mail))
 
 (defun delete-mail (mail)
