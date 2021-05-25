@@ -33,6 +33,7 @@
     </nav>
     <div class="panel wide">
       <h2>About</h2>
+      <img class="gravatar" alt="Avatar" lquery="(attr :src (courier::gravatar address :size 128))">
       <div class="row">
         <label>Name:</label>
         <span lquery="(text name)">Name</span>
