@@ -386,7 +386,7 @@
         (target (check-accessible (resolve-typed target-type target-id)))
         (rule (not (or (null rule) (string= "" rule) (string-equal "false" rule)))))
     (let ((trigger (make-trigger campaign source target
-                                 a:source-type (parse-integer source-type)
+                                 :source-type (parse-integer source-type)
                                  :target-type (parse-integer target-type)
                                  :description description :delay (parse-integer delay)
                                  :tag-constraint tag-constraint :rule rule)))

@@ -131,7 +131,7 @@
            :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
            :up-text (dm:field campaign "title")
            :campaign campaign
-           (pageinated-args (format NIL "courier/campaign/~a" (dm:field campaign "title")) #'list-mails campaign))))
+           (pageinated-args (format NIL "courier/campaign/~a/mail" (dm:field campaign "title")) #'list-mails campaign))))
 
 (define-page mail-overview "courier/^campaign/([^/]+)/mail/([^/]+)/?$" (:uri-groups (campaign mail) :access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail) :target 0))
