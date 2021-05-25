@@ -323,9 +323,10 @@
 (define-api courier/mail/open-rate (mail) (:access (perm courier user))
   (let* ((mail (check-accessible (ensure-mail mail)))
          (opened (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail)))))
-         (sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail))))))
-    (api-output (mktable "labels" '("Opened" "Unopened")
-                         "points" (list opened (- sent opened))))))
+         (sent (db:count 'mail-log (db:query (:and (:= 'mail (dm:id mail)) (:= 'status 0)))))
+         (unlocked (db:count 'mail-log (db:query (:and (:= 'mail (dm:id mail)) (:= 'status 1))))))
+    (api-output (mktable "labels" '("Opened" "Unlocked" "Unsent")
+                         "points" (list opened (- unlocked opened) (- sent unlocked opened))))))
 
 (define-api courier/tag (tag) (:access (perm courier user))
   (api-output (check-accessible (ensure-tag tag))))

@@ -102,7 +102,7 @@
     (mail
      (db:count 'mail-log (db:query (:= 'mail (dm:id thing)))))
     (subscriber
-     (db:count 'mail-log (db:query (:= 'subscriber (dm:id thing)))))))
+     (db:count 'mail-log (db:query (:and (:= 'subscriber (dm:id thing)) (:= 'status 0)))))))
 
 (defun mark-mail-received (mail subscriber)
   (db:with-transaction ()
