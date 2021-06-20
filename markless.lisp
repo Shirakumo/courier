@@ -29,8 +29,9 @@
    :compound-options (list* 'mail-option 'tag-option 'button-option markless:*default-compound-options*)))
 
 (defun make-link* (f url)
-  ;; Do not encode links that are already pointing to Courier.
+  ;; Do not encode links that are already pointing to Courier or are mailto links.
   (if (or (search (url> "courier/") url)
+          (eql 0 (search "mailto:" url))
           (null (campaign f))
           (null (subscriber f)))
       url
