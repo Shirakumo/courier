@@ -35,6 +35,10 @@
       <h2>About</h2>
       <img class="gravatar" alt="Avatar" lquery="(attr :src (courier::gravatar address :size 128))">
       <div class="row">
+        <label>Avatar:</label>
+        <img class="gravatar" alt="Avatar" lquery="(attr :src (courier::gravatar address))"/>
+      </div>
+      <div class="row">
         <label>Name:</label>
         <span lquery="(text name)">Name</span>
       </div>
