@@ -70,4 +70,4 @@
              default)))))
 
 (defun list-pool-entries (pool)
-  (dm:get 'pool-entry (db:query (:= 'pool (dm:id (ensure-pool pool)))) :sort '((claimant :asc))))
+  (dm:get 'pool-entry (db:query (:= 'pool (dm:id (ensure-pool pool)))) :sort '((claimant :desc) (content :asc))))
