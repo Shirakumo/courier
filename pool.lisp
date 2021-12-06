@@ -52,13 +52,16 @@
 
 (defun claim-pool-entry (pool subscriber &key entry default)
   (db:with-transaction ()
-    (let ((pool (ensure-pool pool))
-          (subscriber (ensure-subscriber subscriber)))
-      (unless entry
-        (setf entry (or (dm:get-one 'pool-entry (db:query (:and (:= 'pool (dm:id pool))
-                                                                (:= 'claimant (dm:id subscriber)))))
-                        (dm:get-one 'pool-entry (db:query (:and (:= 'pool (dm:id pool))
-                                                                (:null 'claimant)))))))
+    (let* ((pool (ensure-pool pool))
+           (subscriber (ensure-subscriber subscriber))
+           (entry (if entry
+                      (etypecase entry
+                        (dm:data-model entry)
+                        (db:id (dm:get-one 'pool-entry (db:query (:and (:= 'pool (dm:id pool)) (:= '_id entry))))))
+                      (or (dm:get-one 'pool-entry (db:query (:and (:= 'pool (dm:id pool))
+                                                                  (:= 'claimant (dm:id subscriber)))))
+                          (dm:get-one 'pool-entry (db:query (:and (:= 'pool (dm:id pool))
+                                                                  (:null 'claimant))))))))
       (cond (entry
              (setf (dm:field entry "claimant") (dm:id subscriber))
              (dm:save entry)

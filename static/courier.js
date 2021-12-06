@@ -38,6 +38,7 @@ class Courier{
         var self = this;
         self.registerAll(element, ".type-select", self.registerTypeSelect);
         self.registerAll(element, ".button.confirm", self.registerConfirm);
+        self.registerAll(element, ".button.assign-flow", self.registerAssignFlow);
         self.registerAll(element, ".editor", self.registerEditor);
         self.registerAll(element, ".chart", self.registerChart);
         self.registerAll(element, "form", self.registerForm);
@@ -276,6 +277,27 @@ class Courier{
                 ev.preventDefault();
                 return false;
             }
+        });
+    }
+
+    registerAssignFlow(element){
+        var self = this;
+        let campaign = element.closest("[data-campaign]").dataset.campaign;
+        let pool = element.closest("[data-pool]").dataset.pool;
+        element.addEventListener("click", (ev)=>{
+            var el = self.showPopup(self.constructElement("form",{
+                attributes: {method: "post", action: self.apiRoot+"pool/entry/assign"},
+                classes: ["pool","assign"],
+                elements: [
+                    {tag: "select", attributes: {name:"subscriber"}},
+                    {tag: "input", attributes: {type: "hidden", name: "entry", value: element.dataset.id}},
+                    {tag: "input", attributes: {type: "hidden", name: "pool", value: pool}},
+                    {tag: "input", attributes: {type: "hidden", name: "browser", value: "true"}},
+                    {tag: "input", attributes: {type: "submit", class:"upload", value: "Assign"}}
+                ]
+            }));
+            var select = el.querySelector("select");
+            self.getListed("subscriber", campaign).then((data)=>self.populateSelect(select, data));
         });
     }
 

@@ -652,6 +652,11 @@
     (db:remove 'pool-entry (db:query (:and (:= 'pool (dm:id pool)) (:= '_id (db:ensure-id entry)))))
     (output NIL "Pool entry deleted." "courier/campaign/~a/pool/~a" (dm:field pool "campaign") (dm:id pool))))
 
+(define-api courier/pool/entry/assign (pool entry subscriber) (:access (perm courier user))
+  (let ((pool (check-accessible (ensure-pool pool))))
+    (claim-pool-entry pool subscriber :entry (db:ensure-id entry))
+    (output NIL "Pool entry assigned." "courier/campaign/~a/pool/~a" (dm:field pool "campaign") (dm:id pool))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 

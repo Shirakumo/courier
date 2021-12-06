@@ -13,7 +13,7 @@
   </c:using>
   <div class="panel wide">
     <h2>Entries</h2>
-    <ul class="entries" iterate="entries">
+    <ul class="entries" iterate="entries" lquery="(data :campaign (dm:id campaign) :pool (dm:id pool))">
       <li class="entry">
         <c:if test="claimant">
           <c:then>
@@ -28,6 +28,10 @@
           <span class="dropdown">
             Actions <i class="fas fa-caret-down"></i>
           </span>
+          <a class="button assign-flow" lquery="(data :id _id)">
+            <i class="fas fa-user-tag"></i>
+            Assign
+          </a>
           <a class="button confirm" href="#" @href="courier/api/courier/pool/entry/delete?entry={0}&pool={1}&browser=true _id pool">
             <i class="fas fa-trash"></i>
             Delete
