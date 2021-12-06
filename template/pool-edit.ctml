@@ -1,0 +1,48 @@
+<article class="page pool edit">
+  <c:using value="pool">
+    <form method="post">
+      <div class="row">
+        <label for="host">Campaign:</label>
+        <input type="hidden" name="campaign" lquery="(val campaign)" />
+        <input type="text" readonly
+               id="campaign" lquery="(val (clip (courier::ensure-campaign campaign) :title))" />
+      </div>
+      <div class="row" title="The title of the pool. This is an internal detail.">
+        <label for="title">Title:</label>
+        <input type="text" minlength="1" maxlength="32" required autofocus autocomplete="off"
+               id="title" name="title" lquery="(val title)" />
+      </div>
+      <div class="row" title="The description of the pool.">
+        <label for="url">Description:</label>
+        <textarea id="description" name="description" lquery="(text description)"></textarea>
+      </div>
+      <div class="row dynamic-list auto-csv" title="Entries to add to the pool">
+        <label for="entries">Entries:</label>
+        <div>
+          <ul class="entries">
+            <li class="entry template">
+              <a class="button remove-self">
+                <i class="fas fa-trash"></i>
+              </a>
+              <textarea placeholder="Content" minlength="1" maxlength="32" data-name="entry[]"></textarea>
+            </li>
+          </ul>
+          <a class="button new"><i class="fas fa-fw fa-plus-circle"></i> New Entry</a>
+        </div>
+      </div>
+      <input type="hidden" name="browser" value="true" />
+      <div class="row">
+        <c:if test="_id">
+          <c:then>
+            <input type="hidden" name="pool" lquery="(val _id)" />
+            <input type="submit" value="Save Changes" @formaction="courier/api/courier/pool/edit" />
+            <input type="submit" class="delete" value="Delete" @formaction="courier/api/courier/pool/delete" />
+          </c:then>
+          <c:else>
+            <input type="submit" value="Create Pool" @formaction="courier/api/courier/pool/new" />
+          </c:else>
+        </c:if>
+      </div>
+    </form>
+  </c:using>
+</article>

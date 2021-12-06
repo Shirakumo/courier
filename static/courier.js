@@ -324,21 +324,37 @@ class Courier{
 
     registerDynamicList(element){
         var self = this;
-        var reg = (element)=>{
-            self.registerElements(element);
-            var remove = element.querySelector(".remove-self");
+        var autoCSV = element.classList.contains("auto-csv");
+        var make = ()=>{
+            let copy = self.instantiateTemplate(element);
+            element.querySelector("ul").appendChild(reg(copy));
+            return copy;
+        };
+        var reg = (subelement)=>{
+            self.registerElements(subelement);
+            var remove = subelement.querySelector(".remove-self");
             if(remove)
                 remove.addEventListener("click",()=>{
                     element.parentNode.removeChild(element);
                 });
-            return element;
+            if(autoCSV){
+                let text = subelement.querySelector("textarea");
+                text.addEventListener("paste", (ev)=>{
+                    let paste = (ev.clipboardData || window.clipboardData).getData('text');
+                    let lines = paste.split(/\r?\n/);
+                    text.innerText = lines[0];
+                    for(let i=1; i<lines.length; ++i){
+                        make().querySelector("textarea").innerText = lines[i];
+                    }
+                    ev.preventDefault();
+                });
+            }
+            return subelement;
         };
         [].forEach.call(element.querySelectorAll("li"), (el)=>{
             if(!el.classList.contains("template")) reg(el);
         });
-        element.querySelector("a.new").addEventListener("click",()=>{
-            element.querySelector("ul").appendChild(reg(self.instantiateTemplate(element)));
-        });
+        element.querySelector("a.new").addEventListener("click",make);
     }
 
     registerTags(element){

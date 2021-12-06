@@ -218,12 +218,18 @@
    (.row.big
     :flex-direction column)
    (.row.dynamic-list
-    (>ul
+    (ul
      :list-style none
      :margin 0
      :padding 0
      (>li
-      :margin 0.2em 0)))
+      :margin 0.2em 0
+      :display flex
+      (textarea
+       :box-sizing border-box
+       :display block
+       :flex-grow 1
+       :height 2em))))
    (.template :display none !important)
    (input
     :position relative)
@@ -293,6 +299,22 @@
       :padding 0.1em 0.2em
       :margin 0 0.1em
       :border-radius 0.3em))))
+
+  (.page.pool.overview
+   (ul.entries
+    :border-left 2px solid (hex AAAAAA)
+    :list-style none
+    :margin 0 0 1em 0
+    :padding 0 0 0 1em
+    :display table
+    (li
+     :display table-row
+     (>* :display table-cell)
+     :align-items center
+     (.claimant :min-width 10em)
+     (.content :width 100%)
+     (.actions :white-space nowrap :text-align right
+               (.dropdown :display none)))))
   
   (.page.subscriber.list
    (time :margin 0 0.2em)

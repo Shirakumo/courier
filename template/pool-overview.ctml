@@ -1,0 +1,39 @@
+<article class="page pool overview">
+  <c:using value="pool">
+    <nav class="panel wide">
+      <a class="button" href="#" @href="courier/campaign/{0}/pool/{1}/edit campaign _id">
+        <i class="fas fa-fw fa-edit"></i>
+        Edit
+      </a>
+      <a class="button confirm" href="#" @href="courier/api/courier/pool/delete?pool={0} _id">
+        <i class="fas fa-fw fa-trash"></i>
+        Delete
+      </a>
+    </nav>
+  </c:using>
+  <div class="panel wide">
+    <h2>Entries</h2>
+    <ul class="entries" iterate="entries">
+      <li class="entry">
+        <c:if test="claimant">
+          <c:then>
+            <a class="claimant" @href="courier/campaign/{0}/subscriber/{1} (** :campaign) claimant" lquery="(text (clip:clip (courier::ensure-subscriber claimant) :address))">Claimant</a>
+          </c:then>
+          <c:else>
+            <span class="claimant">Unclaimed</span>
+          </c:else>
+        </c:if>
+        <span class="content" lquery="(text content)">Content</span>
+        <nav class="actions">
+          <span class="dropdown">
+            Actions <i class="fas fa-caret-down"></i>
+          </span>
+          <a class="button confirm" href="#" @href="courier/api/courier/pool/entry/delete?entry={0}&pool={1}&browser=true _id pool">
+            <i class="fas fa-trash"></i>
+            Delete
+          </a>
+        </nav>
+      </li>
+    </ul>
+  </div>
+</article>

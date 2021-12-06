@@ -1,0 +1,43 @@
+<article class="page pool list">
+  <nav class="pageination">
+    <c:when test="prev-page">
+      <a class="button" href="#" lquery="(attr :href prev-page)">
+        <i class="fas fa-arrow-left"></i>
+        Prev page
+      </a>
+    </c:when>
+    <c:when test="next-page">
+      <a class="button" href="#" lquery="(attr :href next-page)">
+        <i class="fas fa-arrow-right"></i>
+        Next page
+      </a>
+    </c:when>
+  </nav>
+  <form class="search" @action="courier/campaign/{0}/pool/ (clip campaign :title)">
+    <input type="search" name="query" placeholder="Search..." autofocus lquery='(val (post/get "query"))' />
+    <input type="submit" value="Go" />
+  </form>
+  <ul class="pool" iterate="list">
+    <li class="pool">
+      <a class="title" @href="courier/campaign/{0}/pool/{1} campaign _id" lquery="(text title)">Pool</a>
+      <span class="url" lquery="(text url)">url</span>
+      <nav class="actions">
+        <span class="dropdown">
+          Actions <i class="fas fa-caret-down"></i>
+        </span>
+        <a class="button" href="#" @href="courier/campaign/{0}/pool/{1}/edit campaign _id">
+          <i class="fas fa-edit"></i>
+          Edit
+        </a>
+        <a class="button confirm" href="#" @href="courier/api/courier/pool/delete?pool={0}&browser=true _id">
+          <i class="fas fa-trash"></i>
+          Delete
+        </a>
+      </nav>
+    </li>
+  </ul>
+  <a class="button" href="#" @href="courier/campaign/{0}/pool/new (clip campaign :title)">
+    <i class="fas fa-plus-circle"></i>
+    New Pool
+  </a>
+</article>

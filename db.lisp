@@ -168,7 +168,17 @@
   (db:create 'feed-entry
              '((feed (:id feed))
                (mail (:id mail))
-               (guid (:varchar 256)))))
+               (guid (:varchar 256))))
+
+  (db:create 'pool
+             '((campaign (:id campaign))
+               (title (:varchar 32))
+               (description :text)))
+
+  (db:create 'pool-entry
+             '((pool (:id pool))
+               (content :text)
+               (claimant (:id subscriber)))))
 
 (defun ensure-id (id-ish)
   (etypecase id-ish
@@ -188,7 +198,8 @@
     (file 5)
     (sequence 6)
     (trigger 7)
-    (host 8)))
+    (host 8)
+    (pool 9)))
 
 (defun type-collection (type)
   (ecase type
@@ -200,7 +211,8 @@
     ((5 file) 'file)
     ((6 sequence) 'sequence)
     ((7 trigger) 'trigger)
-    ((8 host) 'host)))
+    ((8 host) 'host)
+    ((9 pool) 'pool)))
 
 (defun resolve-typed (type id)
   (let ((id (db:ensure-id id)))
@@ -235,7 +247,7 @@
        (check (dm:field dm "author")))
       (campaign
        (check-campaign dm))
-      ((mail tag trigger link subscriber file sequence feed)
+      ((mail tag trigger link subscriber file sequence feed pool)
        (check-campaign (dm:field dm "campaign"))))
     dm))
 
@@ -258,7 +270,8 @@
         (set-bit (collection-type 'tag))
         (set-bit (collection-type 'trigger))
         (set-bit (collection-type 'sequence))
-        (set-bit (collection-type 'feed)))
+        (set-bit (collection-type 'feed))
+        (set-bit (collection-type 'pool)))
       (when (< 2 access-level)
         (set-bit (collection-type 'subscriber)))
       (when (< 3 access-level)

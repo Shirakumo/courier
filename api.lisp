@@ -623,6 +623,35 @@
     (setf (content-type *response*) "text/html; encoding=utf-8")
     (try-compile-content campaign mail (campaign-author campaign))))
 
+(define-api courier/pool (pool) (:access (perm courier user))
+  (let ((pool (check-accessible (ensure-pool pool))))
+    (setf (dm:field pool "entries") (db:select 'pool-entry (db:query (:= 'pool (dm:id pool)))))
+    (api-output pool)))
+
+(define-api courier/pool/list (campaign &optional amount skip) (:access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'pool)))
+    (api-output (list-pools campaign :amount (int* amount) :skip (int* skip 0)))))
+
+(define-api courier/pool/new (campaign title &optional description entry[]) (:access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'pool))
+        (pool (make-pool campaign title :description description :entries entry[])))
+    (output pool "Pool created." "courier/campaign/~a/pool" (dm:id campaign))))
+
+(define-api courier/pool/edit (pool &optional title description entry[]) (:access (perm courier user))
+  (let ((pool (check-accessible (ensure-pool pool))))
+    (edit-pool pool :title title :description description :entries entry[])
+    (output pool "Pool edited." "courier/campaign/~a/pool/~a" (dm:field pool "campaign") (dm:id pool))))
+
+(define-api courier/pool/delete (pool) (:access (perm courier user))
+  (let ((pool (check-accessible (ensure-pool pool))))
+    (delete-pool pool)
+    (output NIL "Pool deleted." "courier/campaign/~a/pool" (dm:field pool "campaign"))))
+
+(define-api courier/pool/entry/delete (pool entry) (:access (perm courier user))
+  (let ((pool (check-accessible (ensure-pool pool))))
+    (db:remove 'pool-entry (db:query (:and (:= 'pool (dm:id pool)) (:= '_id (db:ensure-id entry)))))
+    (output NIL "Pool entry deleted." "courier/campaign/~a/pool/~a" (dm:field pool "campaign") (dm:id pool))))
+
 ;; User sections
 (defvar *tracker* (alexandria:read-file-into-byte-vector (@static "receipt.gif")))
 

@@ -48,3 +48,6 @@ An URL pointing to a page that will unsubscribe the user when clicked. Note that
 
 ### Attributes
 A campaign may define several additional attributes for the user to fill out during signup. Each of these attributes is available as a variable as well, with the variable name being the title of the attribute.
+
+### Pools
+You can also claim a pool entry for a subscriber by using a variable called ``pool-entry pool-name-or-id``. For instance, if a pool is called ``keys`` the variable would be ``pool-entry keys``. A particular subscriber can only ever claim a single entry from a pool. Repeat claims will return the same entry every time. If a pool runs out of entries, an error will be signalled during email composition.

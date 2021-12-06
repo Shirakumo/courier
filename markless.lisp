@@ -13,10 +13,15 @@
    (subscriber :initarg :subscriber :reader subscriber)))
 
 (defmethod variable-value (var (f mail-format))
-  (loop for (key val) on (vars f) by #'cddr
-        do (when (string-equal key var)
-             (return (values val T)))
-        finally (return (values NIL NIL))))
+  (if (radiance::starts-with "pool-entry " var)
+      (let* ((name (subseq var (length "pool-entry ")))
+             (entry (or (claim-pool-entry (ensure-pool name (campaign f)) (subscriber f))
+                        (error "Pool ~a has no more entries left to claim!" name))))
+        (dm:field entry "content"))
+      (loop for (key val) on (vars f) by #'cddr
+            do (when (string-equal key var)
+                 (return (values val T)))
+            finally (return (values NIL NIL)))))
 
 (defclass html-format (mail-format org.shirakumo.markless.plump:plump) ())
 (defclass plain-format (mail-format org.shirakumo.markless:markless) ())

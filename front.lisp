@@ -384,6 +384,43 @@
                  :up-text (dm:field feed "title")
                  :feed feed)))
 
+(define-page pool-list "courier/^campaign/([^/]+)/pool/?" (:uri-groups (campaign) :access (perm courier user))
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'pool)))
+    (apply #'render-page "Pools"
+           (@template "pool-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/pool" (dm:field campaign "title")) #'list-pools campaign))))
+
+(define-page pool-overview "courier/^campaign/([^/]+)/pool/([^/]+)/?" (:uri-groups (campaign pool) :access (perm courier user))
+  (let ((campaign (ensure-campaign campaign))
+        (pool (check-accessible (ensure-pool pool))))
+    (apply #'render-page (dm:field pool "title")
+           (@template "pool-overview.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           :pool pool
+           :entries (list-pool-entries pool)
+           (pageinated-args (format NIL "courier/campaign/~a/pool/~a" (dm:field campaign "title") (dm:id pool)) #'list-pools pool))))
+
+(define-page pool-new ("courier/^campaign/([^/]+)/pool/new" 1) (:uri-groups (campaign) :access (perm courier user))
+  (let* ((campaign (check-accessible (ensure-campaign campaign) :target 'pool))
+         (pool (make-pool campaign "" :save NIL)))
+    (render-page "Create Pool"
+                 (@template "pool-edit.ctml")
+                 :pool pool)))
+
+(define-page pool-edit "courier/^campaign/([^/]+)/pool/([^/+])/edit" (:uri-groups (campaign pool) :access (perm courier user))
+  (let ((campaign (ensure-campaign campaign))
+        (pool (check-accessible (ensure-pool pool))))
+    (render-page "Edit"
+                 (@template "pool-edit.ctml")
+                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+                 :up-text (dm:field pool "title")
+                 :pool pool)))
+
 (define-page mail-log "courier/^log/mail/([^/]+)" (:uri-groups (mail) :access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail))))
     (render-page "Log"
