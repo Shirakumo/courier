@@ -328,6 +328,15 @@
     (api-output (mktable "labels" '("Opened" "Unlocked" "Unsent")
                          "points" (list opened (- unlocked opened) (- sent unlocked opened))))))
 
+(define-api courier/mail/queue () (:access (perm courier host))
+  (api-output (dm:get (rdb:join (((mail-queue subscriber) (subscriber _id)) mail) (mail _id))
+                      (db:query :all)
+                      :sort '(("send-time" :desc)) :amount 100)))
+
+(define-api courier/mail/queue/wake () (:access (perm courier host))
+  (notify-task (find-task 'send-queue))
+  (output :ok "Queue woken up." "courier/queue"))
+
 (define-api courier/tag (tag) (:access (perm courier user))
   (api-output (check-accessible (ensure-tag tag))))
 
