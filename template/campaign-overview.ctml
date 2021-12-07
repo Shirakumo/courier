@@ -77,7 +77,7 @@
       <canvas></canvas>
     </form>
     <form class="panel single chart open-rate" data-type="bar" action="mail/trend">
-      <h2>Open Rate</h2>
+      <h2><a @href="courier/campaign/{0}/mail/trend _id">Open Rate</a></h2>
       <input type="hidden" name="campaign" lquery="(val _id)"/>
       <canvas></canvas>
     </form>

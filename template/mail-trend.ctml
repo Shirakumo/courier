@@ -1,0 +1,10 @@
+<article class="page campaign overview">
+  <c:using value="campaign">
+    <form class="panel wide chart open-rate" data-type="bar" action="mail/trend">
+      <h2>Open Rate</h2>
+      <input type="hidden" name="amount" value="50" />
+      <input type="hidden" name="campaign" lquery="(val _id)"/>
+      <canvas></canvas>
+    </form>
+  </c:using>
+</article>

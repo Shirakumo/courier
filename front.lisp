@@ -173,14 +173,22 @@
                  :up-text (dm:field mail "title")
                  :mail mail)))
 
+(define-page mail-trend ("courier/^campaign/([^/]+)/mail/trend$" 1) (:uri-groups (campaign)) :access (perm courier user)
+  (let ((campaign (check-accessible (ensure-campaign campaign) :target 'mail)))
+    (render-page "Mail trend"
+                 (@template "mail-trend.ctml")
+                 :campaign campaign
+                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+                 :up-text (dm:field campaign "title"))))
+
 (define-page tag-list "courier/^campaign/([^/]+)/tag/?$" (:uri-groups (campaign) :access (perm courier user))
   (let ((campaign (check-accessible (ensure-campaign campaign) :target 0)))
     (apply #'render-page "Tags"
-                 (@template "tag-list.ctml")
-                 :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
-                 :up-text (dm:field campaign "title")
-                 :campaign campaign
-                 (pageinated-args (format NIL "courier/campaign/~a/tag" (dm:field campaign "title")) #'list-tags campaign))))
+           (@template "tag-list.ctml")
+           :up (url> (format NIL "courier/campaign/~a" (dm:field campaign "title")))
+           :up-text (dm:field campaign "title")
+           :campaign campaign
+           (pageinated-args (format NIL "courier/campaign/~a/tag" (dm:field campaign "title")) #'list-tags campaign))))
 
 (define-page tag-overview "courier/^campaign/([^/]+)/tag/([^/]+)/?$" (:uri-groups (campaign tag) :access (perm courier user))
   (let ((campaign (ensure-campaign campaign))
