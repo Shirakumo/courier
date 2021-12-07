@@ -92,10 +92,11 @@
                                              (:= 'subscriber (ensure-id subscriber)))))))
 
 (defun mail-coverage (mail)
-  (let ((sent (db:count 'mail-log (db:query (:= 'mail (dm:id mail)))))
+  (let ((sent (db:count 'mail-log (db:query (:and (:= 'mail (dm:id mail))
+                                                  (:= 'status (mail-status-id :success))))))
         (read (db:count 'mail-receipt (db:query (:= 'mail (dm:id mail))))))
     (if (= 0 sent) 0
-        (/ read sent))))
+        (min 1.0 (/ read sent)))))
 
 (defun mail-sent-count (thing)
   (ecase (dm:collection thing)
