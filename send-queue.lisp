@@ -30,10 +30,10 @@
                        :argument 'target
                        :message (format NIL "Subscriber ~a is not an active subscription" (dm:field target "address")))))
            (tag
-            (mapcar #'send (db:iterate (rdb:join (tab-table subscriber) (subscriber _id))
+            (mapcar #'send (db:iterate (rdb:join (tag-table subscriber) (subscriber _id))
                              (db:query (:and (:= 'tag (dm:id target))
                                              (:= 'status (user-status-id :active))))
-                             (lambda (r) (gethash "subscriber" r) :fields '("subscriber") :accumulate T))))
+                             (lambda (r) (gethash "subscriber" r)) :fields '("subscriber") :accumulate T)))
            (campaign
             (mapcar #'send (db:iterate 'subscriber (db:query (:and (:= 'campaign (dm:id target))
                                                                    (:= 'status (user-status-id :active))))
