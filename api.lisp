@@ -206,7 +206,7 @@
            (rows (cond ((string= dataset "subscribers")
                         (let ((attributes (list-attributes campaign)))
                           (when header
-                            (setf header (list* "Name" "Email Address" "Signup Time" "Status" "Tags"
+                            (setf header (list* "Name" "Email Address" "Signup Time" "Status" "Tags" "Open Rate"
                                                 (loop for attribute in attributes collect (dm:field attribute "title")))))
                           (loop for subscriber in (list-subscribers campaign)
                                 for tags = (list-tags subscriber)
@@ -217,6 +217,9 @@
                                                (with-output-to-string (out)
                                                  (loop for tag in tags do
                                                        (format out "~a," (dm:field tag "title"))))
+                                               (let ((sent (db:count 'mail-log (db:query (:= 'subscriber (dm:id subscriber)))))
+                                                     (opened (db:count 'mail-receipt (db:query (:= 'subscriber (dm:id subscriber))))))
+                                                 (format NIL "~f" (if (< 0 sent) (* 100 (/ opened sent)) 0)))
                                                (loop for attribute in attributes
                                                      for value = (db:select 'attribute-value (db:query (:and (:= 'attribute (dm:id attribute))
                                                                                                              (:= 'subscriber (dm:id subscriber)))))
