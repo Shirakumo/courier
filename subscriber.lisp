@@ -60,7 +60,8 @@
                   do (untag subscriber tag))))
         (case status
           (:active
-           (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign"))))
+           (process-triggers subscriber (ensure-campaign (dm:field subscriber "campaign")))
+           (notify-task (find-task 'send-queue)))
           (:deactivated
            (db:remove 'mail-queue (db:query (:= 'subscriber (dm:id subscriber)))))))
       subscriber)))
