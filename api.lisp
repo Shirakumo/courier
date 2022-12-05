@@ -66,9 +66,9 @@
                                (:integer encryption batch-size batch-cooldown))
       (db:with-transaction ()
         ;; Only unconfirm the host if relevant settings about it changed.
-        (let ((same (macrolet ((same (field) `(string= ,field (dm:field host ,(string field)))))
+        (let ((same (macrolet ((same (field) `(equal ,field (dm:field host ,(string field)))))
                       (and (same address) (same hostname) (same port)
-                           (same username) (same password) (same encryption)))))
+                           (same username) (same encryption) (or (same password) (null password))))))
           (edit-host host :title title :display-name display-name :address address
                           :hostname hostname :port port :username username :password password
                           :encryption encryption :batch-size batch-size :batch-cooldown batch-cooldown
