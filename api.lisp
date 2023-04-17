@@ -298,7 +298,7 @@
 (define-api courier/mail/send (mail &optional target-type target-id time) (:access (perm courier user))
   (let ((mail (check-accessible (ensure-mail mail))))
     (when time
-      (setf time (local-time:timestamp-to-universal (local-time:parse-timestring time))))
+      (setf time (parse-time time)))
     (if (or* target-type)
         (enqueue-mail mail :target (resolve-typed target-type target-id) :time time)
         (enqueue-mail mail :time time))
