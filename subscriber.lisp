@@ -1,9 +1,3 @@
-#|
- This file is a part of Courier
- (c) 2019 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:courier)
 
 (defun make-subscriber (campaign name address &key attributes tags (status :unconfirmed) (signup-time (get-universal-time)) (save t))

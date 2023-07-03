@@ -1,9 +1,3 @@
-#|
- This file is a part of Courier
- (c) 2019 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:courier)
 
 (defun make-host (&key author title display-name address hostname port username password (encryption 1) (batch-size 10) (batch-cooldown 60) (save T))
