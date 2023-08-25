@@ -42,7 +42,7 @@
   (dm:delete queue))
 
 (defun process-send-queue-for-host (host)
-  (l:trace :courier.send-queue "Processing ~a" host)
+  (l:info :courier.send-queue "Processing mail for ~a" (dm:field host "title"))
   (let* ((host (ensure-host host))
          (timeout (- (+ (dm:field host "last-send-time")
                         (dm:field host "batch-cooldown"))
@@ -54,8 +54,8 @@
             (dolist (queue queued)
               (restart-case
                   (handler-bind ((error (lambda (e)
-                                          (l:error :courier.send-queue "Failed to send queued mail.")
-                                          (l:trace :courier.send-queue e)
+                                          (l:error :courier.send-queue "Failed to send queued mail: ~a" e)
+                                          (l:debug :courier.send-queue e)
                                           (cond (radiance:*debugger*
                                                  (invoke-debugger e))
                                                 ((< (dm:field queue "attempts") (config :send-queue :retry-attempts))
