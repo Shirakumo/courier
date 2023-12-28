@@ -86,7 +86,7 @@
     (error "The task runner is not running."))
   (bt:interrupt-thread *task-runner* (lambda () (invoke-restart 'kill))))
 
-(define-trigger (server-start start-task-runner) ()
+(define-trigger (radiance:startup-done start-task-runner) ()
   (unless (and *task-runner*
                (bt:thread-alive-p *task-runner*))
     (start-task-runner)))
