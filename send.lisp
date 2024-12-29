@@ -42,11 +42,12 @@
        :html-message html
        :extra-headers `(,@(when campaign
                             `(("X-Campaign" ,(princ-to-string campaign))
-                              ("X-campaignid" ,(princ-to-string campaign))
-                              ("List-ID" ,(princ-to-string campaign))
-                              ("Message-ID" ,(format NIL "<~a@courier.~a>"
-                                                     (hash (format NIL "~a-~a" (or message-id (get-universal-time)) campaign))
-                                                     (dm:field host "hostname")))))
+                              ("X-CampaignID" ,(princ-to-string campaign))
+                              ("X-CampaignMessageID" 
+                               ,(format NIL "<~a@courier.~a>"
+                                        (hash (format NIL "~a-~a" (or message-id (get-universal-time)) campaign))
+                                        (dm:field host "hostname")))
+                              ("List-ID" ,(princ-to-string campaign))))
                         ,@(when unsubscribe
                             `(("List-Unsubscribe" ,unsubscribe)
                               ("List-Unsubscribe-Post" "List-Unsubscribe=One-Click"))))
