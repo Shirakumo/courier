@@ -332,6 +332,7 @@
                       :sort '(("send-time" :desc)) :amount 100)))
 
 (define-api courier/mail/queue/wake () (:access (perm courier host))
+  (unless *task-runner* (start-task-runner))
   (notify-task (find-task 'send-queue))
   (output :ok "Queue woken up." "courier/queue"))
 

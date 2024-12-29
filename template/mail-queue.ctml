@@ -1,5 +1,5 @@
 <article class="page mail list log">
-  <a class="button" @href="courier/api/courier/mail/queue/wake" title="In case the queue gets stuck.">
+  <a class="button" @href="courier/api/courier/mail/queue/wake?browser=true" title="In case the queue gets stuck.">
     <i class="fas fa-bell"></i>
     Wake Queue
   </a>
