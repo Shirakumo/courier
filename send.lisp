@@ -7,7 +7,7 @@
            (pathname (@template (namestring template))))
          :copyright (config :copyright)
          :software-title (config :title)
-         :software-version (asdf:component-version (asdf:find-system :courier))
+         :software-version (load-time-value (asdf:component-version (asdf:find-system :courier)))
          args))
 
 (defun extract-plaintext (html)
