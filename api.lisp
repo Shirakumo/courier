@@ -4,7 +4,7 @@
   (let ((target (url> (apply #'format NIL url-format args)
                       :query `(("message" . ,message)))))
     (if (string= "true" (post/get "browser"))
-        (redirect target)
+        (api-redirect target)
         (api-output object :message message :target target))))
 
 (defun try-compile-content (campaign mail subscriber)
