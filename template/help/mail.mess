@@ -1,7 +1,7 @@
 ## Email Content
-Emails are written in a markup language called "Markless"(https://shirakumo.github.io/markless). Markless is intended to be an intuitive and simple language to learn. It requires only plaintext and can thus be easily written by hand without the need for a complicated editor. Markless supports a variety of text markup and content embedding options, making it a good fit for email.
+Emails are written in a markup language called "Markless"(https://shirakumo.org/docs/markless). Markless is intended to be an intuitive and simple language to learn. It requires only plaintext and can thus be easily written by hand without the need for a complicated editor. Markless supports a variety of text markup and content embedding options, making it a good fit for email.
 
-The "Markless website"(https://shirakumo.github.io/markless) includes a tutorial that covers all of the features it offers out of the box. We will briefly mention the most used ones here, and explain the Courier specific extensions as well. For more advanced and rigorous understanding of Markless, please consider its "specification"(https://github.com/Shirakumo/markless/blob/master/markless.pdf).
+The "Markless website"(https://shirakumo.org/docs/markless) includes a tutorial that covers all of the features it offers out of the box. We will briefly mention the most used ones here, and explain the Courier specific extensions as well. For more advanced and rigorous understanding of Markless, please consider its "specification"(https://shirakumo.org/project/markless/blob/master/markless.pdf).
 
 ### Text Styling
 The most important text styling you'll need is making things ``**bold**``, ``//italic//``, and ``__underlined__``, though you can also make text ``"colored"(in blue)``.

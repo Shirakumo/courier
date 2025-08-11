@@ -6,9 +6,9 @@
   :version "0.0.0"
   :license "zlib"
   :description "An email marketing service for Radiance"
-  :homepage "https://shirakumo.github.io/courier/"
-  :bug-tracker "https://github.com/shirakumo/courier/issues"
-  :source-control (:git "https://github.com/shirakumo/courier.git")
+  :homepage "https://shirakumo.org/docs/courier/"
+  :bug-tracker "https://shirakumo.org/project/courier/issues"
+  :source-control (:git "https://shirakumo.org/project/courier.git")
   :serial T
   :components ((:file "module")
                (:file "toolkit")

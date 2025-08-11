@@ -1,7 +1,7 @@
 ## Email Hosts
 Courier is not an MTA (Mail Transer Agent) by itself[1]. It handles the registry of subscribers, and the management of mails that should be sent out to them. In order to actually deliver mails to subscribers, an external MTA is required. This is called a "host" in Courier.
 
-In order to use an MTA as your mail host for Courier, the MTA must be accessible via the SMTP protocol. Courier allows you to configure the host, port, and encryption mode used when connecting, so you can use both an MTA that's on the same server as Courier, or one only accessible remotely. Currently Courier only supports the "plain" authentication mode. If you require another authentication mode, please file a ticket for it on "cl-smtp"(https://gitlab.common-lisp.net/cl-smtp/cl-smtp) and "Courier"(https://github.com/shirakumo/courier/issues).
+In order to use an MTA as your mail host for Courier, the MTA must be accessible via the SMTP protocol. Courier allows you to configure the host, port, and encryption mode used when connecting, so you can use both an MTA that's on the same server as Courier, or one only accessible remotely. Currently Courier only supports the "plain" authentication mode. If you require another authentication mode, please file a ticket for it on "cl-smtp"(https://gitlab.common-lisp.net/cl-smtp/cl-smtp) and "Courier"(https://shirakumo.org/project/courier/issues).
 
 Each host comes with its own "mail queue"(link mail-queue), which is used to schedule up emails to be sent over to the MTA you configured. It is a good idea to keep the batches small, or even configure additional rate limiting on the MTA if possible, in order to reduce the risk of getting flagged for spam or flooding.
 
